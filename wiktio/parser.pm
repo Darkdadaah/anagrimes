@@ -153,7 +153,7 @@ sub parseLanguage
 		} elsif ( exists $word_type->{$level} ) {
 			$sections->{type}->{$level.$num} = () ;
 		} else {
-			print STDERR "Level3 inexistant :\t$level\t$title\n" ;
+			print STDERR "[[$title]]	Level3 inexistant :\t$level\t$title\n" ;
 		}
 	} else {
 		# This article does not contain any level3 section
@@ -285,7 +285,7 @@ sub parseType
 			$level = $templevel ;
 			$sections->{$level} = () ;
 		} else {
-			print "Level4:\t$templevel\t$title\n" ;
+			print "[[$title]]	Level4:\t$templevel\t$title\n" ;
 		}
 	} else {
 		# This article does not contain any level4 section
@@ -303,7 +303,7 @@ sub parseType
 				$sections->{$level} = () ;
 				next ;
 			} else {
-				print "Level4\t$templevel\t$title\n" ;
+				print "[[$title]]	Level4\t$templevel\t$title\n" ;
 			}
 		}
 		

@@ -20,17 +20,19 @@ use warnings ;
 
 sub cherche_prononciation
 {
-	my ($line, $lang) = @_ ;
+	my ($line, $lang, $titre) = @_ ;
 	my %pron = () ;
 	my $p = '' ;
 	
 	if ($line =~ /^'''.+?''' ?.*?\{\{pron\|([^\|\}\r\n]+?)\}\}/ and $1 and not $line =~ /SAMPA/) {
 		$p = $1 ;
+		$p =~ s/^lang=.{2,3}// ;
 		$pron{$p} = 1 ;
 	}
 	# Ancien
 	elsif ($line =~ /^'''.+?''' ?.*?\/([.^\/]+?)\// and $1 and not $line =~ /SAMPA/) {
 		$p = $1 ;
+		$p =~ s/^lang=.{2,3}// ;
 		$pron{$p} = 1 ;
 	}
 	
@@ -103,7 +105,7 @@ sub cherche_prononciation
 		$p3 =~ s/^[1-9]=// ;
 		$p4 =~ s/^[1-9]=// ;
 		if ($term eq 'if') {	$p = $p3.$p4.'f' ; }
-		else { print STDERR "Modèle 4p non reconnu:\t$term\t$p1\t$p2\t$p3\t$p4\t$line" ; }
+		else { print STDERR "[[$titre]]	Modèle 4p non reconnu:\t$term\t$p1\t$p2\t$p3\t$p4\t$line" ; }
 		$pron{$p} = 1 ;
 	}
 	
@@ -116,7 +118,7 @@ sub cherche_prononciation
 		if ($term eq 'ot') {	$p = $p2.'o' ; }
 		elsif ($term eq 'eur' and $p2 =~ /rice=.+/) {	$p = $p3.'œʁ' ; }
 		elsif ($term eq 'eur' and $p3 =~ /rice=.+/) {	$p = $p2.'œʁ' ; }
-		else { print STDERR "Modèle 3p non reconnu:\t$term\t$p1\t$p2\t$p3\t$line" ; }
+		else { print STDERR "[[$titre]]	Modèle 3p non reconnu:\t$term\t$p1\t$p2\t$p3\t$line" ; }
 		$pron{$p} = 1 ;
 # 					print "$title = $term\t$p1\t$p\n" ;
 	}
@@ -143,7 +145,7 @@ sub cherche_prononciation
 		elsif ($term eq 'oux') {	$p = $p2.'u' ; }
 		elsif ($term eq 'ail') {	$p = $p2.'aj' ; }
 		elsif ($term eq 's') { $p = $p1 ; }
-		else { print STDERR "Modèle 2p non reconnu:\t$term\t$p1\t$p2\t$line" ; }
+		else { print STDERR "[[$titre]]	Modèle 2p non reconnu:\t$term\t$p1\t$p2\t$line" ; }
 		$pron{$p} = 1 ;
 	}
 	
@@ -158,29 +160,32 @@ sub cherche_prononciation
 		elsif ($term eq 'on') { $p = $p1.'ɔ̃' ; }
 		elsif ($term eq 'et') {	$p = $p1.'ɛ' ; }
 		elsif ($term eq 's') { $p = $p1 ; }
-		else { print STDERR "Modèle 1p non reconnu:\t$term\t$p1\t$line" ; }
+		else { print STDERR "[[$titre]]	Modèle 1p non reconnu:\t$term\t$p1\t$line" ; }
 		$pron{$p} = 1 ;
 # 					die if $title eq 'oiseau' ;
 	}
 	my @prononciations = keys %pron ;
-	@prononciations = check_prononciation(@prononciations) ;
+	@prononciations = check_prononciation(\@prononciations, $titre) ;
 	return @prononciations ;
 }
 
 sub section_prononciation
 {
-	my ($lines) = @_ ;
+	my ($lines, $titre) = @_ ;
+	
 	my %pron = () ;
 	my $p = '' ;
 	
 	foreach my $line (@$lines) {
 		if ($line =~ /^\* ?\{\{pron\|([^\|\}\r\n]+?)\}\}/ and $1 and not $line =~ /SAMPA/) {
 			$p = $1 ;
-			$pron{$p} = 1 ;
+			$p =~ s/^lang=.{2,3}// ;
+			$pron{$p} = 1 if $p ;
 		}
 		elsif ($line =~ /^\* .+ ?\{\{pron\|([^\|\}\r\n]+?)\}\}/ and not $line =~ /SAMPA/ and $1) {
 			$p = $1 ;
-			$pron{$p} = 1 ;
+			$p =~ s/^lang=.{2,3}// ;
+			$pron{$p} = 1 if $p ;
 		}
 		elsif ($line =~ /^\* ?\/([^\|\}\/\r\n]+?)\// and $1 and not $line =~ /SAMPA/) {
 			$p = $1 ;
@@ -193,30 +198,35 @@ sub section_prononciation
 	}
 	
 	my @prononciations = keys %pron ;
-	@prononciations = check_prononciation(@prononciations) ;
+	@prononciations = check_prononciation(\@prononciations, $titre) ;
 	return @prononciations ;
 }
 
 sub check_prononciation
 {
+	my ($prononciations, $titre) = @_ ;
 	my @pron ;
-	foreach my $p (@_) {
+	
+	foreach my $p (@$prononciations) {
+		if ($p =~ /&.{2,5};/) {
+			print STDERR "[[$titre]]	Caractère HTML : $p\n" ;
+		}
 		if ($p =~ /[0-9@\\"&\?EAOIU]/) {
-			print STDERR "Probablement (X-)SAMPA et pas API : $p\n" ;
+			print STDERR "[[$titre]]	Probablement (X-)SAMPA et pas API : $p\n" ;
 		} elsif ($p =~ /[g]/) {
 			my $p2 = $p ;
 			$p2 =~ s/g/ɡ/g ;
-			print STDERR "Correction API g : $p -> $p2\n" ;
+			print STDERR "[[$titre]]	Correction API g : $p -> $p2\n" ;
 			push @pron, $p2 ;
 		} elsif ($p =~ /[:]/) {
 			my $p2 = $p ;
 			$p2 =~ s/:/ː/g ;
-			print STDERR "Correction API deux-points : $p -> $p2\n" ;
+			print STDERR "[[$titre]]	Correction API deux-points : $p -> $p2\n" ;
 			push @pron, $p2 ;
 		} elsif ($p =~ /[']/) {
 			my $p2 = $p ;
 			$p2 =~ s/'/ˈ/g ;
-			print STDERR "Correction API ton : $p -> $p2\n" ;
+			print STDERR "[[$titre]]	Correction API ton : $p -> $p2\n" ;
 			push @pron, $p2 ;
 		} else {
 			push @pron, $p ;
