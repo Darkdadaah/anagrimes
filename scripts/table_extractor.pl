@@ -187,14 +187,13 @@ sub redirect
 	my ($titre, $article) = @_ ;
 	
 	my $cible = '' ;
-	my $special = '' ;
 	
-	if      ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
-		$cible = $2 ;
-		$special = 'normal' ;
-	} elsif ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
-		$cible = $2 ;
-		$special = 'special' ;
+	if ($article->[0] =~ /\# *REDIRECT[^ \[]*\[\[(.+?)\]\]/i) {
+		$cible = $1 ;
+# 	elsif      ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
+# 		$cible = $2 ;
+# 	} elsif ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
+# 		$cible = $2 ;
 	} else {
 		print STDERR "[[$titre]] Pas trouvé de redirect : " ;
 		map { chomp; print STDERR "'$_'\n" ; } @$article ;
@@ -242,6 +241,8 @@ sub article
 ###################
 # MAIN
 init() ;
+
+my $past = time() ;
 
 # Connect
 open(DUMP, $opt{i}) or die "Couldn't open '$opt{i}': $!\n" ;
@@ -297,5 +298,10 @@ close(DUMP) ;
 
 print "Total = $n\n" ;
 print "Total_redirects = $redirect\n" ;
+
+my $diff = time() - $past;
+my $mDiff = int($diff / 60);
+my $sDiff = sprintf("%02d", $diff - 60 * $mDiff);
+print "diff = $diff -> $mDiff\:$sDiff\n";
 
 __END__
