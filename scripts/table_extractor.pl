@@ -189,15 +189,15 @@ sub redirect
 	my $cible = '' ;
 	my $special = '' ;
 	
-	if      ($article->[0] =~ /\# *REDIRECT *:? *\[\[(.+?)\]\]/i) {
-		$cible = $1 ;
+	if      ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
+		$cible = $2 ;
 		$special = 'normal' ;
-	} elsif ($article->[0] =~ /\# *REDIRECT *:? *\[\[(.+?)\]\]/i) {
-		$cible = $1 ;
+	} elsif ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
+		$cible = $2 ;
 		$special = 'special' ;
 	} else {
-		print STDERR "[[$titre]] Pas trouvé de redirect ($special) : " ;
-		map { chomp; STDERR print "'$_'\n" ; } @$article ;
+		print STDERR "[[$titre]] Pas trouvé de redirect : " ;
+		map { chomp; print STDERR "'$_'\n" ; } @$article ;
 	}
 	
 	ajout_redirect($titre, $cible) ;
