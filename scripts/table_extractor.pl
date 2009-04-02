@@ -1,6 +1,5 @@
 #!/usr/bin/perl -w
 
-# Test the functions ascii etc.
 use strict ;
 use warnings ;
 use Getopt::Std ;
@@ -28,7 +27,7 @@ sub usage
 	-h        : this (help) message
 	-i <path> : dump path
 	-o <path> : output path
-	-L <code> : language code (2 or 3 letters)
+	-L <code> : language code to extract alone (2 or 3 letters)
 	
 EOF
 	exit ;
@@ -40,7 +39,7 @@ sub init()
 {
 	getopts( 'i:o:L:', \%opt ) or usage() ;
 	usage() if $opt{h} ;
-# 	$opt{'L'} = 'fr' if not $opt{'L'} ;
+	
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	usage( "Output file path needed (-o)" ) if not $opt{o} ;
 	$opt{o} .= '.csv' if not $opt{o} =~ /\.[a-z0-9]+$/ ;
@@ -66,7 +65,7 @@ sub init()
 	
 	 # Init mots
 	open(MOTS, "> $mots") or die "Couldn't write $mots: $!\n" ;
-	print MOTS '"titre","langue","type","pron","pron_simple","r_pron_simple","flex","num","gent"' . "\n" ;
+	print MOTS '"titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent"' . "\n" ;
 	close(MOTS) ;
 }
 
@@ -114,7 +113,6 @@ sub ajout_langue
 	
 	# Section prononciation?
 	my @prononciations = section_prononciation($lang_section->{'prononciation'}) ;
-# 			print "prons[$titre]= '@prononciations'\n" ;
 	
 	my @sections = keys %{$lang_section} ;
 	my @types = keys %{$lang_section->{'type'}} ;
@@ -131,12 +129,11 @@ sub ajout_langue
 			
 			# gentile?
 			if ($type eq 'nom' or $type eq 'adj' or $type eq 'loc-nom' or $type eq 'loc-adj') {
-				$gent = is_gentile($lang_section) ;
+				$gent = is_gentile($lang_section->{'type'}->{$type}) ;
 				print "$titre est un gentilé (?)" if $gent ;
 			}
 		}
 		
-# 				print "P1'' : @prononciations\n" if @prononciations ;
 		# Prononciations dispos?
 		my @pron = () ;
 		if (keys %type_pron == 0) {
@@ -148,24 +145,37 @@ sub ajout_langue
 		# Si prononciations
 		my $type_nom = $type ;
 		my $num = 1 ;
+		my ($flex,$loc) = (0,0) ;
+		
+		# Nombre?
 		if ($type =~ /^(.+)-([0-9])$/) {
 			$type_nom = $1 ;
 			$num = $2 ;
 		}
+		# Flexion?
+		if ($type_nom =~ /^flex-(.+)$/) {
+			$type_nom = $1 ;
+			$flex = 1 ;
+		}
+		# Locution?
+		if ($type_nom =~ /^loc-(.+)$/) {
+			$type_nom = $1 ;
+			$loc = 1 ;
+		}
+		
 		if (@pron) {
-			my $flex = $type =~ /^flex-/ ? 1 : 0 ;
+			# Ajoute autant de ligne qu'il y a de prononciation
 			foreach my $p (@pron) {
 				my $p_simple = simple_prononciation($p) ;
 				my $r_p_simple = reverse($p_simple) ;
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $flex, $num, $gent) ;
+				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent) ;
 			}
 		} else {
 			my $p = '' ;
 			my $p_simple = '' ;
 			my $r_p_simple = '' ;
-			my $flex = ($type =~ /^flex-/) ? 1 : 0 ;
 			my $num = 1 ;
-			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $flex, $num, $gent) ;
+			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent) ;
 		}
 	}
 }
@@ -208,7 +218,7 @@ sub article
 	if ($mot{'titre_ascii'}) {
 		my $r_titre = reverse($titre) ;
 		my $r_titre_ascii = reverse($mot{'titre_ascii'}) ;
-		ajout_article($titre, $mot{'titre_ascii'}, $mot{'anagramme_id'}, $r_titre, $r_titre_ascii) ;
+		ajout_article($titre, $r_titre, $mot{'titre_ascii'}, $r_titre_ascii, $mot{'anagramme_id'}) ;
 		##########################
 		# Sections
 		my $article_section = parseArticle($article, $titre) ;
