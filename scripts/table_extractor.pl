@@ -112,7 +112,7 @@ sub ajout_langue
 	my $lang_section = parseLanguage($section, $titre) ;
 	
 	# Section prononciation?
-	my @prononciations = section_prononciation($lang_section->{'prononciation'}) ;
+	my @prononciations = section_prononciation($lang_section->{'prononciation'}, $titre) ;
 	
 	my @sections = keys %{$lang_section} ;
 	my @types = keys %{$lang_section->{'type'}} ;
@@ -121,17 +121,17 @@ sub ajout_langue
 		my %type_pron = () ;
 		my $gent = 0 ;
 		foreach my $line (@{$lang_section->{'type'}->{$type}}) {
-			my @pron = cherche_prononciation($line, $opt{'L'}) ;
+			my @pron = cherche_prononciation($line, $opt{'L'}, $titre) ;
 			
 			foreach my $p (@pron) {
 				$type_pron{$p} = 1 ;
 			}
-			
-			# gentile?
-			if ($type eq 'nom' or $type eq 'adj' or $type eq 'loc-nom' or $type eq 'loc-adj') {
-				$gent = is_gentile($lang_section->{'type'}->{$type}) ;
-				print "$titre est un gentilé (?)" if $gent ;
-			}
+		}
+		
+		# gentile?
+		if ($type eq 'nom' or $type eq 'adj' or $type eq 'loc-nom' or $type eq 'loc-adj') {
+			$gent = is_gentile($lang_section->{'type'}->{$type}) ;
+# 			print "[[$titre]]\tgentilé (?)\n" if $gent ;
 		}
 		
 		# Prononciations dispos?
@@ -189,15 +189,15 @@ sub redirect
 	my $cible = '' ;
 	my $special = '' ;
 	
-	if      ($article->[0] =~ /\# *REDIRECT *\[\[(.+?)\]\]/i) {
+	if      ($article->[0] =~ /\# *REDIRECT *:? *\[\[(.+?)\]\]/i) {
 		$cible = $1 ;
 		$special = 'normal' ;
-	} elsif ($article->[0] =~ /\# *REDIRECT *\[\[(.+?)\]\]/i) {
+	} elsif ($article->[0] =~ /\# *REDIRECT *:? *\[\[(.+?)\]\]/i) {
 		$cible = $1 ;
 		$special = 'special' ;
 	} else {
-		print "Pas trouvé de redirect dans $titre : " ;
-		map { chomp; print "'$_'\n" ; } @$article ;
+		print STDERR "[[$titre]] Pas trouvé de redirect ($special) : " ;
+		map { chomp; STDERR print "'$_'\n" ; } @$article ;
 	}
 	
 	ajout_redirect($titre, $cible) ;
