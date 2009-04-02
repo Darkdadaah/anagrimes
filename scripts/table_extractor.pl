@@ -188,7 +188,7 @@ sub redirect
 	
 	my $cible = '' ;
 	
-	if ($article->[0] =~ /\# *REDIRECT[^ \[]*\[\[(.+?)\]\]/i) {
+	if ($article->[0] =~ /\# *REDIRECT[^\[]*\[\[(.+?)\]\]/i) {
 		$cible = $1 ;
 # 	elsif      ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
 # 		$cible = $2 ;
