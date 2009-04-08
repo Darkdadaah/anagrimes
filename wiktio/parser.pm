@@ -162,7 +162,7 @@ sub parseLanguage
 	
 	# continue to retrieve the sections
 	while ( $line = shift @$article ) {
-		
+		my $num = '' ;
 		# Another section?
 		if ( $line and ($line =~ /{{-(.+?)-[\|\}]/ or $line =~ /\{\{-(.+?)-\|.+[\|\}]/)) {
 			my $templevel = $1 ;

@@ -30,13 +30,17 @@ our $level3 = {
 
 our $word_type = {
 
-	'flex-nom' => 1,
-	'flex-adj' => 1,
 	'nom' => 1,
+	'nom-sciences' => 1,
+	'flex-nom' => 1,
 	'nom-pr' => 1,
 	'adj' => 1,
+	'flex-adj' => 1,
 	'adv' => 1,
 	'adv-pron' => 1,
+	'adv-rel' => 1,
+	'adv-int' => 1,
+	
 	'loc' => 1,
 	'loc-nom' => 1,
 	'loc-adj' => 1,
@@ -53,6 +57,7 @@ our $word_type = {
 	'adj-excl' => 1,
 	'adj-indef' => 1,
 	'adj-indéf' => 1,
+	'flex-adj-indéf' => 1,
 	'adj-int' => 1,
 	'adj-num' => 1,
 	'adj-pos' => 1,
@@ -74,6 +79,7 @@ our $word_type = {
 	'pronom-déf' => 1,
 	'pronom-indef' => 1,
 	'pronom-indéf' => 1,
+	'flex-pronom-indéf' => 1,
 	'pronom-int' => 1,
 	'pronom-pers' => 1,
 	'pronom-pos' => 1,
