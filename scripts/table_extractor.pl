@@ -128,12 +128,6 @@ sub ajout_langue
 			}
 		}
 		
-		# gentile?
-		if ($type eq 'nom' or $type eq 'adj' or $type eq 'loc-nom' or $type eq 'loc-adj') {
-			$gent = is_gentile($lang_section->{'type'}->{$type}) ;
-# 			print "[[$titre]]\tgentilé (?)\n" if $gent ;
-		}
-		
 		# Prononciations dispos?
 		my @pron = () ;
 		if (keys %type_pron == 0) {
@@ -161,6 +155,12 @@ sub ajout_langue
 		if ($type_nom =~ /^loc-(.+)$/) {
 			$type_nom = $1 ;
 			$loc = 1 ;
+		}
+		
+		# gentile?
+		if ($type_nom eq 'nom' or $type_nom eq 'adj' or $type_nom eq 'loc-nom' or $type_nom eq 'loc-adj') {
+			$gent = is_gentile($lang_section->{'type'}->{$type}) ;
+# 			print "[[$titre]]\tgentilé (?)\n" if $gent ;
 		}
 		
 		if (@pron) {
