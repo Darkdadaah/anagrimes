@@ -1,3 +1,4 @@
+
 # Wiktionnaire bases
 # Author: Matthieu Barba
 # This module contain basic data and functions for Wiktionary fr
@@ -21,7 +22,8 @@ sub stepl { print STDERR $_[0] ? "$_[0]" : "" } ;
 
 our $level3 = {
 	'étym' => 'etymologie',
-	'etym' => 'etymologie',
+	'etym' => 'etymologie',	# Beuh
+	'éty' => 'etymologie',	# Beuh
 	'pron' => 'prononciation',
 	'voir' => 'voir',
 	'anagr'  => 'anagrammes',

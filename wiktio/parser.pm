@@ -137,20 +137,23 @@ sub parseLanguage
 			last ;
 		}
 	}
-	
 	# ETYM, TYPES?
 	my $level = '' ;
 	my $num = '' ;
 	if ($line and ($line =~ /\{\{-(.+?)-[\|\}]/ or $line =~ /\{\{-(.+?)-\|.+[\|\}]/)) {
 		$level = $1 ;
-		if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
-			$num = '-'.$1 ;
-		} else {
-			$num = '' ;
-		}
+		
+		# Initialize level3
+		# Normal level3?
 		if ( exists $level3->{$level} ) {
 			$sections->{$level3->{$level}} = () ;
+		# Word type?
 		} elsif ( exists $word_type->{$level} ) {
+			if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
+				$num = '-'.$1 ;
+			} else {
+				$num = '' ;
+			}
 			$sections->{type}->{$level.$num} = () ;
 		} else {
 			print STDERR "[[$title]]	Level3 inexistant :\t$level\t$title\n" ;
@@ -162,20 +165,21 @@ sub parseLanguage
 	
 	# continue to retrieve the sections
 	while ( $line = shift @$article ) {
-		my $num = '' ;
 		# Another section?
 		if ( $line and ($line =~ /{{-(.+?)-[\|\}]/ or $line =~ /\{\{-(.+?)-\|.+[\|\}]/)) {
 			my $templevel = $1 ;
 			
-			if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
-				$num = '-'.$1 ;
-			}
 			if ( exists $level3->{$templevel} ) {
 				$level = $templevel ;
 				$sections->{$level3->{$level}} = () ;
 				next ;
 			}
 			elsif ( exists $word_type->{$templevel} ) {
+				if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
+					$num = '-'.$1 ;
+				} else {
+					$num = '' ;
+				}
 				$level = $templevel ;
 				$sections->{type}->{$level.$num} = () ;
 				next ;
@@ -186,6 +190,7 @@ sub parseLanguage
 		if ( exists $level3->{$level} ) {
 			push @{$sections->{$level3->{$level}}}, $line ;
 		}
+		# Word type?
 		elsif ( exists $word_type->{$level} ) {
 			push @{$sections->{type}->{$level.$num}}, $line ;
 		}
