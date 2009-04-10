@@ -24,6 +24,7 @@ our $level3 = {
 	'étym' => 'etymologie',
 	'etym' => 'etymologie',	# Beuh
 	'éty' => 'etymologie',	# Beuh
+	'étyl' => 'etymologie',	# Beuh
 	'pron' => 'prononciation',
 	'voir' => 'voir',
 	'anagr'  => 'anagrammes',

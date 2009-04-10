@@ -53,20 +53,14 @@ sub init()
 	$mots = $opt{o} ;
 	$mots =~ s/^(.+?)(\.[a-z0-9]+)$/$1_mots$2/ ;
 	
-	 # Init redirect
-	open(REDIRECTS, "> $redirects") or die "Couldn't write $redirects: $!\n" ;
-	print REDIRECTS '"titre","cible"'."\n" ;
-	close(REDIRECTS) ;
-	
-	 # Init articles
-	open(ARTICLES, "> $articles") or die "Couldn't write $articles: $!\n" ;
-	print ARTICLES '"titre","r_titre","titre_ascii","r_titre_ascii","anagramme_id"'."\n" ;
-	close(ARTICLES) ;
-	
-	 # Init mots
-	open(MOTS, "> $mots") or die "Couldn't write $mots: $!\n" ;
-	print MOTS '"titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent"' . "\n" ;
-	close(MOTS) ;
+	# Ordre des colonnes des tables
+	print STDERR 'REDIRECTS: "titre","cible"'."\n" ;
+	print STDERR 'ARTICLES: "titre","r_titre","titre_ascii","r_titre_ascii","anagramme_id"'."\n" ;
+	print STDERR 'MOTS: "titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent"' . "\n" ;
+	# Initialisation des fichiers
+	open(REDIRECTS, "> $redirects") or die "Impossible d'écrire $redirects: $!\n" ; close(REDIRECTS) ;
+	open(ARTICLES, "> $articles") or die "Impossible d'écrire $articles : $!\n" ; close(ARTICLES) ;
+	open(MOTS, "> $mots") or die "Impossible d'écrire $mots : $!\n" ; close(MOTS) ;
 }
 
 sub ajout_redirect
@@ -120,12 +114,11 @@ sub ajout_langue
 		next if $type eq 'erreur' ;
 		my %type_pron = () ;
 		my $gent = 0 ;
-		foreach my $line (@{$lang_section->{'type'}->{$type}}) {
-			my @pron = cherche_prononciation($line, $opt{'L'}, $titre) ;
-			
-			foreach my $p (@pron) {
-				$type_pron{$p} = 1 ;
-			}
+		
+		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}, $langue, $titre) ;
+		
+		foreach my $p (@$prons) {
+			$type_pron{$p} = 1 ;
 		}
 		
 		# Prononciations dispos?
