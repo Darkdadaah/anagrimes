@@ -133,7 +133,7 @@ sub article
 sub read_article
 {
 	my ($article0, $title) = @_ ;
-	my $article = {} ;
+	my $article = () ;
 	if ($opt{L}) {
 		my $lang = parseArticle($article0, $title) ;
 		
@@ -149,8 +149,11 @@ sub read_article
 			delete $lang->{'language'}->{$opt{N}} ;
 		}
 		
-		$article = {} ;
 		foreach my $l (keys %{$lang->{'language'}}) {
+			if (not ref($lang->{'language'}->{$l}) eq 'ARRAY') {
+				print STDERR "[[$title]]\tSection de langue vide : $l\n" ;
+				next ;
+			}
 			push @$article, @{$lang->{'language'}->{$l}} ;
 		}
 		
