@@ -64,9 +64,23 @@ sub init()
 		open(ARTICLES, "> $opt{O}") or die "Couldn't write $opt{O}: $!\n" ;
 		close(ARTICLES) ;
 	}
+	
+	$opt{p} = correct_pattern($opt{p}) ;
+	$opt{n} = correct_pattern($opt{n}) ;
 }
 
 ###################################
+
+sub correct_pattern
+{
+	my $p = shift ;
+	if ($p) {
+		$p =~ s/</&lt;/ ;
+		$p =~ s/>/&gt;/ ;
+	}
+	return $p ;
+}
+
 # REDIRECTS
 sub redirect
 {
