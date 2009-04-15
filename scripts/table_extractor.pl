@@ -312,9 +312,8 @@ close(DUMP) ;
 my @order = sort keys(%langues_list) ;
 
 open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ;
-print LANGUES '"'.$order[0].'"' ;
-for (my $i=1; $i < @order ; $i++) {
-	print LANGUES ',"'.$langues_list{$i}.'"' ;
+foreach my $l (sort keys(%langues_list)) {
+	print LANGUES "\"$l\",\"$langues_list{$l}\"\n" ;
 }
 close(LANGUES) ;
 
