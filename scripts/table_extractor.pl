@@ -175,12 +175,14 @@ sub ajout_langue
 				if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
 				else { $langues_total{$langue} = 1 ; }
 				
-				# Nombre dans la langue filtré
-				if (not $gent and not $flex) {
+				# Nombre dans la langue (filtré)
+				my $rand = 0 ;
+				if (not $gent and not $flex and $type ne 'nom-pr' and not $titre =~ /[0-9]/) {
 					if ($langues_filtre{$langue}) { $langues_filtre{$langue}++ ; }
 					else { $langues_filtre{$langue} = 1 ; }
+					$rand = $langues_filtre{$langue} ;
 				}
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_filtre{$langue}) ;
+				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $rand) ;
 			}
 		} else {
 			my $p = '' ;
@@ -191,12 +193,14 @@ sub ajout_langue
 			if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
 			else { $langues_total{$langue} = 1 ; }
 			
-			# Nombre dans la langue filtré
-			if (not $gent and not $flex) {
+			# Nombre dans la langue (filtré)
+			my $rand = 0 ;
+			if (not $gent and not $flex and $type ne 'nom-pr' and not $titre =~ /[0-9]/) {
 				if ($langues_filtre{$langue}) { $langues_filtre{$langue}++ ; }
 				else { $langues_filtre{$langue} = 1 ; }
+				$rand = $langues_filtre{$langue} ;
 			}
-			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_filtre{$langue}) ;
+			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $rand) ;
 		}
 	}
 }
