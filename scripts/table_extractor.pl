@@ -12,6 +12,9 @@ our %opt ;
 my $redirects = '' ;
 my $articles = '' ;
 my $mots = '' ;
+my $langues = '' ;
+
+my %langues_list = () ;
 
 #################################################
 # Message about this program and how to use it
@@ -53,14 +56,20 @@ sub init()
 	$mots = $opt{o} ;
 	$mots =~ s/^(.+?)(\.[a-z0-9]+)$/$1_mots$2/ ;
 	
+	$langues = $opt{o} ;
+	$langues =~ s/^(.+?)(\.[a-z0-9]+)$/$1_langues$2/ ;
+	
 	# Ordre des colonnes des tables
 	print STDERR 'REDIRECTS: "titre","cible"'."\n" ;
 	print STDERR 'ARTICLES: "titre","r_titre","titre_ascii","r_titre_ascii","anagramme_id"'."\n" ;
-	print STDERR 'MOTS: "titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent"' . "\n" ;
+	print STDERR 'MOTS: "titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent","rand"' . "\n" ;
+	print STDERR 'LANGUES: "langue", "num"'."\n" ;
+	
 	# Initialisation des fichiers
 	open(REDIRECTS, "> $redirects") or die "Impossible d'écrire $redirects: $!\n" ; close(REDIRECTS) ;
 	open(ARTICLES, "> $articles") or die "Impossible d'écrire $articles : $!\n" ; close(ARTICLES) ;
 	open(MOTS, "> $mots") or die "Impossible d'écrire $mots : $!\n" ; close(MOTS) ;
+	open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ; close(LANGUES) ;
 }
 
 sub ajout_redirect
@@ -161,14 +170,24 @@ sub ajout_langue
 			foreach my $p (@pron) {
 				my $p_simple = simple_prononciation($p) ;
 				my $r_p_simple = reverse($p_simple) ;
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent) ;
+				if ($langues_list{$langue}) {
+					$langues_list{$langue}++ ;
+				} else {
+					$langues_list{$langue} = 1 ;
+				}
+				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_list{$langue}) ;
 			}
 		} else {
 			my $p = '' ;
 			my $p_simple = '' ;
 			my $r_p_simple = '' ;
 			my $num = 1 ;
-			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent) ;
+			if ($langues_list{$langue}) {
+				$langues_list{$langue}++ ;
+			} else {
+				$langues_list{$langue} = 1 ;
+			}
+			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_list{$langue}) ;
 		}
 	}
 }
@@ -288,6 +307,16 @@ while(<DUMP>) {
 	}
 }
 close(DUMP) ;
+
+# Print the langues list
+my @order = sort keys(%langues_list) ;
+
+open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ;
+print LANGUES '"'.$order[0].'"' ;
+for (my $i=1; $i < @order ; $i++) {
+	print LANGUES ',"'.$langues_list{$i}.'"' ;
+}
+close(LANGUES) ;
 
 print "Total = $n\n" ;
 print "Total_redirects = $redirect\n" ;

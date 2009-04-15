@@ -13,7 +13,7 @@ my $redirects = '' ;
 my $articles = '' ;
 
 # Defaut
-$opt{i} = '/home/barba/data/wiki/frwikt_2008-10.xml' ;
+# $opt{i} = '' ;
 
 #################################################
 # Message about this program and how to use it
