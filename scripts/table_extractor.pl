@@ -14,7 +14,8 @@ my $articles = '' ;
 my $mots = '' ;
 my $langues = '' ;
 
-my %langues_list = () ;
+my %langues_total = () ;
+my %langues_filtre = () ;
 
 #################################################
 # Message about this program and how to use it
@@ -63,7 +64,7 @@ sub init()
 	print STDERR 'REDIRECTS: "titre","cible"'."\n" ;
 	print STDERR 'ARTICLES: "titre","r_titre","titre_ascii","r_titre_ascii","anagramme_id"'."\n" ;
 	print STDERR 'MOTS: "titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent","rand"' . "\n" ;
-	print STDERR 'LANGUES: "langue", "num"'."\n" ;
+	print STDERR 'LANGUES: "langue", "num", "num_min"'."\n" ;
 	
 	# Initialisation des fichiers
 	open(REDIRECTS, "> $redirects") or die "Impossible d'écrire $redirects: $!\n" ; close(REDIRECTS) ;
@@ -170,24 +171,32 @@ sub ajout_langue
 			foreach my $p (@pron) {
 				my $p_simple = simple_prononciation($p) ;
 				my $r_p_simple = reverse($p_simple) ;
-				if ($langues_list{$langue}) {
-					$langues_list{$langue}++ ;
-				} else {
-					$langues_list{$langue} = 1 ;
+				# Nombre de langue
+				if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
+				else { $langues_total{$langue} = 1 ; }
+				
+				# Nombre dans la langue filtré
+				if (not $gent and not $flex) {
+					if ($langues_filtre{$langue}) { $langues_filtre{$langue}++ ; }
+					else { $langues_filtre{$langue} = 1 ; }
 				}
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_list{$langue}) ;
+				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_filtre{$langue}) ;
 			}
 		} else {
 			my $p = '' ;
 			my $p_simple = '' ;
 			my $r_p_simple = '' ;
 			my $num = 1 ;
-			if ($langues_list{$langue}) {
-				$langues_list{$langue}++ ;
-			} else {
-				$langues_list{$langue} = 1 ;
+			# Nombre dans la langue
+			if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
+			else { $langues_total{$langue} = 1 ; }
+			
+			# Nombre dans la langue filtré
+			if (not $gent and not $flex) {
+				if ($langues_filtre{$langue}) { $langues_filtre{$langue}++ ; }
+				else { $langues_filtre{$langue} = 1 ; }
 			}
-			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_list{$langue}) ;
+			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $langues_filtre{$langue}) ;
 		}
 	}
 }
@@ -309,11 +318,9 @@ while(<DUMP>) {
 close(DUMP) ;
 
 # Print the langues list
-my @order = sort keys(%langues_list) ;
-
 open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ;
-foreach my $l (sort keys(%langues_list)) {
-	print LANGUES "\"$l\",\"$langues_list{$l}\"\n" ;
+foreach my $l (sort keys(%langues_total)) {
+	print LANGUES "\"$l\",\"$langues_total{$l}\",\"$langues_filtre{$l}\"\n" ;
 }
 close(LANGUES) ;
 
