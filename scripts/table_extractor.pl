@@ -141,7 +141,7 @@ sub ajout_langue
 		
 		# Si prononciations
 		my $type_nom = $type ;
-		my $num = 1 ;
+		my $num = 0 ;
 		my ($flex,$loc) = (0,0) ;
 		
 		# Nombre?

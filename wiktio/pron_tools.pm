@@ -162,12 +162,12 @@ sub cherche_prononciation
 		}
 		
 		# Ancien
-		if ($ligne =~ /^'''.+?'''.*?\/([^\/]+?)\/ ou \/([^\/]+?)\//) {
+		if ($ligne =~ /^'''.+?'''.*?\/([^\/]*?)\/ ou \/([^\/]*?)\//) {
 			$pron{$1} = 1 ;
 			$pron{$2} = 1 ;
 			print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/, /$2/\n" ;
 		}
-		elsif ( $ligne =~ /^'''.+?'''.*?\/([^\/]+?)\// ) {
+		elsif ( $ligne =~ /^'''.+?'''.*?\/([^\/]*?)\// ) {
 			$pron{$1} = 1 ;
 			print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/\n" ;
 		}
@@ -391,6 +391,10 @@ sub check_prononciation
 			$p2 =~ s/'/ˈ/g ;
 			print STDERR "[[$titre]]	Correction API ton : $p -> $p2\n" ;
 			push @pron, $p2 ;
+		} elsif ($p =~ /\/ ou \// or / ou /) {
+			print STDERR "[[$titre]]	à dédoubler : $p\n" ;
+			my @ou_pron = split(/\/? ou \/?/, $p) ;
+			push @pron, @ou_pron ;
 		} else {
 			push @pron, $p ;
 		}
