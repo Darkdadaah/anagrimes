@@ -399,6 +399,14 @@ sub check_prononciation
 			push @pron, $p ;
 		}
 	}
+	
+	# Corrections simples
+	foreach my $p (@pron) {
+		# Pas d'espaces en début ou fin
+		$p =~ s/^ +// ;
+		$p =~ s/ +$// ;
+	}
+	
 	return @pron ;
 }
 
