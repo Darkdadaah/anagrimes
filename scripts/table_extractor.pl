@@ -324,7 +324,8 @@ close(DUMP) ;
 # Print the langues list
 open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ;
 foreach my $l (sort keys(%langues_total)) {
-	print LANGUES "\"$l\",\"$langues_total{$l}\",\"$langues_filtre{$l}\"\n" ;
+	my $filtre = $langues_filtre{$l} ? $langues_filtre{$l} : 0 ;
+	print LANGUES "\"$l\",\"$langues_total{$l}\",\"$filtre\"\n" ;
 }
 close(LANGUES) ;
 
