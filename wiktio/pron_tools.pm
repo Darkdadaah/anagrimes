@@ -48,6 +48,7 @@ sub cherche_tables
 					while ($compte > 0) {
 						$i++ ;
 						$ligne = $lignes->[$i] ;
+						last if not $ligne ;
 						chomp($ligne) ;
 						$ligne =~ s/\s*\|\s*$// ;
 						$ouverture = ($ligne =~ tr/\{//) ;
