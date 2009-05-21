@@ -7,6 +7,10 @@
 
 package wiktio::pron_tools ;
 
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use Exporter ;
 @ISA=('Exporter') ;
 @EXPORT_OK = qw(
@@ -45,7 +49,7 @@ sub cherche_tables
 				my $compte = $ouverture - $fermeture ;
 				if ($compte > 0) {
 # 					print "Table multiligne...\n" ;
-					while ($compte > 0) {
+					while ($compte > 0 and $lignes->[$i+1]) {
 						$i++ ;
 						$ligne = $lignes->[$i] ;
 						last if not $ligne ;
@@ -57,6 +61,10 @@ sub cherche_tables
 						$ligne =~ s/\s*\|\s*// ;
 						$ligne = '|'.$ligne ;
 						$table_texte .= $ligne ;
+					}
+					# Still open? BAD
+					if ($compte > 0) {
+						print STDERR "[[$titre]]\tunclosed table ($compte)\n" ;
 					}
 				}
 # 				print "table finale : $table_texte\n" ;
@@ -416,6 +424,13 @@ sub simple_prononciation
 	my ($pron0) = @_ ;
 	my $pron = $pron0 ;
 	$pron =~ s/[\.,\- ‿ːˈˌ]//g ;
+	
+	# Cas spéciaux
+	# r: identique partout
+	$pron =~ s/[ʁrɹʀ]/r/ ;
+	# Autres
+	$pron =~ s/ʧ/tʃ/ ;
+	$pron =~ s/ʤ/dʒ/ ;
 	return $pron ;
 }
 

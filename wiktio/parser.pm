@@ -6,6 +6,10 @@
 
 package wiktio::parser ;
 
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use Exporter ;		# So that we can export functions and vars
 @ISA=('Exporter') ;	# This module is a subclass of Exporter
 

@@ -1,16 +1,21 @@
 #!/usr/bin/perl -w
 
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use strict ;
 use warnings ;
 use Getopt::Std ;
 
 use lib '..' ;
-use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
+use wiktio::string_tools	qw(ascii ascii_strict transcription anagramme) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation) ;
 our %opt ;
 my $redirects = '' ;
 my $articles = '' ;
+my $transcrits = '' ;
 my $mots = '' ;
 my $langues = '' ;
 
@@ -54,6 +59,9 @@ sub init()
 	$articles = $opt{o} ;
 	$articles =~ s/^(.+?)(\.[a-z0-9]+)$/$1_articles$2/ ;
 	
+	$transcrits = $opt{o} ;
+	$transcrits =~ s/^(.+?)(\.[a-z0-9]+)$/$1_transcrits$2/ ;
+	
 	$mots = $opt{o} ;
 	$mots =~ s/^(.+?)(\.[a-z0-9]+)$/$1_mots$2/ ;
 	
@@ -63,14 +71,16 @@ sub init()
 	# Ordre des colonnes des tables
 	print STDERR 'REDIRECTS: "titre","cible"'."\n" ;
 	print STDERR 'ARTICLES: "titre","r_titre","titre_ascii","r_titre_ascii","anagramme_id"'."\n" ;
+	print STDERR 'TRANSCRITS: "titre","r_titre","transcrit_plat", "r_transcrit_plat", "anagramme_id"'."\n" ;
 	print STDERR 'MOTS: "titre","langue","type","pron","pron_simple","r_pron_simple","num","flex","loc","gent","rand"' . "\n" ;
 	print STDERR 'LANGUES: "langue", "num", "num_min"'."\n" ;
 	
 	# Initialisation des fichiers
-	open(REDIRECTS, "> $redirects") or die "Impossible d'écrire $redirects: $!\n" ; close(REDIRECTS) ;
-	open(ARTICLES, "> $articles") or die "Impossible d'écrire $articles : $!\n" ; close(ARTICLES) ;
-	open(MOTS, "> $mots") or die "Impossible d'écrire $mots : $!\n" ; close(MOTS) ;
-	open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ; close(LANGUES) ;
+	open(REDIRECTS, "> $redirects") or die "Impossible d'initier $redirects: $!\n" ; close(REDIRECTS) ;
+	open(ARTICLES, "> $articles") or die "Impossible d'initier $articles : $!\n" ; close(ARTICLES) ;
+	open(TRANSCRITS, "> $transcrits") or die "Impossible d'initier $transcrits : $!\n" ; close(TRANSCRITS) ;
+	open(MOTS, "> $mots") or die "Impossible d'initier $mots : $!\n" ; close(MOTS) ;
+	open(LANGUES, "> $langues") or die "Impossible d'initier $langues : $!\n" ; close(LANGUES) ;
 }
 
 sub ajout_redirect
@@ -87,12 +97,30 @@ sub ajout_redirect
 sub ajout_article
 {
 	open(ARTICLES, ">> $articles") or die "Impossible d'écrire $articles : $!\n" ;
-	print ARTICLES '"'.$_[0].'"' ;
-	for (my $i=1; $i<@_; $i++) {
-		print ARTICLES ',"'.$_[$i].'"' ;
+# 	print ARTICLES '"'.$_[0].'"' ;
+	
+	if (@_) {
+		print ARTICLES '"'.join('","', @_)."\"\n" ;
+	} else {
+		print "Empty article.\n" ;
 	}
-	print ARTICLES "\n" ;
+	
+# 	for (my $i=1; $i<@_; $i++) {
+# 		print ARTICLES ',"'.$_[$i].'"' ;
+# 	}
+# 	print ARTICLES "\n" ;
 	close(ARTICLES) ;
+}
+
+sub ajout_transcrit
+{
+	open(TRANSCRITS, ">> $transcrits") or die "Impossible d'écrire $transcrits : $!\n" ;
+	print TRANSCRITS '"'.$_[0].'"' ;
+	for (my $i=1; $i<@_; $i++) {
+		print TRANSCRITS ',"'.$_[$i].'"' ;
+	}
+	print TRANSCRITS "\n" ;
+	close(TRANSCRITS) ;
 }
 
 sub ajout_mot
@@ -237,12 +265,12 @@ sub article
 	
 	###########################
 	# Travail sur le titre
-	$mot{'anagramme_id'} = anagramme($titre) ;
 	$mot{'titre_ascii'} = lc(ascii_strict($titre)) ;
+	$mot{'anagramme_id'} = anagramme($titre) ;
+# 	delete $mot{'anagramme_id'} if length($mot{'anagramme_id'})==1 ;
+	
 	if ($mot{'titre_ascii'}) {
-		my $r_titre = reverse($titre) ;
-		my $r_titre_ascii = reverse($mot{'titre_ascii'}) ;
-		ajout_article($titre, $r_titre, $mot{'titre_ascii'}, $r_titre_ascii, $mot{'anagramme_id'}) ;
+		
 		##########################
 		# Sections
 		my $article_section = parseArticle($article, $titre) ;
@@ -258,6 +286,26 @@ sub article
 				my $langue_section = $article_section->{language}->{$langue} ;
 				next if not $langue_section ;
 				ajout_langue($titre, $langue_section, $langue) ;
+			}
+		}
+		
+		##########################
+		# Graphie
+		my $r_titre = reverse($titre) ;
+		my $r_titre_ascii = reverse($mot{'titre_ascii'}) ;
+		
+		# Alphabet latin ?
+		if ($mot{'titre_ascii'} =~ /[a-z]/) {
+			ajout_article($titre, $r_titre, $mot{'titre_ascii'}, $r_titre_ascii, $mot{'anagramme_id'}) ;
+		
+		# Autre: transcription
+		} else {
+			my @langues = keys %{$article_section->{language}} ;
+			my $transcrit_plat = transcription($mot{'titre_ascii'}, \@langues) ;
+			if ($transcrit_plat and $transcrit_plat =~ /[a-z]/) {
+				my $r_transcrit_plat = reverse($transcrit_plat) ;
+				print STDERR "[[$titre]]\ttranscription incomplète en '$transcrit_plat'\n" if $transcrit_plat and not $transcrit_plat =~ /^[a-z ]+$/ ;
+				ajout_transcrit($titre, $r_titre, $transcrit_plat, $r_transcrit_plat, $mot{'anagramme_id'}) ;
 			}
 		}
 	}

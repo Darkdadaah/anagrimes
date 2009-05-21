@@ -4,12 +4,17 @@
 # This module contain basic data and functions for Wiktionary fr
 package wiktio::basic ;
 
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use Exporter ;
 @ISA=('Exporter') ;
 @EXPORT_OK = qw(
 	$word_type
 	$level3
 	$level4
+	$langues_transcrites
 	step
 	stepl
 ) ;
@@ -164,6 +169,12 @@ our $level4 = {
 	'paro' => 1,
 	'anagr' => 1,
 	'abrév' => 1,
+} ;
+
+our $langues_transcrites = {
+	'cyrillique' => {'ru'=>1, 'bg'=>1, 'uk'=>1},
+	'grec' => {'el'=>1, 'grc'=>1},
+	'arabe' => {'ar'=>1, 'fa'=>1},
 } ;
 
 1 ;

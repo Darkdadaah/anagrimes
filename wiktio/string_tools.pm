@@ -7,6 +7,10 @@
 
 package wiktio::string_tools ;
 
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use Exporter ;
 @ISA=('Exporter') ;
 @EXPORT_OK = qw(
@@ -14,6 +18,7 @@ use Exporter ;
 	SAMPAtoAPI
 	ascii
 	ascii_strict
+	transcription
 	anagramme
 ) ;
 
@@ -21,6 +26,7 @@ use strict ;
 use warnings ;
 use Encode ;
 use Unicode::Normalize ;
+use wiktio::basic 	qw( $langues_transcrites ) ;
 
 sub unicode_NFKD($)
 {
@@ -28,7 +34,7 @@ sub unicode_NFKD($)
 	
 	my $mot = $mot0 ;
 	
-	$mot = NFKD(decode('utf8', $mot)) ;
+	$mot = NFKD($mot) ;
 	$mot =~ s/\pM//g ;
 	return $mot ;
 }
@@ -47,7 +53,6 @@ sub ascii
 	$mot =~ s/’/'/g ;
 	$mot =~ s/ʻ/'/g ;
 # 	
-# 	
 # 	# Enlever les caractères superflus
 	$mot =~ s/&amp;//g ;
 	$mot =~ s/&quot;//g ;
@@ -65,11 +70,14 @@ sub ascii
 	if ($mot eq '') {
 # 		print STDERR "Mot vide: '$mot0'\n" ;
 		return '' ;
-	} elsif ($mot =~ /[a-zA-Z0-9]/ and $mot =~ /^[a-zA-Z0-9 \.'&\-]+$/) {
-		return $mot ;
-	} else {
+# 	} elsif ($mot =~ /[a-zA-Z0-9]/ and $mot =~ /^[a-zA-Z0-9 \.'&\-]+$/) {
+# 		return $mot ;
+# 	} else {
 # 		print STDERR "Asciisation incomplète : '$mot0' -> '$mot'\n" ;
-		return '' ;
+# 		return '' ;
+# 	}
+	} else {
+		return $mot ;
 	}
 }
 
@@ -82,12 +90,14 @@ sub ascii_strict
 	# Strict
 	$mot =~ s/[\.'\- ]//g ;
 	
-	if ($mot =~ /^[a-zA-Z0-9]+$/) {
-		return $mot ;
-	} else {
-# 		print "non ascii strict: $mot\n" ;
-		return '' ;
-	}
+	return $mot ;
+	
+# 	if ($mot =~ /^[a-zA-Z0-9]+$/) {
+# 		return $mot ;
+# 	} else {
+# # 		print "non ascii strict: $mot\n" ;
+# 		return '' ;
+# 	}
 }
 
 sub anagramme
@@ -106,6 +116,63 @@ sub anagramme
 	return $mot ;
 }
 
+sub transcription
+{
+	my ($titre, $langues) = @_ ;
+	
+	my $transcrit = $titre ;
+	foreach my $l (@$langues) {
+		if ($langues_transcrites->{'cyrillique'}->{$l}) {
+			#############
+			# Cyrillique
+			
+			# Combinaisons
+			$transcrit =~ s/([ыи])й$/$1/ ;	# En fin de mot
+			$transcrit =~ s/й/i/g ;		# Sinon
+			
+			$transcrit =~ s/([ийИЙ])ю/$1ou/ ;	# Après voyelle i
+			$transcrit =~ s/ю/iou/g ;	# Sinon
+			$transcrit =~ s/Ю/Iou/g ;	# Sinon
+			
+			$transcrit =~ s/([ийИЙ])я/$1a/g ;	# Après voyelle i
+			$transcrit =~ s/я/ia/g ;	# Sinon
+			$transcrit =~ s/Я/Ia/g ;	# Sinon
+			
+			# Caractères doublés
+			$transcrit =~ s/х/kh/g ;
+			$transcrit =~ s/Х/Kh/g ;
+			$transcrit =~ s/ц/ts/g ;
+			$transcrit =~ s/Ц/Ts/g ;
+			$transcrit =~ s/ч/tch/g ;
+			$transcrit =~ s/Ч/Tch/g ;
+			$transcrit =~ s/ш/ch/g ;
+			$transcrit =~ s/Ш/Ch/g ;
+			$transcrit =~ s/щ/chtch/g ;
+			$transcrit =~ s/Щ/Chtch/g ;
+			$transcrit =~ s/у/ou/g ;
+			$transcrit =~ s/У/Ou/g ;
+			
+			# Caractères muets
+			$transcrit =~ s/[ЪъЬь]//g ;
+			
+			# Transcription directe
+			$transcrit =~ tr/абвгґдежзіиклмнопрстфыэ/abvggdejziiklmnoprstfye/ ;
+			$transcrit =~ tr/АБГҐДЕЖЗІИКЛМНОПРСТФЫЭ/ABGGDEJZIIKLMNOPRSTFYE/ ;
+			
+			# Non classique
+			$transcrit =~ tr/є/e/ ;
+			$transcrit =~ tr/Є/E/ ;
+			
+			# Latinisation (son /j/)
+			$transcrit =~ s/ј/y/g ;
+			$transcrit =~ s/Ј/y/g ;
+			
+# 			$transcrit =~ tr/абвгдежзиклмнопрстуф/abvgdejziklmnoprstuf/ ;
+# 			print "[$l] transcrit: $transcrit\n" ;
+			return $transcrit ;
+		}
+	}
+}
 
 sub APItoSAMPA
 {
