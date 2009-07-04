@@ -20,6 +20,7 @@ use Exporter ;
 	ascii_strict
 	transcription
 	anagramme
+	unicode_NFKD
 ) ;
 
 use strict ;
@@ -88,7 +89,7 @@ sub ascii_strict
 	$mot = ascii($mot) ;
 	
 	# Strict
-	$mot =~ s/[\.'\- ]//g ;
+	$mot =~ s/[\.'\-]//g ;
 	
 	return $mot ;
 	
@@ -169,8 +170,173 @@ sub transcription
 			
 # 			$transcrit =~ tr/абвгдежзиклмнопрстуф/abvgdejziklmnoprstuf/ ;
 # 			print "[$l] transcrit: $transcrit\n" ;
+
+			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+				print STDERR "[[$titre]]\tTranscription du cyrillique ratée : '$transcrit'\n" ;
+			}
 			return $transcrit ;
 		}
+		
+		if ($langues_transcrites->{'grec'}->{$l}) {
+			$transcrit =~ tr/αβϐγδεϵζηικϰλμνξοπϖρϱσςϲτυφχψω/abbgdêêzeikklmnxopprrssstuô/ ;
+			$transcrit =~ tr/ΑΒΓΔΕΖΗΙΚΛΜΝΞΟΠΡΣϹΤΥΦΧΨΩ/ABGDÊZEIKLMNXOPRSSTUÔ/ ;
+			
+			# Caractères doublés
+			$transcrit =~ s/[θϑ]/th/g ;
+			$transcrit =~ s/[φϕ]/ph/g ;
+			$transcrit =~ s/χ/kh/g ;
+			$transcrit =~ s/ψ/ps/g ;
+			
+			# Majuscule en début de mot
+			$transcrit =~ s/^Θ|\bΘ/Th/g ;
+			$transcrit =~ s/^Φ|\bΦ/Ph/g ;
+			$transcrit =~ s/^Χ|\bΧ/Kh/g ;
+			$transcrit =~ s/^Ψ|\bΨ/Ps/g ;
+			
+			# Majuscule partout
+			$transcrit =~ s/Θ/TH/g ;
+			$transcrit =~ s/Φ/PH/g ;
+			$transcrit =~ s/Χ/KH/g ;
+			$transcrit =~ s/Ψ/PS/g ;
+			
+			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+				print STDERR "[[$titre]]\tTranscription du grec ratée : '$transcrit'\n" ;
+			}
+			return $transcrit ;
+		}
+		
+		if ($langues_transcrites->{'arabe'}->{$l}) {
+			# De droite à gauche
+# 			$transcrit = reverse($transcrit) ;
+			my $bad_char = chr(8204) ;
+			if ($transcrit =~ /$bad_char/) {
+				print STDERR "[[$titre]]\tFaux-espace (chr 8204, 200c)\n" ;
+				$transcrit =~ s/$bad_char//g ;
+			}
+			
+			# hamza
+# 			$transcrit =~ tr/ء/’/ ;			# Standard
+# 			$transcrit =~ tr/ء/'/ ;			# Simplification
+			$transcrit =~ s/ء// ;			# Ultra simplifié
+			# alif
+			#$transcrit =~ tr/ﺎا/ââ/ ;
+			$transcrit =~ tr/ﺎا/aa/ ;		# Plus simple, non ambigu
+			# ba
+			$transcrit =~ tr/ﺒﺑبﺐ/bbbb/ ;
+			# ta 1
+			$transcrit =~ tr/تﺗﺘﺖ/tttt/ ;
+			# ta 2
+			$transcrit =~ s/[ثﺛﺜﺚ]/th/g ;
+			# gim
+			$transcrit =~ s/[جﺟﺠﺞ]/dj/g ;
+			
+			# ha 1
+# 			$transcrit =~ tr/حﺣﺤﺢ/ḥḥḥḥ/ ;	# Standard
+			$transcrit =~ tr/حﺣﺤﺢ/hhhh/ ;	# Simplification
+			# ha 2
+			$transcrit =~ s/[خﺧﺨﺦ]/kh/g ;
+			
+			# dal 1
+			$transcrit =~ tr/دﺪ/dd/ ;
+			# dal 2
+			$transcrit =~ s/[ﺬذ]/dh/g ;
+			
+			# ra
+			$transcrit =~ tr/ﺮر/rr/ ;
+			# zay
+			$transcrit =~ tr/زﺰ/zz/ ;
+			# sin 1
+			$transcrit =~ tr/سﺳﺴﺲ/ssss/ ;
+			# sin 2
+			$transcrit =~ s/[شﺷﺸﺶ]/sh/g ;
+			# sad
+# 			$transcrit =~ tr/صﺻﺼﺺ/ṣṣṣṣ/ ;	# Standard
+			$transcrit =~ tr/صﺻﺼﺺ/ssss/ ;	# Simplification
+			# dad
+# 			$transcrit =~ tr/ضﺿﻀﺾ/ḍḍḍḍ/ ;	# Standard
+			$transcrit =~ tr/ضﺿﻀﺾ/dddd/ ;	# Simplification
+			# ta
+# 			$transcrit =~ s/[طﻃﻄﻂ]/ṭ/g ;	# Standard
+			$transcrit =~ s/[طﻃﻄﻂ]/t/g ;	# Simplification
+			# za
+			$transcrit =~ tr/ظﻇﻈﻆ/ẓẓẓẓ/ ;	# Standard
+			$transcrit =~ tr/ظﻇﻈﻆ/zzzz/ ;	# Simplification
+			# ayn
+# 			$transcrit =~ tr/عﻋﻌﻊ/‘‘‘‘/ ;	# Standard
+# 			$transcrit =~ tr/عﻋﻌﻊ/''''/ ;	# Simplifié
+			$transcrit =~ s/[عﻋﻌﻊ]//g ;		# Ultra simplifié
+			# gayn
+			$transcrit =~ s/[غﻏﻐﻎ]/gh/g ;
+			# fa
+			$transcrit =~ tr/فﻓﻔﻒ/ffff/ ;
+			# qaf
+			$transcrit =~ tr/قﻗﻘﻖ/qqqq/ ;
+			# kaf
+			$transcrit =~ tr/كﻛﻜﻚ/kkkk/ ;
+			# kaf perse
+			$transcrit =~ tr/کﮐﻜﮏ/kkkk/ ;
+			# lam
+			$transcrit =~ tr/لﻟﻠﻞ/llll/ ;
+			# mim
+			$transcrit =~ tr/مﻣﻤﻢ/mmmm/ ;
+			# nun
+			$transcrit =~ tr/نﻧﻨﻦ/nnnn/ ;
+			# ha
+			$transcrit =~ tr/هﻫﻬﻪ/hhhh/ ;
+			# waw
+# 			$transcrit =~ tr/وﻮ/ww/ ;	# Standard
+			$transcrit =~ s/^[وﻮ]/w/g ;	# W en début de mot ?
+			$transcrit =~ tr/وﻮ/uu/ ;	# Plus lisible et courante
+			# ya
+			$transcrit =~ tr/يﻳﻴﻲ/yyyy/ ;
+			
+			# Voyelles de prolongement
+			# alif maqsura
+			$transcrit =~ tr/ى/a/ ;
+			
+			# Spécial
+			# ta marbuta
+			$transcrit =~ tr/ة/a/ ;
+			# sukun
+			$transcrit =~ s/ْ//g ;
+			
+			# Persan
+			
+			# pe
+			$transcrit =~ tr/پﺑﺒپ/pppp/ ;
+			
+			# zhe
+			$transcrit =~ tr/ژژ/j/ ;
+			
+			# ch
+			$transcrit =~ s/[چﺣﺤﺢ]/tch/g ;
+			
+			# gaf
+			$transcrit =~ tr/گﮔﮕﮕ/gggg/ ;
+			
+			# Voyelles
+			$transcrit =~ tr/ی/i/ ;
+			
+
+
+# 			$transcrit =~ s/[]//g ;
+# 			$transcrit =~ s/[]//g ;
+# 			$transcrit =~ s/[]//g ;
+			$transcrit =~ tr/// ;
+			$transcrit =~ tr/// ;
+			$transcrit =~ tr/// ;
+			
+			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+				my $left = $transcrit ;
+				$left =~ s/[a-z ]//g ;
+				my $len = length($left) ;
+				print STDERR "[[$titre]]\tTranscription de l'arabe ratée : '$transcrit' (reste $len lettres : '$left')\n" ;
+			} else {
+# 				print "[[$titre]]\tTranscription de l'arabe réussie : '$transcrit' !!\n" ;
+			}
+			return $transcrit ;
+		}
+		
 	}
 }
 
