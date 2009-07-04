@@ -9,7 +9,7 @@ use warnings ;
 use Getopt::Std ;
 
 use lib '..' ;
-use wiktio::string_tools	qw(ascii_strict transcription anagramme) ;
+use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation) ;
 our %opt ;
@@ -71,7 +71,7 @@ sub init()
 	# Ordre des colonnes des tables
 	print STDERR 'REDIRECTS: titre, cible'."\n" ;
 	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n" ;
-	print STDERR 'MOTS: "titre, langue, type, pron, pron_simple, r_pron_simple, num, flex, loc, gent, rand' . "\n" ;
+	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, num, flex, loc, gent, rand' . "\n" ;
 	print STDERR 'LANGUES: langue, num, num_min'."\n" ;
 	
 	# Initialisation des fichiers
@@ -95,18 +95,12 @@ sub ajout_redirect
 sub ajout_article
 {
 	open(ARTICLES, ">> $articles") or die "Impossible d'écrire $articles : $!\n" ;
-# 	print ARTICLES '"'.$_[0].'"' ;
 	
 	if (@_) {
 		print ARTICLES '"'.join('","', @_)."\"\n" ;
 	} else {
 		print "Empty article.\n" ;
 	}
-	
-# 	for (my $i=1; $i<@_; $i++) {
-# 		print ARTICLES ',"'.$_[$i].'"' ;
-# 	}
-# 	print ARTICLES "\n" ;
 	close(ARTICLES) ;
 }
 
@@ -248,6 +242,8 @@ sub article
 {
 	my ($titre, $article) = @_ ;
 	my %mot = () ;
+	# Ni préfixe ni suffixe, ni accent
+	return if $titre =~ /^-/ or $titre =~ /-$/ or $titre =~ /ـ/ ;
 	$mot{'titre'} = $titre ;
 	
 	###########################
@@ -283,16 +279,17 @@ sub article
 		$mot{'r_transcrit_plat'} = '' ;
 		
 		# Alphabet latin ?
-		if (not $mot{'titre_plat'} =~ /[a-z]/) {
-		
+		if (not unicode_NFKD($mot{'titre_plat'}) =~ /[a-z]/) {
 			my @langues = keys %{$article_section->{language}} ;
 			$mot{'transcrit_plat'} = transcription($mot{'titre_plat'}, \@langues) ;
-			if ($mot{'transcrit_plat'} and $mot{'transcrit_plat'} =~ /[a-z]/) {
-				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
-				print STDERR "[[$titre]]\ttranscription incomplète en '$mot{'transcrit_plat'}'\n" if $mot{'transcrit_plat'} and not $mot{'transcrit_plat'} =~ /^[a-z ]+$/ ;
-			} else {
-				# Ni latin ni transcrit : pas ajouté
+			
+			if (not $mot{'transcrit_plat'}) {
 				return ;
+			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
+				print STDERR "[[$titre]]\ttranscription incomplète en '$mot{'transcrit_plat'}'\n" ;
+				return ;
+			} else {
+				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
 			}
 		}
 		ajout_article($titre, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'}) ;
