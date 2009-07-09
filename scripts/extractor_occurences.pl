@@ -5,6 +5,11 @@ use strict ;
 use warnings ;
 use Getopt::Std ;
 
+use utf8 ;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use lib '..' ;
 use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
 use wiktio::parser		qw(parseArticle parseLanguage parseType) ;
@@ -34,6 +39,8 @@ sub usage
 	-n <str>  : pattern to exclude
 	-S <str>  : use this namespace
 	
+	-s        : special (see script)
+	
 	-L <str>  : language to include only
 	-N <str>  : language to exclude
 	
@@ -48,12 +55,14 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:p:n:S:L:N:F:', \%opt ) or usage() ;
+	getopts( 'hi:o:O:p:n:S:L:N:F:s', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	if (not $opt{F}) {
-		usage( "Pattern needed (-p)" ) if not $opt{p} ;
-		usage( "Only 1 language option (-L|-N)" ) if $opt{L} and $opt{N} ;
+		if (not $opt{s} and not $opt{p}) {
+			usage( "Pattern needed (-p)" ) ;
+			usage( "Only 1 language option (-L|-N)" ) if $opt{L} and $opt{N} ;
+		}
 	}
 	
 	if ($opt{o}) {
@@ -65,8 +74,10 @@ sub init()
 		close(ARTICLES) ;
 	}
 	
-	$opt{p} = correct_pattern($opt{p}) ;
-	$opt{n} = correct_pattern($opt{n}) ;
+	unless ($opt{s}) {
+		$opt{p} = correct_pattern($opt{p}) ;
+		$opt{n} = correct_pattern($opt{n}) ;
+	}
 }
 
 ###################################
@@ -224,6 +235,7 @@ open(DUMP, $opt{i}) or die "Couldn't open '$opt{i}': $!\n" ;
 my $title = '' ;
 my ($n, $redirect) = (0,0) ;
 my $complete_article = 0 ;
+my %already = () ;
 my @article = () ;
 my $count = {} ;
 
@@ -236,7 +248,7 @@ while(<DUMP>) {
 		} else {
 			$title = '' if $title =~ /[:\/]/ ;
 		}
-	
+		
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
 		@article = () ;
 		push @article, "$1\n" ;
@@ -258,17 +270,35 @@ while(<DUMP>) {
 	}
 	if ($complete_article) {
 		if ($article[0] =~ /#redirect/i) {
-			######################################
-			# Traiter les redirects ici
-			redirect(\@article, $title) ;
-			######################################
-			$redirect++ ;
+			if ($opt{s}) {
+				my $target = $article[0] ;
+				$target =~ s/^.*\[\[(.+)\]\].*$/$1/ ;
+				chomp($target) ;
+				push @{$already{ lc($title) }}, "$title|]][[:$target|<sup>(<small>redirect</small>)</sup>" ;
+				$n++ ;
+				print "[$n] $title\n" if $n%500==0 ;
+				$title = '' ;
+				$redirect++ ;
+			} else {
+				######################################
+				# Traiter les redirects ici
+				redirect(\@article, $title) ;
+				######################################
+				$redirect++ ;
+			}
 		} else {
-			######################################
-			# Traiter les articles ici
-			my $article_count = article(\@article, $title) ;
-			foreach my $num (keys %$article_count) {
-				$count->{$num} += $article_count->{$num}  ;
+			if ($opt{s}) {
+				push @{$already{ lc($title) }}, "$title|" ;
+				$n++ ;
+				print "[$n] $title\n" if $n%500==0 ;
+				$title = '' ;
+			} else {
+				######################################
+				# Traiter les articles ici
+				my $article_count = article(\@article, $title) ;
+				foreach my $num (keys %$article_count) {
+					$count->{$num} += $article_count->{$num}  ;
+				}
 			}
 			######################################
 			$n++ ;
@@ -282,8 +312,35 @@ close(DUMP) ;
 print "Total = $n\n" ;
 print "Total_redirects = $redirect\n" ;
 
-foreach my $c (keys %$count) {
-	print "$c:\t$count->{$c}\n" ;
+if ($opt{s}) {
+	print "Recherche des doublons: " ;
+	# Filter special
+	open(SPECIAL, ">> $opt{o}") or die("Couldn't write $opt{o}: $!\n") ;
+	my $space = '' ;
+	foreach my $t (sort keys %already) {
+		my $num = $#{ $already{$t} }+1 ;
+		if ($num == 1) {
+			delete $already{$t} ;
+		} else {
+			(my $new_space) = split(':', $t) ;
+			if ($space ne $new_space) {
+				$space = $new_space ;
+				print SPECIAL "\n== ". (ucfirst($space)) ." ==\n" ;
+			}
+			my $prefix = '' ;
+			if ($space eq 'catégorie') {
+				$prefix = ':' ;
+			}
+			print SPECIAL "* [[$prefix". join("]], [[$prefix", sort { $a cmp $b } @{ $already{$t} }) . "]]\n" ;
+		}
+	}
+	close(SPECIAL) ;
+	my $total = keys %already ;
+	print "$total\n" ;
+} else {
+	foreach my $c (keys %$count) {
+		print "$c:\t$count->{$c}\n" ;
+	}
 }
 
 __END__
