@@ -124,14 +124,23 @@ our $word_type = {
 	'flex-loc-adj' => 1,
 	'flex-nom-pr' => 1,
 	'flex-nom-fam' => 1,
+	'flex-prénom' => 1,
 	'flex-prep' => 1,
+	'flex-interj' => 1,
+	'flex-adv' => 1,
+	'flex-conj' => 1,
 	'flex-prép' => 1,
 	'flex-suf' => 1,
+	'flex-pronom-pers' => 1,
+	'flex-pronom-int' => 1,
+	'flex-pronom-rel' => 1,
+	
 	'nom-ni' => 1,
 	'nom-nu' => 1,
 	'nom-nn' => 1,
 	'nom-npl' => 1,
 	'radical' => 1,
+	
 	# Verbe
 	'verb' => 1,
 	'flex-verb' => 1,
@@ -139,8 +148,13 @@ our $word_type = {
 	'flex-loc-verb' => 1,
 	'verb-pr' => 1,
 	
+	# Nombres
+	'numér' => 1,
+	
 	# Beuh
 	'erreur' => 2,
+	'var-typo' => 2,
+	'drv' => 2,
 } ;
 
 our $level4 = {
