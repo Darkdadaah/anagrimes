@@ -139,9 +139,18 @@ sub cherche_prononciation
 			} elsif ($p =~ /^lang=[^\|\}]+\|(.+)$/ or $p =~ /^(.+)\|lang=[^\|\}]+$/) {
 				$pron{$1} = 1 ;
 			} elsif ($p =~ /^lang=[^\|\}]+\|$/ or $p =~ /^\|lang=[^\|\}]+$/ or $p =~ /^lang=[^\|\}]+$/) {
-				# Vide
-			} elsif ($p =~ /.\|./ and not $p =~ /=/) {
-				print STDERR "[[$titre]]\tProbable résidu X-SAMPA dans {{pron}} (p='$p')\n" ;
+				# Second paramètre?
+			} elsif ($p =~ /^.+\|.+$/ and not $p =~ /=/) {
+				# Code langue ?
+				if ($p =~ /^(.+)\|[a-z]{2,3}$/) {
+					$pron{$1} = 1 ;
+				# Autre : erreur ou résidu
+				} else {
+					print STDERR "[[$titre]]\tProbable résidu X-SAMPA dans {{pron}} (p='$p')\n" ;
+				}
+			# Vide avec code langue
+			} elsif ($p =~ /^\s*\|[a-z]{2,3}$/) {
+# 				print STDERR "[[$titre]]\t {{pron}} vide mais avec code langue (p='$p')\n" ;
 			} else {
 				print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p='$p')\n" ;
 			}
@@ -400,7 +409,7 @@ sub check_prononciation
 			$p2 =~ s/'/ˈ/g ;
 			print STDERR "[[$titre]]	Correction API ton : $p -> $p2\n" ;
 			push @pron, $p2 ;
-		} elsif ($p =~ /\/ ou \// or / ou /) {
+		} elsif ($p =~ /\/ ou \// or $p =~ / ou /) {
 			print STDERR "[[$titre]]	à dédoubler : $p\n" ;
 			my @ou_pron = split(/\/? ou \/?/, $p) ;
 			push @pron, @ou_pron ;
