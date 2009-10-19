@@ -82,11 +82,17 @@ sub article
 	
 	foreach my $line (@$article) {
 		$line =~ s/\{\{.+?\}\}//g ;
+		$line =~ s/^(\{\|!\|).+$//g ;
+		$line =~ s/^\{\{.+?\|\s+$//g ;
+		$line =~ s/^\|?.+?\}\}\s+$//g ;
 		$line =~ s/\[\[.+?:.+?\]\]//g ;
 		$line =~ s/\[\[.+?\|(.+?)\]\]/$1/g ;
 		$line =~ s/\[\[(.+?)\]\]/$1/g ;
 		$line =~ s/'''(.+)'''/$1/g ;
 		$line =~ s/''(.+)''/$1/g ;
+		$line =~ s/''//g ;
+		$line =~ s/[ld]'|[ld]’//g ;
+		$line =~ s/[«»]//g ;
 		while ($line =~ /[#:\*\.!\?]\s+([A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}])/) {
 			my $premier = $1 ;
 			my $basdecasse = lc($premier) ;
@@ -97,7 +103,13 @@ sub article
 		next if @mots_ligne == 0 ;
 		#print "$titre: ". join(' ; ', @mots_ligne). "\n" ;
 		foreach my $mot (@mots_ligne) {
-			next if ($mot eq '' or $mot =~ /^\s+$/) ;
+			next if (
+				$mot eq ''
+				or $mot =~ /^\s+$/
+				or $mot eq '«'
+				or $mot eq '»'
+				or $mot eq '|'
+			) ;
 			if ($mots->{$mot}) {
 				$mots->{$mot}++ ;
 			} else {
@@ -125,7 +137,7 @@ sub sauve_liste
 	
 	open(LISTE, ">$fichier") or die("Impossible d'écrire dans $fichier: $!") ;
 	foreach my $mot (sort { $mots->{$b} <=> $mots->{$a} } keys %$mots) {
-		print LISTE "* [[$mot]] ($mots->{$mot})" ;
+		print LISTE "* [[$mot]] ($mots->{$mot})\n" ;
 	}
 	close(LISTE) ;
 }
@@ -205,10 +217,10 @@ print "Total_redirects = $redirect\n" ;
 
 my $num_dico = @dico ;
 my $num_mots = keys(%$mots) ;
-print "Articles dico: $num_dico" ;
-print "Nombre de mots: $num_mots" ;
+print "Articles dico: $num_dico\n" ;
+print "Nombre de mots: $num_mots\n" ;
 
-print "Filtre les mots existants dans le dico..." ;
+print "Filtre les mots existants dans le dico... " ;
 filtre(\@dico, $mots) ;
 
 my $num_mots_restants = keys(%$mots) ;
