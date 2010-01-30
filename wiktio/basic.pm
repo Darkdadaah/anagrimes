@@ -154,7 +154,7 @@ our $word_type = {
 	# Beuh
 	'erreur' => 2,
 	'var-typo' => 2,
-	'drv' => 2,
+	#'drv' => 2,
 } ;
 
 our $level4 = {
