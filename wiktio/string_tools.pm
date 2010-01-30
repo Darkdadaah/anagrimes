@@ -27,6 +27,7 @@ use strict ;
 use warnings ;
 use Encode ;
 use Unicode::Normalize ;
+use wiktio::basic ;
 use wiktio::basic 	qw( $langues_transcrites ) ;
 
 sub unicode_NFKD($)
@@ -172,7 +173,8 @@ sub transcription
 # 			print "[$l] transcrit: $transcrit\n" ;
 
 			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
-				print STDERR "[[$titre]]\tTranscription du cyrillique ratée : '$transcrit'\n" ;
+				#print STDERR "[[$titre]]\tTranscription du cyrillique ratée : '$transcrit'\n" ;
+				special_log('bad_cyrillique', $titre, '', $transcrit) ;
 			}
 			return $transcrit ;
 		}
@@ -200,7 +202,8 @@ sub transcription
 			$transcrit =~ s/Ψ/PS/g ;
 			
 			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
-				print STDERR "[[$titre]]\tTranscription du grec ratée : '$transcrit'\n" ;
+				#print STDERR "[[$titre]]\tTranscription du grec ratée : '$transcrit'\n" ;
+				special_log('bad_grec', $titre, '', $transcrit) ;
 			}
 			return $transcrit ;
 		}
@@ -210,7 +213,8 @@ sub transcription
 # 			$transcrit = reverse($transcrit) ;
 			my $bad_char = chr(8204) ;
 			if ($transcrit =~ /$bad_char/) {
-				print STDERR "[[$titre]]\tFaux-espace (chr 8204, 200c)\n" ;
+				#print STDERR "[[$titre]]\tFaux-espace (chr 8204, 200c)\n" ;
+				special_log('bad_espace', $titre) ;
 				$transcrit =~ s/$bad_char//g ;
 			}
 			
@@ -330,7 +334,8 @@ sub transcription
 				my $left = $transcrit ;
 				$left =~ s/[a-z ]//g ;
 				my $len = length($left) ;
-				print STDERR "[[$titre]]\tTranscription de l'arabe ratée : '$transcrit' (reste $len lettres : '$left')\n" ;
+				#print STDERR "[[$titre]]\tTranscription de l'arabe ratée : '$transcrit' (reste $len lettres : '$left')\n" ;
+				special_log('bad_arabe', $titre, "reste $len lettres : '$left", $transcrit) ;
 			} else {
 # 				print "[[$titre]]\tTranscription de l'arabe réussie : '$transcrit' !!\n" ;
 			}

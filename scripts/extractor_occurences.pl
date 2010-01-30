@@ -193,18 +193,18 @@ sub read_article
 	foreach my $line (@$article) {
 		$n++ ;
 		if ($opt{n} and $line =~ /($opt{n})/) {
-			$no_pattern = "'$1' ($n)" ;
+			$no_pattern = "<< $1 >> ($n)" ;
 			$no = 1 ;
 		}
 		if ($line =~ /($opt{p})/) {
 			$count++ if not $no ;
-			$ok_pattern = "'$1' ($n)" ;
+			$ok_pattern = "<< $1 >> ($n)" ;
 			$ok = 1 ;
 			$line =~ s/$opt{p}// ;
 		}
 		while ($line =~ /($opt{p})/) {
 			$count++ if not $no ;
-			$ok_pattern .= "\t'$1' ($n)" ;
+			$ok_pattern .= "\t<< $1 >> ($n)" ;
 			$line =~ s/$opt{p}// ;
 		}
 	}

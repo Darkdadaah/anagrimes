@@ -10,6 +10,12 @@ binmode STDERR, ":utf8";
 
 use Exporter ;
 @ISA=('Exporter') ;
+
+@EXPORT = qw(
+	$log
+	special_log
+) ;
+
 @EXPORT_OK = qw(
 	$word_type
 	$level3
@@ -22,8 +28,24 @@ use Exporter ;
 use strict ;
 use warnings ;
 
+our $log = 'log.txt' ;
+
 sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n" } ;
 sub stepl { print STDERR $_[0] ? "$_[0]" : "" } ;
+
+sub special_log
+{
+	my ($nom, $titre, $texte, $other) = @_ ;
+	
+	my $logfile = $log.$nom ;
+	
+	open(LOG, ">>$logfile") or die("Couldn't write $logfile: $!") ;
+	my $raw_texte = $texte ? $texte : '' ;
+	$raw_texte =~ s/\[\[([^\]]+)\]\]/__((__$1__))__/g ;
+	$raw_texte .= "\t($other)" if $other ;
+	print LOG "* [[$titre]]\t$raw_texte\n" ;
+	close(LOG) ;
+}
 
 our $level3 = {
 	'étym' => 'etymologie',

@@ -18,6 +18,7 @@ use Exporter ;		# So that we can export functions and vars
 
 use strict ;
 use warnings ;
+use wiktio::basic ;
 use wiktio::basic 	qw( $level3 $word_type $level4 step ) ;
 
 sub parseArticle
@@ -160,7 +161,8 @@ sub parseLanguage
 			}
 			$sections->{type}->{$level.$num} = () ;
 		} else {
-			print STDERR "[[$title]]	Level3 inexistant :\t$level\t$title\n" ;
+			#print STDERR "[[$title]]	Level3 inexistant :\t$level\t$title\n" ;
+			special_log('level3', $title) ;
 		}
 	} else {
 		# This article does not contain any level3 section

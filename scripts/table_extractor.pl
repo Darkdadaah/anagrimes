@@ -9,6 +9,7 @@ use warnings ;
 use Getopt::Std ;
 
 use lib '..' ;
+use wiktio::basic ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation) ;
@@ -38,6 +39,8 @@ sub usage
 	-o <path> : output path
 	-L <code> : language code to extract alone (2 or 3 letters)
 	
+	-l <path> : special log_files
+	
 EOF
 	exit ;
 }
@@ -46,8 +49,10 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'i:o:L:', \%opt ) or usage() ;
+	getopts( 'i:o:L:l:', \%opt ) or usage() ;
 	usage() if $opt{h} ;
+	
+	$log = $opt{l} if $opt{l} ;
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	usage( "Output file path needed (-o)" ) if not $opt{o} ;

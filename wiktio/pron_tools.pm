@@ -21,6 +21,7 @@ use Exporter ;
 
 use strict ;
 use warnings ;
+use wiktio::basic ;
 
 sub cherche_tables
 {
@@ -64,7 +65,8 @@ sub cherche_tables
 					}
 					# Still open? BAD
 					if ($compte > 0) {
-						print STDERR "[[$titre]]\tunclosed table ($compte)\n" ;
+						special_log('unclosed_table', $titre, '', $compte) ;
+#						print STDERR "[[$titre]]\tunclosed table ($compte)\n" ;
 					}
 				}
 # 				print "table finale : $table_texte\n" ;
@@ -123,7 +125,8 @@ sub cherche_prononciation
 	my ($lignes, $lang, $titre) = @_ ;
 	
 	if (ref($lignes) eq '') {
-		print STDERR "[[$titre]]\tproblème de mise en forme en $lang\n" ;
+		special_log('mef', $titre, '', "en $lang") ;
+#		print STDERR "[[$titre]]\tproblème de mise en forme en $lang\n" ;
 		return ;
 	}
 	
@@ -146,13 +149,15 @@ sub cherche_prononciation
 					$pron{$1} = 1 ;
 				# Autre : erreur ou résidu
 				} else {
-					print STDERR "[[$titre]]\tProbable résidu X-SAMPA dans {{pron}} (p='$p')\n" ;
+					#print STDERR "[[$titre]]\tProbable résidu X-SAMPA dans {{pron}} (p='$p')\n" ;
+					special_log('SAMPA', $titre, '', "p=$p") ;
 				}
 			# Vide avec code langue
 			} elsif ($p =~ /^\s*\|[a-z]{2,3}$/) {
 # 				print STDERR "[[$titre]]\t {{pron}} vide mais avec code langue (p='$p')\n" ;
 			} else {
-				print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p='$p')\n" ;
+				#print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p='$p')\n" ;
+				special_log('bad_pron', $titre, '', "p=$p") ;
 			}
 		}
 		elsif ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\} ou \{\{pron\|([^\}\r\n]+?)\}\}\}/) {
@@ -165,7 +170,8 @@ sub cherche_prononciation
 # 			} elsif ($p1 =~ /^lang=.{2,3}\|$/ or $p1 =~ /^\|lang=.{2,3}$/) {
 				# Vide
 			} else {
-				print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p1='$p1')\n" ;
+				#print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p1='$p1')\n" ;
+				special_log('bad_pron', $titre, '', "p1=$p1") ;
 			}
 			
 			if (not $p2 =~ /[=\|]/) {
@@ -175,7 +181,8 @@ sub cherche_prononciation
 # 			} elsif ($p2 =~ /^lang=.{2,3}\|$/ or $p2 =~ /^\|lang=.{2,3}$/) {
 				# Vide
 			} else {
-				print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p2='$p2')\n" ;
+				#print STDERR "[[$titre]]\tFormat de {{pron}} invalide (p2='$p2')\n" ;
+				special_log('bad_pron', $titre, '', "p2=$p2") ;
 			}
 		}
 		
@@ -183,11 +190,13 @@ sub cherche_prononciation
 		if ($ligne =~ /^'''.+?'''.*?\/([^\/]*?)\/ ou \/([^\/]*?)\//) {
 			$pron{$1} = 1 ;
 			$pron{$2} = 1 ;
-			print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/, /$2/\n" ;
+			#print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/, /$2/\n" ;
+			special_log('vieille_pron', $titre, "/$1/, /$2/") ;
 		}
 		elsif ( $ligne =~ /^'''.+?'''.*?\/([^\/]*?)\// ) {
-			$pron{$1} = 1 ;
-			print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/\n" ;
+			$pron{$1} = 1 ;			
+			special_log('vieille_pron', $titre, "/$1/") ;
+			#print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/\n" ;
 		}
 	}
 	
@@ -250,7 +259,8 @@ sub cherche_prononciation
 				$pron{$arg->{2}.$suff} = 1 if ($arg->{2}) ;
 				$pron{$arg->{pron2}.$suff} = 1 if ($arg->{pron2}) ;
 				$pron{$arg->{pron3}.$suff} = 1 if ($arg->{pron3}) ;
-				print STDERR "[[$titre]]\tmodèle 'fr-$nom' est inapproprié\n" ;
+				#print STDERR "[[$titre]]\tmodèle 'fr-$nom' est inapproprié\n" ;
+				special_log('remplissage', $titre, '', "fr-nom") ;
 			}
 			elsif ($nom eq 'accord-comp-mf' or $nom eq 'accord-comp') {
 				my $mot_1 = $arg->{3} ;
@@ -262,7 +272,8 @@ sub cherche_prononciation
 					my $comp = $mot_1 . $sep . $mot_2 ;
 					$pron{$comp} = 1 ;
 				} elsif ($mot_1 or $mot_2) {
-					print STDERR "[[$titre]]\tmodèle 'fr-$nom' mal rempli\n" ;
+					#print STDERR "[[$titre]]\tmodèle 'fr-$nom' mal rempli\n" ;
+					special_log('remplissage', $titre, '', "fr-$nom") ;
 				}
 			}
 			# Radical en 1
@@ -334,13 +345,15 @@ sub cherche_prononciation
 			}
 			else {
 			# TABLE INCONNUE ? DIABLE !
-				print STDERR "[[$titre]]\tTable $lang inconnue: '$nom'" ;
-				print STDERR " (paramètres: " ;
+				#print STDERR "[[$titre]]\tTable $lang inconnue: '$nom'" ;
+				my $texte = "{{$nom| " ;
 				my @arg_texte = () ;
 				foreach my $a (sort keys %$arg) {
 					push @arg_texte, "$a=$arg->{$a}" ;
 				}
-				print STDERR join(' | ', @arg_texte), " )\n" ;
+				$texte .= join(' | ', @arg_texte) ;
+				$texte .= ' }}' ;
+				special_log('bad_table', $titre, $texte, $nom) ;
 			}
 		}
 	}
@@ -390,27 +403,33 @@ sub check_prononciation
 	
 	foreach my $p (@$prononciations) {
 		if ($p =~ /&.{2,5};/) {
-			print STDERR "[[$titre]]	Caractère HTML : $p\n" ;
+			special_log('HTML', $titre, $p) ;
+#			print STDERR "[[$titre]]	Caractère HTML : $p\n" ;
 		}
 		if ($p =~ /[0-9@\\"&\?EAOIU]/) {
-			print STDERR "[[$titre]]	Probablement (X-)SAMPA et pas API : $p\n" ;
+			special_log('SAMPA', $titre, $p) ;
+#			print STDERR "[[$titre]]	Probablement (X-)SAMPA et pas API : $p\n" ;
 		} elsif ($p =~ /[g]/) {
 			my $p2 = $p ;
 			$p2 =~ s/g/ɡ/g ;
-			print STDERR "[[$titre]]	Correction API g : $p -> $p2\n" ;
+			special_log('API_g', $titre, "$p -> $p2") ;
+#			print STDERR "[[$titre]]	Correction API g : $p -> $p2\n" ;
 			push @pron, $p2 ;
 		} elsif ($p =~ /[:]/) {
 			my $p2 = $p ;
 			$p2 =~ s/:/ː/g ;
-			print STDERR "[[$titre]]	Correction API deux-points : $p -> $p2\n" ;
+			special_log('API_2points', $titre, "$p -> $p2") ;
+#			print STDERR "[[$titre]]	Correction API deux-points : $p -> $p2\n" ;
 			push @pron, $p2 ;
 		} elsif ($p =~ /[']/) {
 			my $p2 = $p ;
 			$p2 =~ s/'/ˈ/g ;
-			print STDERR "[[$titre]]	Correction API ton : $p -> $p2\n" ;
+			special_log('API_ton', $titre, "$p -> $p2") ;
+#			print STDERR "[[$titre]]	Correction API ton : $p -> $p2\n" ;
 			push @pron, $p2 ;
 		} elsif ($p =~ /\/ ou \// or $p =~ / ou /) {
-			print STDERR "[[$titre]]	à dédoubler : $p\n" ;
+			special_log('double_pron', $titre, $p) ;
+#			print STDERR "[[$titre]]	à dédoubler : $p\n" ;
 			my @ou_pron = split(/\/? ou \/?/, $p) ;
 			push @pron, @ou_pron ;
 		} else {
