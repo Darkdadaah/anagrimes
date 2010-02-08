@@ -1,7 +1,7 @@
 
 # Wiktionnaire bases
 # Author: Matthieu Barba
-# This module contain basic data and functions for Wiktionary fr
+# This module contains basic data and functions for Wiktionary fr
 package wiktio::basic ;
 
 use open IO => ':utf8';
