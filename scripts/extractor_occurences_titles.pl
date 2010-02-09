@@ -9,6 +9,7 @@ use utf8 ;
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
+use Encode qw(encode decode) ;
 
 use lib '..' ;
 use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
@@ -81,6 +82,7 @@ sub init()
 sub correct_pattern
 {
 	my $p = shift ;
+	$p = decode('utf8', $p) ;
 	if ($p) {
 		$p =~ s/</&lt;/ ;
 		$p =~ s/>/&gt;/ ;

@@ -6,6 +6,7 @@ use warnings ;
 use Getopt::Std ;
 
 use utf8 ;
+use Encode qw(decode encode) ;
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
@@ -85,6 +86,7 @@ sub init()
 sub correct_pattern
 {
 	my $p = shift ;
+	$p = decode('utf8', $p) ;
 	if ($p) {
 		$p =~ s/</&lt;/ ;
 		$p =~ s/>/&gt;/ ;
