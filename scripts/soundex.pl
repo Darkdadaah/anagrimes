@@ -5,16 +5,22 @@ use strict ;
 use warnings ;
 
 use utf8 ;
-use open IO => ':utf8';
-binmode STDIN, ":utf8";
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+use open IO => ':encoding(utf8)';
+binmode STDIN, ":encoding(utf8)";
+binmode STDOUT, ":encoding(utf8)";
+binmode STDERR, ":encoding(utf8)";
+use Encode qw(decode encode);
+
 
 use lib '..' ;
 use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
-our %opt ;
 
-while(<>) {
+foreach my $a (@ARGV) {
+	my $u = decode("utf-8", $a) ;
+	print STDERR ("$a / $u\t", length($a), ' / ', length($u), "\n") ;
+}
+
+while(<STDIN>) {
 	chomp ;
 	print soundex($_), "\n" ;
 }
