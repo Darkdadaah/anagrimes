@@ -1,5 +1,6 @@
 #!/usr/bin/perl -w
 
+use utf8 ;
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
@@ -291,7 +292,7 @@ sub article
 			if (not $mot{'transcrit_plat'}) {
 				return ;
 			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
-				print STDERR "[[$titre]]\ttranscription incomplète en '$mot{'transcrit_plat'}'\n" ;
+				special_log('erreur_transcription', $titre, $mot{'transcrit_plat'}) ;
 				return ;
 			} else {
 				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
@@ -313,7 +314,7 @@ my $title = '' ;
 my ($n, $redirect) = (0,0) ;
 my $complete_article = 0 ;
 my @article = () ;
-
+$| = 1 ;
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1 ;
@@ -352,11 +353,12 @@ while(<DUMP>) {
 			article($title, \@article) ;
 			######################################
 			$n++ ;
-			print "[$n] $title\n" if $n%10000==0 ;
+			printf STDERR "%7d articles traités\r", $n ;
 		}
 		$complete_article = 0 ;
 	}
 }
+$| = 0 ;
 close(DUMP) ;
 
 # Print the langues list
