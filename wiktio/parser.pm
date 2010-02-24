@@ -162,7 +162,7 @@ sub parseLanguage
 			$sections->{type}->{$level.$num} = () ;
 		} else {
 			#print STDERR "[[$title]]	Level3 inexistant :\t$level\t$title\n" ;
-			special_log('level3', $title) ;
+			special_log('level3', $title, $level) ;
 		}
 	} else {
 		# This article does not contain any level3 section

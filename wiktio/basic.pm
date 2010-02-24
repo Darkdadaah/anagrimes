@@ -156,6 +156,7 @@ our $word_type = {
 	'flex-pronom-pers' => 1,
 	'flex-pronom-int' => 1,
 	'flex-pronom-rel' => 1,
+	'flex-adj-pos' => 1,
 	
 	'nom-ni' => 1,
 	'nom-nu' => 1,
