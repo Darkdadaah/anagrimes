@@ -292,7 +292,8 @@ sub article
 			if (not $mot{'transcrit_plat'}) {
 				return ;
 			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
-				special_log('erreur_transcription', $titre, $mot{'transcrit_plat'}) ;
+				special_log('transcription', $titre, $mot{'transcrit_plat'}) ;
+				
 				return ;
 			} else {
 				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
