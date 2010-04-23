@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 
 use utf8 ;
-use open IO => ':utf8';
+use open ':encoding(utf8)';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
@@ -354,7 +354,7 @@ while(<DUMP>) {
 			article($title, \@article) ;
 			######################################
 			$n++ ;
-			printf STDERR "%7d articles traités\r", $n ;
+			printf STDERR "%7d articles traités\r", $n if $n % 1000 == 0 ;
 		}
 		$complete_article = 0 ;
 	}
