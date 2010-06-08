@@ -22,12 +22,14 @@ sub check_sum($$)
 }
 
 chdir('/home/darkdadaah/data/dump/') or die() ;
+`echo '' > log` ;
 
 # 1) Vérifie si une dernière version du dump est dispo
 my $release = 'release.txt' ;
 {
+print STDERR "Vérification de la dernière version...\n" ;
 my $url = "$racine/$langue$projet" ;
-`wget -O $release $url` ;
+`wget -O $release $url 2>> log` ;
 }
 
 # 2) Vérification de la dernière version connue
@@ -62,8 +64,8 @@ my $url = "$racine/$langue$projet/$date/$fichierbz" ;
 # D'abord récupère la somme de contrôle MD5
 my $md5url = "$racine/$langue$projet/$date/$langue$projet-$date-md5sums.txt" ;
 my $fichiermd5 = 'md5.txt' ;
-print STDERR "Téléchargement de la somme de contrôle ($fichiermd5)...\n" ;
-`wget -O $fichiermd5 $md5url` ;
+print STDERR "Téléchargement des sommes de contrôle ($fichiermd5)...\n" ;
+`wget -O $fichiermd5 $md5url 2>> log` ;
 
 if (not -e $fichiermd5) {
         print STDERR "Pas de somme de contrôle téléchargée (le fichier n'est peut-être pas encore disponible...)\n" ;
@@ -81,7 +83,7 @@ while(<MD5>) {
 close(MD5) ;
 
 if (not $md5sum) {
-	print STDERR "Pas de somme de contrôle trouvée dans le fichier (le dump n'est peut-être pas encore disponible...)\n" ;
+	print STDERR "Pas de somme de contrôle trouvée pour le dernier dump (le dump n'est peut-être pas encore disponible...)\n" ;
         exit ;
 }
 
@@ -114,8 +116,8 @@ $fichier =~ s/\.bz2// ;
 print STDERR "Extraction des données et mise à jour de la base\n" ;
 `qsub -sync yes -cwd /home/darkdadaah/scripts/anagrimes/updater.sh $fichier` ;
 
-# 9) Update the "last updated" in the html files
-
+# 9) Met à jour le site web
+# TODO
 
 # 10) Recompresse le dump
 `bzip2 $fichier` ;
