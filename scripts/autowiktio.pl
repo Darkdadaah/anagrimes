@@ -214,7 +214,7 @@ sub article
 		$mot =~ s/\((.+?)\)/$1/g ;
 		$mot =~ s/^[\.,;:!\?\)\(\{\}\[\]'“]+//g ;
 		$mot =~  s/[\.,;:!\?\)\(\{\}\[\]'”]+$//g ;
-		#$mot =~ s/^([cdjlmnst]|qu)\x{2019}//g ;
+		next if $mot =~ /_/ ;
 		next if $mot =~ /^[\s\*#]*$/ ;
 		next if $mot =~ /^\P{Letter}*$/ ;
 		next if $mot =~ /^\p{Letter}$/ ;
