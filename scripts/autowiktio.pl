@@ -194,8 +194,8 @@ sub article
 	# Tables
 	$line =~ s/\{\|.+?\|\}/ /g ;
 	$line =~ s/\{\|.+?\|\}/ /g ;
-	# Apostrophe
-	$line =~ s/\x{2019}/ /g ;
+	# Apostrophe, tirets quadratins
+	$line =~ s/\x{2019}\x{2013}/ /g ;
 	
 	# Separation
 	my @mots_ligne = split(/\s+/, $line) ;
@@ -212,8 +212,8 @@ sub article
 		# Nettoyage
 		$mot =~ s/[«»]//g ;
 		$mot =~ s/\((.+?)\)/$1/g ;
-		$mot =~ s/^[\.,;:!\?\)\(\{\}\[\]']+//g ;
-		$mot =~  s/[\.,;:!\?\)\(\{\}\[\]']+$//g ;
+		$mot =~ s/^[\.,;:!\?\)\(\{\}\[\]'“]+//g ;
+		$mot =~  s/[\.,;:!\?\)\(\{\}\[\]'”]+$//g ;
 		#$mot =~ s/^([cdjlmnst]|qu)\x{2019}//g ;
 		next if $mot =~ /^[\s\*#]*$/ ;
 		next if $mot =~ /^\P{Letter}*$/ ;
