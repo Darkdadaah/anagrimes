@@ -300,6 +300,24 @@ while(<DUMP>) {
 		} else {
 			$title = '' if $title =~ /[:\/]/ ;
 		}
+		
+		# Si avec historique : vérifier s'il y a une version plus récente (=après)
+		if ($opt{H}) {
+			my $mark = tell(DUMP) ;
+			HISTORY : while(<DUMP>) {
+				if ( /<title>(.+?)<\/title>/ ) {
+					my $this_title = $1 ;
+					# Nouvelle version !
+					if ($this_title eq $title) {
+						$mark = tell(DUMP) ;
+					} else {
+						# Autre article : on revient à la dernière version...
+						seek(DUMP, $mark, 0) ;
+						last HISTORY ;
+					}
+				}
+			}
+		}
 	
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
 		@article = () ;
@@ -322,23 +340,6 @@ while(<DUMP>) {
 		$complete_article = 1 ;
 	}
 	if ($complete_article) {
-			# Si avec historique : vérifier s'il y a une version plus récente (=après)
-			if ($opt{H}) {
-				my $mark = tell(DUMP) ;
-				HISTORY : while(<DUMP>) {
-					if ( /<title>(.+?)<\/title>/ ) {
-						my $this_title = $1 ;
-						# Nouvelle version !
-						if ($this_title eq $title) {
-							$mark = tell(DUMP) ;
-						} else {
-							# Autre article : on revient à la dernière version...
-							seek(DUMP, $mark, 0) ;
-							last HISTORY ;
-						}
-					}
-				}
-			}
 			
 		if ($article[0] =~ /#redirect/i) {
 			######################################
