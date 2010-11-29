@@ -175,12 +175,20 @@ sub article
 {
 	my ($titre, $article, $dico, $sql) = @_ ;
 	
+	# Précorrection
+	
+	foreach my $line (@$article) {
+		# Ligne de traduction ou prononciation
+		$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g ;
+	}
+	
 	my $line = join(' ', @$article) ;
 	my $mots_article = {} ;
 	my $num_mots = 0 ;
 	
 	# Nettoyage
 	# Balises HTML
+	
 	$line =~ s/<[^<]+?>/ /g ;
 	# Lien wiki
 	$line =~ s/\[\[[^\[]+?\]\]\p{Ll}*/ /g ;
