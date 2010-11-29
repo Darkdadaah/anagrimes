@@ -304,25 +304,18 @@ while(<DUMP>) {
 		# Si avec historique : vérifier s'il y a une version plus récente (=après)
 		if ($opt{H}) {
 			my $mark = tell(DUMP) ;
-			my $found = 0 ;
 			HISTORY : while(<DUMP>) {
-				if ( /<title>(.+?)<\/title>/ ) {
-					my $this_title = $1 ;
-					# Nouvelle version !
-					if ($this_title eq $title) {
-						$mark = tell(DUMP) ;
-					} else {
-						# Autre article : on revient à la dernière version...
-						seek(DUMP, $mark, 0) ;
-						$found = 1 ;
-						last HISTORY ;
-					}
+				if ( /<revision>/ ) {
+					print("Revision at".tell(DUMP)."\n") ;
+					$mark = tell(DUMP) ;
+				}
+				# Woops, on est arrivé à la fin
+				elsif (/<\/page>/) {
+					last HISTORY ;
 				}
 			}
-			# Rien trouvé : fin de fichier ?
-			if (not $found) {
-				seek(DUMP, $mark, 0) ;
-			}
+			# Retour au début de la dernière version
+			seek(DUMP, $mark, 0) ;
 		}
 	
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
