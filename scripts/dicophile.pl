@@ -306,7 +306,6 @@ while(<DUMP>) {
 			my $mark = tell(DUMP) ;
 			HISTORY : while(<DUMP>) {
 				if ( /<revision>/ ) {
-					print("Revision at".tell(DUMP)."\n") ;
 					$mark = tell(DUMP) ;
 				}
 				# Woops, on est arrivé à la fin
