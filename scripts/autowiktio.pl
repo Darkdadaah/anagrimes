@@ -1,12 +1,14 @@
 #!/usr/bin/perl -w
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use strict ;
 use warnings ;
 use Getopt::Std ;
+
+use utf8 ;
+use Encode qw(decode encode) ;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
 
 use lib '..' ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
@@ -28,7 +30,10 @@ sub usage
 	-h        : this (help) message
 	-i <path> : dump path
 	-o <path> : output path
+	-I <path> : word list path
 	-L <code> : language code to extract alone (2 or 3 letters)
+	
+	-P        : use non-mainspace pages
 	
 EOF
 	exit ;
@@ -38,12 +43,31 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:L:', \%opt ) or usage() ;
+	getopts( 'hi:I:o:L:P', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
+	usage( "Word list path needed (-I)" ) if not $opt{I} ;
 	usage( "Output file path needed (-o)" ) if not $opt{o} ;
 	$opt{o} .= '.txt' if not $opt{o} =~ /\.[a-z0-9]+$/ ;
+}
+
+sub get_dico
+{
+	my ($file) = @_ ;
+	my %list = () ;
+	
+	open(DICO, $file) or die("$file: $!") ;
+	while(<DICO>) {
+		chomp ;
+		$_ =~ s/\.$// ;
+		my @sousmots = split(/[ '\x{2019}]/) ;
+		foreach my $mot (@sousmots) {
+			$list{$mot} = 1 ;
+		}
+	}
+	close(DICO) ;
+	return \%list ;
 }
 
 sub ajout_redirect
@@ -78,47 +102,71 @@ sub redirect
 # ARTICLE
 sub article
 {
-	my ($titre, $article, $mots) = @_ ;
+	my ($titre, $article, $dico, $num_mots, $sql) = @_ ;
 	
-	foreach my $line (@$article) {
-		$line =~ s/\{\{.+?\}\}//g ;
-		$line =~ s/^(\{\|!\|).+$//g ;
-		$line =~ s/^\{\{.+?\|\s+$//g ;
-		$line =~ s/^\|?.+?\}\}\s+$//g ;
-		$line =~ s/\[\[.+?:.+?\]\]//g ;
-		$line =~ s/\[\[.+?\|(.+?)\]\]/$1/g ;
-		$line =~ s/\[\[(.+?)\]\]/$1/g ;
-		$line =~ s/'''(.+)'''/$1/g ;
-		$line =~ s/''(.+)''/$1/g ;
-		$line =~ s/''//g ;
-		$line =~ s/[ld]'|[ld]’//g ;
-		$line =~ s/[«»]//g ;
-		while ($line =~ /[#:\*\.!\?]\s+([A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}])/) {
-			my $premier = $1 ;
-			my $basdecasse = lc($premier) ;
-			$line =~ s/[#:\*\.!\?]\s+$premier/$basdecasse/ ;
-		}
-		$line =~ s/[#=\*:,\.;!\?\(\)\[\]0-9\r\n]//g ;
-		my @mots_ligne = split(/\s+/, $line) ;
-		next if @mots_ligne == 0 ;
-		#print "$titre: ". join(' ; ', @mots_ligne). "\n" ;
-		foreach my $mot (@mots_ligne) {
-			next if (
-				$mot eq ''
-				or $mot =~ /^\s+$/
-				or $mot eq '«'
-				or $mot eq '»'
-				or $mot eq '|'
-			) ;
-			if ($mots->{$mot}) {
-				$mots->{$mot}++ ;
+	my $line = join(' ', @$article) ;
+	my $mots_article = {} ;
+	
+	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$//g ;
+	$line =~ s/\{\{[^\}\{]+?\}\}//g ;
+	$line =~ s/<[^<>]+?>//g ;
+	$line =~ s/\{\|.+?\|\}//g ;
+	$line =~ s/\[\[.+?:.+?\]\]//g ;
+	$line =~ s/\[\[.+?\|(.+?)\]\]/$1/g ;
+	$line =~ s/\[\[(.+?)\]\]/$1/g ;
+	$line =~ s/'''''([^']+?)'''''/$1/g ;
+	$line =~ s/''''([^']+?)''''/$1/g ;
+	$line =~ s/'''([^']+?)'''/$1/g ;
+	$line =~ s/''([^']+?)''/$1/g ;
+	$line =~ s/''//g ;
+	#$line =~ s/ ([tsdlmcnj ]|qu)['\x{2019}]/ /gi ;
+	$line =~ s/['\x{2019}]/ /gi ;
+	$line =~ s/['\x{2019}](\s|$)/ /g ;
+	$line =~ s/[«»]//g ;
+	$line =~ s/[#:*]/ /g ;
+	$line =~ s/[#\*:,\x{2026};!\?\(\)\[\]0-9\r\n]//g ;
+	$line =~ s/\. //g ;
+	$line =~ s/\s+/ /g ;
+	$line =~ s/^\s+$// ;
+	$line =~ s/^entr['\x{2019}]// ;
+	my @mots_ligne = split(/\s+/, $line) ;
+	return if @mots_ligne == 0 ;
+	#print "$titre: ". join(' ; ', @mots_ligne). "\n" ;
+	foreach my $mot (@mots_ligne) {
+		next if (
+			$mot eq ''
+			or $mot =~ /^\s+$/
+			or $mot eq '«'
+			or $mot eq '»'
+			or $mot eq '|'
+			or $mot =~ /http|www|=|\./
+			or $mot =~ /[A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}\x{00CE}\x{0152}\x{00D4}]/
+			or $mot =~ /^-/
+			or $mot =~ /-$/
+			or $mot =~ /&/
+			or $mot =~ /^.$/
+			or $mot =~ /\[|\]|\{|\}|\||\\|\//
+			or $mot =~ /\x{2018}/
+			or $mot =~ /t-(il|elle|on|ils|elles)$|-(je|moi|lui|tu|nous|vous|leur|là|ci|ce|le|la|les|y)$/
+		) ;
+		
+		# Keep only if unknown
+		if (not $dico->{$mot}) {
+			if ($mots_article->{$mot}) {
+				$mots_article->{$mot}++ ;
 			} else {
-				$mots->{$mot} = 1 ;
+				$mots_article->{$mot} = 1 ;
 			}
 		}
 	}
-	#die ;
-	return $mots ;
+	
+	# Save mots_article in the sqlfile
+	foreach my $m (keys %$mots_article) {
+		print $sql "$m\t$titre\t$mots_article->{$m}\n" ;
+		$num_mots++ ;
+	}
+	
+	return $num_mots ;
 }
 
 sub filtre
@@ -155,22 +203,23 @@ close(DICO) ;
 # Read dump
 open(DUMP, $opt{i}) or die "Couldn't open '$opt{i}': $!\n" ;
 my $title = '' ;
-my ($n, $redirect) = (0,0) ;
+my $n = 0 ;
 my $complete_article = 0 ;
 my @article = () ;
 
-my $mots = {} ;
-my @dico = () ;
+my $num_mots = 0 ;
+my $dico = get_dico($opt{I}) ;
+my $sqlfile = "$opt{o}.sql" ;
+open(my $sql, ">$sqlfile") or die("$sqlfile: $!") ;
 
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1 ;
 		# Exclut toutes les pages en dehors de l'espace principal
-		$title = '' if $title =~ /[:\/]/ ;
-		
-		# Enregistre ce mot
-		if ($title) {
-			push @dico, $title ;
+		if ($opt{P}) {
+			$title = '' unless $title =~ /[:\/]/ ;
+		} else {
+			$title = '' if $title =~ /[:\/]/ ;
 		}
 	
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
@@ -187,6 +236,7 @@ while(<DUMP>) {
 				push @article, "$1\n" ;
 				last ;
 			} else {
+				chomp ;
 				push @article, $_ ;
 			}
 		}
@@ -198,11 +248,11 @@ while(<DUMP>) {
 			# Traiter les redirects ici
 			#redirect($title, \@article) ;
 			######################################
-			$redirect++ ;
+			#$redirect++ ;
 		} else {
 			######################################
 			# Traiter les articles ici
-			article($title, \@article, $mots) ;
+			article($title, \@article, $dico, $num_mots, $sql) ;
 			######################################
 			$n++ ;
 			print "[$n] $title\n" if $n%10000==0 ;
@@ -211,23 +261,13 @@ while(<DUMP>) {
 	}
 }
 close(DUMP) ;
+close($sql) ;
 
 print "Total = $n\n" ;
-print "Total_redirects = $redirect\n" ;
 
-my $num_dico = @dico ;
-my $num_mots = keys(%$mots) ;
+my $num_dico = keys %$dico ;
 print "Articles dico: $num_dico\n" ;
-print "Nombre de mots: $num_mots\n" ;
-
-print "Filtre les mots existants dans le dico... " ;
-filtre(\@dico, $mots) ;
-
-my $num_mots_restants = keys(%$mots) ;
-print "$num_mots_restants mots restants\n" ;
-
-print "Sauve..." ;
-sauve_liste($mots, $opt{o}) ;
+print "Nombre de mots restants: $num_mots\n" ;
 
 my $diff = time() - $past;
 my $mDiff = int($diff / 60);

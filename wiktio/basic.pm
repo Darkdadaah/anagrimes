@@ -37,7 +37,7 @@ sub special_log
 {
 	my ($nom, $titre, $texte, $other) = @_ ;
 	
-	my $logfile = $log.$nom ;
+	my $logfile = $log.'_'.$nom ;
 	
 	open(LOG, ">>$logfile") or die("Couldn't write $logfile: $!") ;
 	my $raw_texte = $texte ? $texte : '' ;
@@ -157,6 +157,7 @@ our $word_type = {
 	'flex-pronom-int' => 1,
 	'flex-pronom-rel' => 1,
 	'flex-adj-pos' => 1,
+	'flex-aux' => 1,
 	
 	'nom-ni' => 1,
 	'nom-nu' => 1,

@@ -362,15 +362,23 @@ sub section_prononciation
 	my $p = '' ;
 	
 	foreach my $ligne (@$lignes) {
-		if ($ligne =~ /^\* ?\{\{pron\|([^\|\}\r\n]+?)\}\}/ and $1 and not $ligne =~ /SAMPA/) {
+		if ($ligne =~ /^\* ?\{\{pron\|([^\}\r\n]+?)\}\}/ and $1 and not $ligne =~ /SAMPA/) {
 			$p = $1 ;
-			$p =~ s/^lang=.{2,3}// ;
-			$pron{$p} = 1 if $p ;
+			my @ps = split(/\s*\|\s*/, $p) ;
+			if ($ps[0] =~ /lang=/) {
+				$pron{$ps[1]} = 1 if $ps[1] ;
+			} else {
+				$pron{$ps[0]} = 1 if $ps[0] ;
+			}
 		}
-		elsif ($ligne =~ /^\* .+ ?\{\{pron\|([^\|\}\r\n]+?)\}\}/ and not $ligne =~ /SAMPA/ and $1) {
+		elsif ($ligne =~ /^\* .+ ?\{\{pron\|([^\}\r\n]+?)\}\}/ and not $ligne =~ /SAMPA/ and $1) {
 			$p = $1 ;
-			$p =~ s/^lang=.{2,3}// ;
-			$pron{$p} = 1 if $p ;
+			my @ps = split(/\s*\|\s*/, $p) ;
+			if ($ps[0] =~ /lang=/) {
+				$pron{$ps[1]} = 1 if $ps[1] ;
+			} else {
+				$pron{$ps[0]} = 1 if $ps[0] ;
+			}
 		}
 		elsif ($ligne =~ /^\* ?\/([^\|\}\/\r\n]+?)\// and $1 and not $ligne =~ /SAMPA/) {
 			$p = $1 ;
@@ -379,6 +387,7 @@ sub section_prononciation
 		elsif ($ligne =~ /^\* ?.+ ?\/([^\/]+?)\// and $1 and not $ligne =~ /SAMPA/) {
 			$p = $1 ;
 			$pron{$p} = 1 ;
+		} else {
 		}
 	}
 	
@@ -448,7 +457,7 @@ sub simple_prononciation
 	
 	# Cas spéciaux
 	# r: identique partout
-	$pron =~ s/[ʁrɹʀ]/r/ ;
+	$pron =~ s/[ʁrɹʀ]/r/g ;
 	# Autres
 	$pron =~ s/ʧ/tʃ/ ;
 	$pron =~ s/ʤ/dʒ/ ;

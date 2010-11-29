@@ -2,9 +2,26 @@
 
 use Digest::MD5;
 
-my $racine = 'http://download.wikimedia.org' ;
+my $optlangue = $ARGV[0] ;
+my @langues = qw(fr en it de es) ;
 my $langue = 'fr' ;
-my $projet = 'wiktionary' ; 
+my $racine = 'http://download.wikimedia.org' ;
+my $projet = 'wiktionary' ;
+my $log = "$langue$projet"."_log.txt" ;
+my $datadir = "$ENV{HOME}/2/data/wikt/" ;
+my $workdir = "$ENV{HOME}/Documents/Travaux/wiktio/scripts/anagrimes/scripts" ;
+my $tabledir = 'tables';
+my $outputs = 'fr-wikt_'.$ENV{date} ;
+my $output7z = "$outputs.7z" ;
+`mkdir -p tables` ;
+
+if ($optlangue) {
+	if ($optlangue ~~ @langues) {
+		$langue = $optlangue ;
+	} else {
+		die("Unknown language: $optlangue\n") ;
+	}
+}
 
 sub check_sum($$)
 {
@@ -21,15 +38,15 @@ sub check_sum($$)
 	}
 }
 
-chdir('/home/darkdadaah/data/dump/') or die() ;
-`echo '' > log` ;
+chdir($datadir) or die("No $datadir") ;
+`echo '' > $log` ;
 
 # 1) Vérifie si une dernière version du dump est dispo
-my $release = 'release.txt' ;
+my $release = "$langue$projet"."_release.txt" ;
 {
 print STDERR "Vérification de la dernière version...\n" ;
 my $url = "$racine/$langue$projet" ;
-`wget -O $release $url 2>> log` ;
+`wget -O $release $url 2>> $log` ;
 }
 
 # 2) Vérification de la dernière version connue
@@ -43,15 +60,23 @@ while(<T>) {
 close(T) ;
 
 # 3) Compare avec la dernière version téléchargée
-open(T, 'last.txt') or die("$!") ;
-my $old = 0 ;
-chomp($old = <T>) ;
-$old =~ s/[^0-9]+//g ;
-close(T) ;
+my $last_file = "$langue$projet"."_last.txt" ;
+
+if (-s $last_file) {
+	open(T, $last_file) or die("$last_file: $!") ;
+	chomp($old = <T>) ;
+	close(T) ;
+} else {
+	$old = 'new' ;
+}
 
 # 4) Compare
 if ($date ~~ $old) {
 	print STDERR "Pas de nouvelle version ($date)\n" ;
+	exit 0 ;
+} elsif (not $date) {
+	print STDERR "Impossible de trouver la dernière version. Le serveur est peut-être KO\n" ;
+	print STDERR "Vérifier : http://download.wikimedia.org/frwiktionary/\n" ;
 	exit 0 ;
 } else {
 	print STDERR "Nouvelle version ! ($date > $old)\n" ;
@@ -63,9 +88,9 @@ my $url = "$racine/$langue$projet/$date/$fichierbz" ;
 
 # D'abord récupère la somme de contrôle MD5
 my $md5url = "$racine/$langue$projet/$date/$langue$projet-$date-md5sums.txt" ;
-my $fichiermd5 = 'md5.txt' ;
+my $fichiermd5 = "$langue$projet"."_md5.txt" ;
 print STDERR "Téléchargement des sommes de contrôle ($fichiermd5)...\n" ;
-`wget -O $fichiermd5 $md5url 2>> log` ;
+`wget -O $fichiermd5 $md5url 2>> $log` ;
 
 if (not -e $fichiermd5) {
         print STDERR "Pas de somme de contrôle téléchargée (le fichier n'est peut-être pas encore disponible...)\n" ;
@@ -89,7 +114,7 @@ if (not $md5sum) {
 
 # Téléchargement du fichier si il est bien complet
 print STDERR "Téléchargement de $fichierbz...\n" ;
-`wget -O $fichierbz $url` ;
+system("wget -O $fichierbz $url") ;
 
 if (not -e $fichierbz) {
 	print STDERR "Pas de dump téléchargé (le dump n'est peut-être pas encore disponible...)\n" ;
@@ -105,27 +130,52 @@ if ($status) {
 
 # 6) Décompresse
 print STDERR "Décompression de $fichierbz...\n" ;
-`bzip2 -dv $fichierbz` ;
+system("bzip2 -dv $fichierbz") ;
 my $fichier = $fichierbz ;
 $fichier =~ s/\.bz2// ;
 
-# 7) Enlève la dernière version des listes de mots
-`mv /home/darkdadaah/data/tables/*.csv /home/darkdadaah/tmp/trash/` ;
+# 7) Extraction des tables de données
+print STDERR "Extraction des données\n" ;
 
-# 8) Lance la création des fichiers
-print STDERR "Extraction des données et mise à jour de la base\n" ;
-`qsub -sync yes -cwd /home/darkdadaah/scripts/anagrimes/updater.sh $fichier` ;
+chdir($workdir) ;
+`table_extractor.pl -i $datadir/$fichier -o $datadir/$tabledir/$outputs` ;
+chdir($datadir) ;
 
-# 9) Met à jour le site web
-# TODO
+# 8) Archivage 7z
+print STDERR "\nArchivage 7z\n" ;
+ print STDERR "7z a $tabledir/$output7z $tabledir/$outputs*.csv\n" ;
+ `7z a $tabledir/$output7z $tabledir/$outputs*.csv` ;
 
-# 10) Recompresse le dump
-`bzip2 $fichier` ;
+############################################################################################
+# TOOLSERVER
+my $datadir_t = 'data/tables' ;
+
+# 9) Copy data to toolserver
+print STDERR "Copie archive serveur\n" ;
+system("scp $datadir/$tabledir/$output7z darkdadaah\@nightshade.toolserver.org:$datadir_t") and die() ;
+
+# 10) clean toolserver before update
+print STDERR "Décompression archive serveur\n" ;
+system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"pwd ; rm -f -v ".$datadir_t."/*.csv\"") and die() ;
+system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"pwd ; 7z e -o$datadir_t $datadir_t/$output7z\"") and die() ;
+system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"pwd ; cd $datadir_t && pwd && rename s/_.+_/_current_/ *.csv\"") and die() ;
+
+# 11) Update toolserver databases
+print STDERR "Mise à jour base de données du serveur\n" ;
+system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"scripts/update_anagrimes/update_db.sh\"") ;
+
+############################################################################################
+# 12) Update lists
+system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"scripts/journaux/extrait_mots.sh\"") ;
 
 # FIN Change la version
-open(T, ">last.txt") or die("$!") ;
+open(T, ">$last_file") or die("$!") ;
 print T $date ;
 close(T) ;
 print STDERR "Version mise à jour\n" ;
+
+# Cleaning
+`rm -f $release $fichiermd5 $log` ;
+
 
 exit 0 ;
