@@ -107,7 +107,7 @@ sub article
 	my $line = join(' ', @$article) ;
 	my $mots_article = {} ;
 	
-	$line =~ s/([\s\|]).+\s*=/$1/g ;
+	$line =~ s/([\s\|]).+?\s*=/$1/g ;
 	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$//g ;
 	$line =~ s/\{\{[^\}\{]+?\}\}//g ;
 	$line =~ s/<[^<>]+?>//g ;
