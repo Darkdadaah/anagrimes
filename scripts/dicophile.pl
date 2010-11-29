@@ -304,6 +304,7 @@ while(<DUMP>) {
 		# Si avec historique : vérifier s'il y a une version plus récente (=après)
 		if ($opt{H}) {
 			my $mark = tell(DUMP) ;
+			my $found = 0 ;
 			HISTORY : while(<DUMP>) {
 				if ( /<title>(.+?)<\/title>/ ) {
 					my $this_title = $1 ;
@@ -313,9 +314,14 @@ while(<DUMP>) {
 					} else {
 						# Autre article : on revient à la dernière version...
 						seek(DUMP, $mark, 0) ;
+						$found = 1 ;
 						last HISTORY ;
 					}
 				}
+			}
+			# Rien trouvé : fin de fichier ?
+			if (not $found) {
+				seek(DUMP, $mark, 0) ;
 			}
 		}
 	
