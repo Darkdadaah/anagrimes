@@ -197,8 +197,8 @@ init() ;
 my $past = time() ;
 
 # Initialize the file
-open(DICO, ">$opt{o}") or die("Couldn't write $opt{o}: $!") ;
-close(DICO) ;
+#open(DICO, ">$opt{o}") or die("Couldn't write $opt{o}: $!") ;
+#close(DICO) ;
 
 # Read dump
 open(DUMP, $opt{i}) or die "Couldn't open '$opt{i}': $!\n" ;
@@ -209,7 +209,7 @@ my @article = () ;
 
 my $num_mots = 0 ;
 my $dico = get_dico($opt{I}) ;
-my $sqlfile = "$opt{o}.sql" ;
+my $sqlfile = $opt{o} ;
 open(my $sql, ">$sqlfile") or die("$sqlfile: $!") ;
 
 while(<DUMP>) {
