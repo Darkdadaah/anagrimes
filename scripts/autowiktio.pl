@@ -189,6 +189,11 @@ sub article
 	$line =~ s/http.+?\s/ /g ;
 	# Modèle
 	$line =~ s/\{\{[^\{]+?\}\}/ /g ;
+	$line =~ s/\{\{[^\{]+?\}\}/ /g ;
+	$line =~ s/\{\{[^\{]+?\}\}/ /g ;
+	# Tables
+	$line =~ s/\{\|.+?\|\}/ /g ;
+	$line =~ s/\{\|.+?\|\}/ /g ;
 	# Apostrophe
 	$line =~ s/\x{2019}/ /g ;
 	
