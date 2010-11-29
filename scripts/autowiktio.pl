@@ -32,6 +32,7 @@ sub usage
 	-o <path> : output path
 	-I <path> : word list path
 	-L <code> : language code to extract alone (2 or 3 letters)
+	-H        : history file (special case, only use last version of each page)
 	
 	-P        : use non-mainspace pages
 	
@@ -43,7 +44,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:I:o:L:P', \%opt ) or usage() ;
+	getopts( 'hi:I:o:L:PH', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
@@ -321,6 +322,23 @@ while(<DUMP>) {
 		$complete_article = 1 ;
 	}
 	if ($complete_article) {
+			# Si avec historique : vérifier s'il y a une version plus récente (=après)
+			if ($opt{H}) {
+				my $mark = tell(DUMP) ;
+				while(<DUMP>) {
+					if ( /<title>(.+?)<\/title>/ ) {
+						my $this_title = $1 ;
+						# Nouvelle version !
+						if ($this_title eq $title) {
+							$mark = tell(DUMP) ;
+						} else {
+							# Autre article : on revient à la dernière version...
+							seek(DUMP, $mark, 0) ;
+						}
+					}
+				}
+			}
+			
 		if ($article[0] =~ /#redirect/i) {
 			######################################
 			# Traiter les redirects ici
