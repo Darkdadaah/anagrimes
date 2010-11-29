@@ -140,6 +140,7 @@ sub article
 			or $mot eq '«'
 			or $mot eq '»'
 			or $mot eq '|'
+			or $mot =~ /margin-|background-color/
 			or $mot =~ /http|www|=|\./
 			or $mot =~ /[A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}\x{00CE}\x{0152}\x{00D4}]/
 			or $mot =~ /^-/
