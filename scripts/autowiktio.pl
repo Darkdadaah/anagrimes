@@ -100,57 +100,120 @@ sub redirect
 
 ###################################
 # ARTICLE
+#~ sub article
+#~ {
+	#~ my ($titre, $article, $dico, $num_mots, $sql) = @_ ;
+	#~ 
+	#~ my $line = join(' ', @$article) ;
+	#~ my $mots_article = {} ;
+	#~ 
+	#~ $line =~ s/([\s\|]).+?\s*=\s.+\}/$1\}/g ;
+	#~ $line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g ;
+	#~ $line =~ s/\{\{[^\}\{]+?\}\}/ /g ;
+	#~ $line =~ s/<[^<>]+?>/ /g ;
+	#~ $line =~ s/\{\|.+?\|\}/ /g ;
+	#~ $line =~ s/\[\[.+?:.+?\]\]/ /g ;
+	#~ $line =~ s/\[\[.+?\|(.+?)\]\]/$1/g ;
+	#~ $line =~ s/\[\[(.+?)\]\]/$1/g ;
+	#~ $line =~ s/'''''([^']+?)'''''/$1/g ;
+	#~ $line =~ s/''''([^']+?)''''/$1/g ;
+	#~ $line =~ s/'''([^']+?)'''/$1/g ;
+	#~ $line =~ s/''([^']+?)''/$1/g ;
+	#~ $line =~ s/''//g ;
+	#~ #$line =~ s/ ([tsdlmcnj ]|qu)['\x{2019}]/ /gi ;
+	#~ $line =~ s/['\x{2019}]/ /gi ;
+	#~ $line =~ s/['\x{2019}](\s|$)/ /g ;
+	#~ $line =~ s/[«»]/ /g ;
+	#~ $line =~ s/[#:*]/ /g ;
+	#~ $line =~ s/[#\*:,\x{2026}\x{2014};!\?\(\)\[\]0-9\r\n]/ /g ;
+	#~ $line =~ s/\. //g ;
+	#~ $line =~ s/\s+/ /g ;
+	#~ $line =~ s/^\s+$// ;
+	#~ $line =~ s/^entr['\x{2019}]// ;
+	#~ my @mots_ligne = split(/\s+/, $line) ;
+	#~ return if @mots_ligne == 0 ;
+	#~ #print "$titre: ". join(' ; ', @mots_ligne). "\n" ;
+	#~ foreach my $mot (@mots_ligne) {
+		#~ next if (
+			#~ $mot eq ''
+			#~ or $mot =~ /^\s+$/
+			#~ or $mot eq '«'
+			#~ or $mot eq '»'
+			#~ or $mot eq '|'
+			#~ or $mot =~ /margin-|background-color/
+			#~ or $mot =~ /http|www|=|\./
+			#~ or $mot =~ /[A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}\x{00CE}\x{0152}\x{00D4}]/
+			#~ or $mot =~ /^-/
+			#~ or $mot =~ /-$/
+			#~ or $mot =~ /&/
+			#~ or $mot =~ /^.$/
+			#~ or $mot =~ /[\[\]\{\}\|\\\/_]/
+			#~ or $mot =~ /\x{2018}/
+			#~ or $mot =~ /t-(il|elle|on|ils|elles)$|-(je|moi|lui|tu|nous|vous|leur|là|ci|ce|le|la|les|y)$/
+		#~ ) ;
+		#~ 
+		#~ # Keep only if unknown
+		#~ if (not $dico->{$mot}) {
+			#~ if ($mots_article->{$mot}) {
+				#~ $mots_article->{$mot}++ ;
+			#~ } else {
+				#~ $mots_article->{$mot} = 1 ;
+			#~ }
+		#~ }
+	#~ }
+	#~ 
+	#~ # Save mots_article in the sqlfile
+	#~ foreach my $m (keys %$mots_article) {
+		#~ print $sql "$m\t$titre\t$mots_article->{$m}\n" ;
+		#~ $num_mots++ ;
+	#~ }
+	#~ 
+	#~ return $num_mots ;
+#~ }
+
 sub article
 {
-	my ($titre, $article, $dico, $num_mots, $sql) = @_ ;
+	my ($titre, $article, $dico, $sql) = @_ ;
 	
 	my $line = join(' ', @$article) ;
 	my $mots_article = {} ;
+	my $num_mots = 0 ;
 	
-	$line =~ s/([\s\|]).+?\s*=\s.+\}/$1\}/g ;
-	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g ;
-	$line =~ s/\{\{[^\}\{]+?\}\}/ /g ;
-	$line =~ s/<[^<>]+?>/ /g ;
-	$line =~ s/\{\|.+?\|\}/ /g ;
-	$line =~ s/\[\[.+?:.+?\]\]/ /g ;
-	$line =~ s/\[\[.+?\|(.+?)\]\]/$1/g ;
-	$line =~ s/\[\[(.+?)\]\]/$1/g ;
-	$line =~ s/'''''([^']+?)'''''/$1/g ;
-	$line =~ s/''''([^']+?)''''/$1/g ;
-	$line =~ s/'''([^']+?)'''/$1/g ;
-	$line =~ s/''([^']+?)''/$1/g ;
-	$line =~ s/''//g ;
-	#$line =~ s/ ([tsdlmcnj ]|qu)['\x{2019}]/ /gi ;
-	$line =~ s/['\x{2019}]/ /gi ;
-	$line =~ s/['\x{2019}](\s|$)/ /g ;
-	$line =~ s/[«»]/ /g ;
-	$line =~ s/[#:*]/ /g ;
-	$line =~ s/[#\*:,\x{2026}\x{2014};!\?\(\)\[\]0-9\r\n]/ /g ;
-	$line =~ s/\. //g ;
-	$line =~ s/\s+/ /g ;
-	$line =~ s/^\s+$// ;
-	$line =~ s/^entr['\x{2019}]// ;
+	# Nettoyage
+	# Balises HTML
+	$line =~ s/<[^<]+?>/ /g ;
+	# Lien wiki
+	$line =~ s/\[\[[^\[]+?\]\]\p{Ll}*/ /g ;
+	# Lien externe
+	$line =~ s/\[http.+?\]/ /g ;
+	$line =~ s/http.+?\s/ /g ;
+	# Modèle
+	$line =~ s/\{\{[^\{]+?\}\}/ /g ;
+	# Apostrophe
+	$line =~ s/\x{2019}/ /g ;
+	
+	# Separation
 	my @mots_ligne = split(/\s+/, $line) ;
-	return if @mots_ligne == 0 ;
-	#print "$titre: ". join(' ; ', @mots_ligne). "\n" ;
+	
+	# Evaluation
 	foreach my $mot (@mots_ligne) {
-		next if (
-			$mot eq ''
-			or $mot =~ /^\s+$/
-			or $mot eq '«'
-			or $mot eq '»'
-			or $mot eq '|'
-			or $mot =~ /margin-|background-color/
-			or $mot =~ /http|www|=|\./
-			or $mot =~ /[A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}\x{00CE}\x{0152}\x{00D4}]/
-			or $mot =~ /^-/
-			or $mot =~ /-$/
-			or $mot =~ /&/
-			or $mot =~ /^.$/
-			or $mot =~ /[\[\]\{\}\|\\\/_]/
-			or $mot =~ /\x{2018}/
-			or $mot =~ /t-(il|elle|on|ils|elles)$|-(je|moi|lui|tu|nous|vous|leur|là|ci|ce|le|la|les|y)$/
-		) ;
+		if ($mot =~ /=/) {
+			next ;
+		}
+		# Pas de majuscule
+		next if $mot =~ /\p{Uppercase_letter}/ ;
+		# Pas de nombre ni de signe de ponctuation ni de symbole ou d'autre truc bizarre
+		next if $mot =~ /[\p{Number}\p{Other_Punctuation}\p{Symbol}\p{Other}]/ ;
+		# Nettoyage
+		$mot =~ s/[«»]//g ;
+		$mot =~ s/\((.+?)\)/$1/g ;
+		$mot =~ s/^[\.,;:!\?\)\(\{\}\[\]']+//g ;
+		$mot =~  s/[\.,;:!\?\)\(\{\}\[\]']+$//g ;
+		#$mot =~ s/^([cdjlmnst]|qu)\x{2019}//g ;
+		next if $mot =~ /^[\s\*#]*$/ ;
+		next if $mot =~ /^\P{Letter}*$/ ;
+		next if $mot =~ /^\p{Letter}$/ ;
+		next if $mot =~ /-(je|tu|il|elle|on|nous|vous|ils|elles|moi|toi|lui|leur|là|ci|ce|le|la|les|y)?$/ ;
 		
 		# Keep only if unknown
 		if (not $dico->{$mot}) {
@@ -254,7 +317,8 @@ while(<DUMP>) {
 		} else {
 			######################################
 			# Traiter les articles ici
-			article($title, \@article, $dico, $num_mots, $sql) ;
+			my $mots_en_plus = article($title, \@article, $dico, $sql) ;
+			$num_mots += $mots_en_plus if $mots_en_plus ;
 			######################################
 			$n++ ;
 			print "[$n] $title\n" if $n%10000==0 ;
