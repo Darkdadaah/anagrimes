@@ -107,6 +107,7 @@ sub article
 	my $line = join(' ', @$article) ;
 	my $mots_article = {} ;
 	
+	$line =~ s/([\s\|]).+\s*=/$1/g ;
 	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$//g ;
 	$line =~ s/\{\{[^\}\{]+?\}\}//g ;
 	$line =~ s/<[^<>]+?>//g ;
@@ -145,7 +146,7 @@ sub article
 			or $mot =~ /-$/
 			or $mot =~ /&/
 			or $mot =~ /^.$/
-			or $mot =~ /\[|\]|\{|\}|\||\\|\//
+			or $mot =~ /[\[\]\{\}\|\\\/_]/
 			or $mot =~ /\x{2018}/
 			or $mot =~ /t-(il|elle|on|ils|elles)$|-(je|moi|lui|tu|nous|vous|leur|là|ci|ce|le|la|les|y)$/
 		) ;
