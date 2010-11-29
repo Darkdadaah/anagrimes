@@ -195,7 +195,7 @@ sub article
 	$line =~ s/\{\|.+?\|\}/ /g ;
 	$line =~ s/\{\|.+?\|\}/ /g ;
 	# Apostrophe, tirets quadratins
-	$line =~ s/\x{2019}\x{2013}/ /g ;
+	$line =~ s/[\x{2019}\x{2013}]/ /g ;
 	
 	# Separation
 	my @mots_ligne = split(/\s+/, $line) ;
