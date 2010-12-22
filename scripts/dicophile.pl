@@ -221,6 +221,7 @@ my $num_mots = 0 ;
 my $dico = get_dico($opt{I}) ;
 my $sqlfile = $opt{o} ;
 my @namespaces = split(/\s*,\s*/, $opt{p}) ;
+print STDERR "Allowed namespaces: ".join(", ", @namespaces)."\n" ;
 open(my $sql, ">$sqlfile") or die("$sqlfile: $!") ;
 
 while(<DUMP>) {
@@ -231,7 +232,7 @@ while(<DUMP>) {
 		if ($title =~ /^([^:]+):/) {
 			my $ns = $1 ;
 			
-			if (not ($opt{p} and $opt{p} ~~ @namespaces) and not $opt{P}) {
+			if (not ($opt{p} and $ns ~~ @namespaces) and not $opt{P}) {
 				$title = '' ;
 			}
 		}
