@@ -35,6 +35,8 @@ sub usage
 	-H        : history file (special case, only use last version of each page)
 	
 	-P        : use non-mainspace pages
+	-p list,  : use these namespaces
+	-m        : use mainspace pages (in combination with -P or -p)
 	
 EOF
 	exit ;
@@ -44,7 +46,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:I:o:L:PH', \%opt ) or usage() ;
+	getopts( 'hi:I:o:L:PHp:m', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
@@ -101,77 +103,6 @@ sub redirect
 
 ###################################
 # ARTICLE
-#~ sub article
-#~ {
-	#~ my ($titre, $article, $dico, $num_mots, $sql) = @_ ;
-	#~ 
-	#~ my $line = join(' ', @$article) ;
-	#~ my $mots_article = {} ;
-	#~ 
-	#~ $line =~ s/([\s\|]).+?\s*=\s.+\}/$1\}/g ;
-	#~ $line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g ;
-	#~ $line =~ s/\{\{[^\}\{]+?\}\}/ /g ;
-	#~ $line =~ s/<[^<>]+?>/ /g ;
-	#~ $line =~ s/\{\|.+?\|\}/ /g ;
-	#~ $line =~ s/\[\[.+?:.+?\]\]/ /g ;
-	#~ $line =~ s/\[\[.+?\|(.+?)\]\]/$1/g ;
-	#~ $line =~ s/\[\[(.+?)\]\]/$1/g ;
-	#~ $line =~ s/'''''([^']+?)'''''/$1/g ;
-	#~ $line =~ s/''''([^']+?)''''/$1/g ;
-	#~ $line =~ s/'''([^']+?)'''/$1/g ;
-	#~ $line =~ s/''([^']+?)''/$1/g ;
-	#~ $line =~ s/''//g ;
-	#~ #$line =~ s/ ([tsdlmcnj ]|qu)['\x{2019}]/ /gi ;
-	#~ $line =~ s/['\x{2019}]/ /gi ;
-	#~ $line =~ s/['\x{2019}](\s|$)/ /g ;
-	#~ $line =~ s/[«»]/ /g ;
-	#~ $line =~ s/[#:*]/ /g ;
-	#~ $line =~ s/[#\*:,\x{2026}\x{2014};!\?\(\)\[\]0-9\r\n]/ /g ;
-	#~ $line =~ s/\. //g ;
-	#~ $line =~ s/\s+/ /g ;
-	#~ $line =~ s/^\s+$// ;
-	#~ $line =~ s/^entr['\x{2019}]// ;
-	#~ my @mots_ligne = split(/\s+/, $line) ;
-	#~ return if @mots_ligne == 0 ;
-	#~ #print "$titre: ". join(' ; ', @mots_ligne). "\n" ;
-	#~ foreach my $mot (@mots_ligne) {
-		#~ next if (
-			#~ $mot eq ''
-			#~ or $mot =~ /^\s+$/
-			#~ or $mot eq '«'
-			#~ or $mot eq '»'
-			#~ or $mot eq '|'
-			#~ or $mot =~ /margin-|background-color/
-			#~ or $mot =~ /http|www|=|\./
-			#~ or $mot =~ /[A-Z\x{00C0}\x{00C7}\x{00C8}\x{00C9}\x{00CE}\x{0152}\x{00D4}]/
-			#~ or $mot =~ /^-/
-			#~ or $mot =~ /-$/
-			#~ or $mot =~ /&/
-			#~ or $mot =~ /^.$/
-			#~ or $mot =~ /[\[\]\{\}\|\\\/_]/
-			#~ or $mot =~ /\x{2018}/
-			#~ or $mot =~ /t-(il|elle|on|ils|elles)$|-(je|moi|lui|tu|nous|vous|leur|là|ci|ce|le|la|les|y)$/
-		#~ ) ;
-		#~ 
-		#~ # Keep only if unknown
-		#~ if (not $dico->{$mot}) {
-			#~ if ($mots_article->{$mot}) {
-				#~ $mots_article->{$mot}++ ;
-			#~ } else {
-				#~ $mots_article->{$mot} = 1 ;
-			#~ }
-		#~ }
-	#~ }
-	#~ 
-	#~ # Save mots_article in the sqlfile
-	#~ foreach my $m (keys %$mots_article) {
-		#~ print $sql "$m\t$titre\t$mots_article->{$m}\n" ;
-		#~ $num_mots++ ;
-	#~ }
-	#~ 
-	#~ return $num_mots ;
-#~ }
-
 sub article
 {
 	my ($titre, $article, $dico, $sql) = @_ ;
@@ -289,16 +220,25 @@ my @article = () ;
 my $num_mots = 0 ;
 my $dico = get_dico($opt{I}) ;
 my $sqlfile = $opt{o} ;
+my @namespaces = split(/\s*,\s*/, $opt{p}) ;
 open(my $sql, ">$sqlfile") or die("$sqlfile: $!") ;
 
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1 ;
-		# Exclut toutes les pages en dehors de l'espace principal
-		if ($opt{P}) {
-			$title = '' unless $title =~ /[:\/]/ ;
-		} else {
-			$title = '' if $title =~ /[:\/]/ ;
+		
+		# Other Namespace
+		if ($title =~ /^([^:]+):/) {
+			my $ns = $1 ;
+			
+			if (not ($opt{p} and $opt{p} ~~ @namespaces) and not $opt{P}) {
+				$title = '' ;
+			}
+		}
+		
+		# Main namespace
+		elsif (($opt{P} or $opt{p}) and not $opt{m}) {
+			$title = '' ;
 		}
 		
 		# Si avec historique : vérifier s'il y a une version plus récente (=après)
