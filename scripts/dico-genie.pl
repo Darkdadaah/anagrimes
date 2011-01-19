@@ -29,7 +29,7 @@ sub usage
 	print STDERR "[ $_[0] ]\n" if $_[0] ;
 	print STDERR << "EOF";
 	
-	Ce script extrait des articles du Wiktionnaire et créé un dico simple de type xml.
+	Ce script extrait des articles du Wiktionnaire et créé un dico simple de type xml (INCOMPLET).
 	
 	usage: $0 -i fr-wikt_fr.xml -o fr-wikt_fr.xml [-L fr]
 	

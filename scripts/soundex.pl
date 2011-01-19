@@ -12,6 +12,7 @@ binmode STDERR, ":encoding(utf8)";
 use Encode qw(decode encode);
 
 
+
 use lib '..' ;
 use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
 
@@ -50,11 +51,12 @@ sub soundex
 	$soundex = $first . $soundex ;
 	
 	# Cut or complete
+	my $lim = 4 ;
 	my $len = length($soundex) ;
-	if ($len > 4) {
-		$soundex = substr($soundex, 0, 4) ;
-	} elsif ($len < 4) {
-		$soundex .= '0'x(4-$len) ;
+	if ($len > $lim) {
+		$soundex = substr($soundex, 0, $lim) ;
+	} elsif ($len < $lim) {
+		$soundex .= '0'x($lim-$len) ;
 	}
 	
 	return $soundex ;

@@ -23,20 +23,19 @@ sub usage
 	print STDERR "[ $_[0] ]\n" if $_[0] ;
 	print STDERR << "EOF";
 	
-	Ce script extrait les mots du Wiktionnaire utilisés dans celui-ci sans pour autant avoir d'article existant.
+	Ce script extrait les mots d'un dump Wikimedia utilisés qui sont absent d'une liste de mot donnée (issue du Wiktionnaire par exemple).
 	
 	usage: $0 -i fr-wikt_fr.xml -o fr-wikt_fr.xml [-L fr]
 	
-	-h        : this (help) message
-	-i <path> : dump path
-	-o <path> : output path
-	-I <path> : word list path
-	-L <code> : language code to extract alone (2 or 3 letters)
+	-h        : aide
+	-i <path> : chemin dump (entrée)
+	-I <path> : chemin liste de mots (entrée)
+	-o <path> : chemin fichier (sortie)
 	-H        : history file (special case, only use last version of each page)
 	
-	-P        : use non-mainspace pages
-	-p list,  : use these namespaces
-	-m        : use mainspace pages (in combination with -P or -p)
+	-P        : Utiliser toutes les pages hors espace principal
+	-p list,  : utiliser ces espaces de nommage
+	-m        : Utiliser les pages de l'espace principal (en combinaison avec -P or -p)
 	
 EOF
 	exit ;
@@ -46,13 +45,14 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:I:o:L:PHp:m', \%opt ) or usage() ;
+	getopts( 'hi:I:o:PHp:m', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	
-	usage( "Dump path needed (-i)" ) if not $opt{i} ;
-	usage( "Word list path needed (-I)" ) if not $opt{I} ;
-	usage( "Output file path needed (-o)" ) if not $opt{o} ;
+	usage( "Chemin du dump (-i)" ) if not $opt{i} ;
+	usage( "Chemin de la liste de mots (-I)" ) if not $opt{I} ;
+	usage( "Chemin du fichier de sortie (-o)" ) if not $opt{o} ;
 	$opt{o} .= '.txt' if not $opt{o} =~ /\.[a-z0-9]+$/ ;
+	$opt{p} = '' ;
 }
 
 sub get_dico
@@ -135,16 +135,15 @@ sub article
 	$line =~ s/\{\|.+?\|\}/ /g ;
 	$line =~ s/\{\|.+?\|\}/ /g ;
 	# Apostrophe, tirets quadratins
-	$line =~ s/[\x{2019}\x{2013}]/ /g ;
+	$line =~ s/[\x{2018}\x{2019}\x{2013}\x{2014}]/ /g ;
 	
 	# Separation
 	my @mots_ligne = split(/\s+/, $line) ;
 	
 	# Evaluation
 	foreach my $mot (@mots_ligne) {
-		if ($mot =~ /=/) {
-			next ;
-		}
+		# Pas de signe égal
+		next if $mot =~ /=/ ;
 		# Pas de majuscule
 		next if $mot =~ /\p{Uppercase_letter}/ ;
 		# Pas de nombre ni de signe de ponctuation ni de symbole ou d'autre truc bizarre
@@ -154,10 +153,15 @@ sub article
 		$mot =~ s/\((.+?)\)/$1/g ;
 		$mot =~ s/^[\.,;:!\?\)\(\{\}\[\]'“]+//g ;
 		$mot =~  s/[\.,;:!\?\)\(\{\}\[\]'”]+$//g ;
+		# Espace souligné = probable paramètre
 		next if $mot =~ /_/ ;
-		next if $mot =~ /^[\s\*#]*$/ ;
+		# Pas de suffixes/préfixes
+		next if $mot =~ /^-|-$/ ;
+		# Mot sans aucune lettre ou vide
 		next if $mot =~ /^\P{Letter}*$/ ;
+		# Une lettre unique
 		next if $mot =~ /^\p{Letter}$/ ;
+		# Terminaisons avec tiret en français
 		next if $mot =~ /-(je|tu|il|elle|on|nous|vous|ils|elles|moi|toi|lui|leur|là|ci|ce|le|la|les|y)?$/ ;
 		
 		# Keep only if unknown

@@ -3,8 +3,9 @@ use strict ;
 
 my $file = $ARGV[0] ;
 
+die("Fichier nécessaire (argument 1)\n") if not $file ;
 print "$file\n" ;
-open FILE, "<$file" or die ;
+open(FILE, "<$file") or die("") ;
 
 # Declarations
 my $max= $ARGV[1] ? $ARGV[1] : 100000 ;

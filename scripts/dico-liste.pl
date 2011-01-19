@@ -6,10 +6,10 @@ use warnings ;
 use Getopt::Std ;
 
 use utf8 ;
+use Encode qw(decode encode) ;
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
-use Encode qw(encode decode) ;
 
 use lib '..' ;
 use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
@@ -28,7 +28,7 @@ sub usage
 	print STDERR "[ $_[0] ]\n" if $_[0] ;
 	print STDERR << "EOF";
 	
-	This script parse a Wiktionary dump and extract titles
+	This script parse a Wiktionary dump and extract article names
 	
 	usage: $0 [-h] -f file
 	
@@ -36,12 +36,16 @@ sub usage
 	-i <path> : dump path
 	-o <path> : list of all the articles selected
 	-O <path> : list of all articles with the pattern but excluded
-	-p <str>  : pattern to search in the titles
-	-n <str>  : pattern to exclude from the titles
+	-p <str>  : pattern to search
+	-n <str>  : pattern to exclude
 	-S <str>  : use this namespace
+	
+	-s        : special (see script)
 	
 	-L <str>  : language to include only
 	-N <str>  : language to exclude
+	
+	-F <path> : path to a list of general patterns to search
 	
 	example: $0 -i data/frwikt.xml
 EOF
@@ -52,7 +56,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:p:n:S:L:N:F:', \%opt ) or usage() ;
+	getopts( 'hi:o:O:p:n:S:L:N:F:s', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	if (not $opt{F}) {
@@ -172,8 +176,6 @@ sub read_article
 			delete $lang->{'language'}->{$opt{N}} ;
 		}
 		
-		return 0 if (keys %{$lang->{'language'}} == 0) ;
-		
 		foreach my $l (keys %{$lang->{'language'}}) {
 			if (not ref($lang->{'language'}->{$l}) eq 'ARRAY') {
 				print STDERR "[[$title]]\tSection de langue vide : $l\n" ;
@@ -182,29 +184,45 @@ sub read_article
 			push @$article, @{$lang->{'language'}->{$l}} ;
 		}
 		
+	} else {
+		$article = $article0 ;
 	}
 	
 	my ($count, $n) = (0,0) ;
 	my ($ok, $no) = (0,0) ;
 	my ($ok_pattern, $no_pattern) = ('','') ;
 	
-	if ($opt{n} and $title =~ /$opt{n}/) {
-		$count++ ;
-		$no = 1 ;
+	foreach my $line (@$article) {
+		$n++ ;
+		if ($opt{n} and $line =~ /($opt{n})/) {
+			$no_pattern = "<< $1 >> ($n)" ;
+			$no = 1 ;
+		}
+		if ($line =~ /($opt{p})/) {
+			$count++ if not $no ;
+			$ok_pattern = "<< $1 >> ($n)" ;
+			$ok = 1 ;
+			$line =~ s/$opt{p}// ;
+		}
+		while ($line =~ /($opt{p})/) {
+			$count++ if not $no ;
+			$ok_pattern .= "\t<< $1 >> ($n)" ;
+			$line =~ s/$opt{p}// ;
+		}
 	}
-	if ($title =~ /($opt{p})/) {
-		$count++ ;
-		$ok = 1 ;
-	}
+	$ok_pattern =~ s/\n/\\n/g ;
+	$ok_pattern =~ s/\r/\\r/g ;
+	$no_pattern =~ s/\n/\\n/g ;
+	$no_pattern =~ s/\r/\\r/g ;
 	
 	if ($ok and not $no and $opt{o}) {
 		open(ARTICLES, ">> $opt{o}") or die "Couldn't write $opt{o}: $!\n" ;
-		print ARTICLES "* [[$title]]\n" ;
+		print ARTICLES "* [[$title]]\t$ok_pattern\n" ;
 		close(ARTICLES) ;
 	}
 	if ($ok and $no and $opt{O}) {
 		open(ARTICLES, ">> $opt{O}") or die "Couldn't write $opt{O}: $!\n" ;
-		print ARTICLES "* [[$title]]\n" ;
+		print ARTICLES "* [[$title]]\t$ok_pattern\t$no_pattern\n" ;
 		close(ARTICLES) ;
 	}
 	return $count ;
@@ -230,7 +248,7 @@ while(<DUMP>) {
 		if ($opt{S}) {
 			$title = '' if not $title =~ /^$opt{S}:/ ;
 		} else {
-			#$title = '' if $title =~ /[:\/]/ ;
+			$title = '' if $title =~ /[:\/]/ ;
 		}
 		
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
@@ -254,16 +272,36 @@ while(<DUMP>) {
 	}
 	if ($complete_article) {
 		if ($article[0] =~ /#redirect/i) {
-			######################################
-			# Traiter les redirects ici
-			redirect(\@article, $title) ;
-			######################################
-			$redirect++ ;
+			if ($opt{s}) {
+				my $target = $article[0] ;
+				$target =~ s/^.*\[\[(.+)\]\].*$/$1/ ;
+				chomp($target) ;
+				push @{$already{ lc($title) }}, "$title|]][[:$target|<sup>(<small>redirect</small>)</sup>" ;
+				$n++ ;
+				print "[$n] $title\n" if $n%500==0 ;
+				$title = '' ;
+				$redirect++ ;
+			} else {
+				######################################
+				# Traiter les redirects ici
+				redirect(\@article, $title) ;
+				######################################
+				$redirect++ ;
+			}
 		} else {
-			######################################
-			# Traiter les articles ici
-			my $article_count = article(\@article, $title) ;
-			$count += $article_count ;
+			if ($opt{s}) {
+				push @{$already{ lc($title) }}, "$title|" ;
+				$n++ ;
+				print "[$n] $title\n" if $n%500==0 ;
+				$title = '' ;
+			} else {
+				######################################
+				# Traiter les articles ici
+				my $article_count = article(\@article, $title) ;
+				foreach my $num (keys %$article_count) {
+					$count->{$num} += $article_count->{$num}  ;
+				}
+			}
 			######################################
 			$n++ ;
 			print "[$n] $title\n" if $n%10000==0 ;
@@ -276,8 +314,35 @@ close(DUMP) ;
 print "Total = $n\n" ;
 print "Total_redirects = $redirect\n" ;
 
-print "Compte = $count\n" ;
-
+if ($opt{s}) {
+	print "Recherche des doublons: " ;
+	# Filter special
+	open(SPECIAL, ">> $opt{o}") or die("Couldn't write $opt{o}: $!\n") ;
+	my $space = '' ;
+	foreach my $t (sort keys %already) {
+		my $num = $#{ $already{$t} }+1 ;
+		if ($num == 1) {
+			delete $already{$t} ;
+		} else {
+			(my $new_space) = split(':', $t) ;
+			if ($space ne $new_space) {
+				$space = $new_space ;
+				print SPECIAL "\n== ". (ucfirst($space)) ." ==\n" ;
+			}
+			my $prefix = '' ;
+			if ($space eq 'catégorie') {
+				$prefix = ':' ;
+			}
+			print SPECIAL "* [[$prefix". join("]], [[$prefix", sort { $a cmp $b } @{ $already{$t} }) . "]]\n" ;
+		}
+	}
+	close(SPECIAL) ;
+	my $total = keys %already ;
+	print "$total\n" ;
+} else {
+	foreach my $c (keys %$count) {
+		print "$c:\t$count->{$c}\n" ;
+	}
+}
 
 __END__
-
