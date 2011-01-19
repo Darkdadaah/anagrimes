@@ -17,4 +17,4 @@ echo '' > $HOME/logs/table_extractor/update_db.e
 echo '' > $HOME/logs/table_extractor/update_db.o
 
 # Update the database
-sql u_darkdadaah < $HOME/scripts/anagrimes/updater.sql
+sql u_darkdadaah < $HOME/scripts/anagrimes/update/updater.sql
