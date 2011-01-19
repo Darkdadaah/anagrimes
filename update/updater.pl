@@ -138,7 +138,7 @@ $fichier =~ s/\.bz2// ;
 print STDERR "Extraction des données\n" ;
 
 chdir($workdir) ;
-`table_extractor.pl -i $datadir/$fichier -o $datadir/$tabledir/$outputs` ;
+`dico-table.pl -i $datadir/$fichier -o $datadir/$tabledir/$outputs` ;
 chdir($datadir) ;
 
 # 8) Archivage 7z
