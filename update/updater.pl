@@ -164,6 +164,8 @@ system("ssh darkdadaah\@$toolserver bash -c \"pwd ; cd $datadir_t && pwd && rena
 print STDERR "Mise à jour base de données du serveur\n" ;
 system("ssh darkdadaah\@$toolserver bash -c \"scripts/update_anagrimes/update_db.sh\"") ;
 
+sleep 1000 ;
+
 ############################################################################################
 # 12) Update lists
 system("ssh darkdadaah\@$toolserver bash -c \"scripts/journaux/extrait_mots.sh\"") ;
