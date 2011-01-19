@@ -1,0 +1,6 @@
+Liste des outils de base :
+* dico-diffs.pl = différences d'articles entre deux dumps de Wiktionary de langues différentes
+* dico-genie.pl = création d'un dico xml simple à partir d'un dump de Wiktionary fr (INCOMPLET)
+* dico-liste.pl = création d'une liste wiki d'articles selon certains critères à partir d'un dump de Wiktionary fr
+* dico-phile.pl = création d'une table répertoriant les articles d'un dump ne contenant pas les mots d'une liste donnée
+* dico-table.pl = création de tables complètes des articles, mots et langues d'un dump de Wiktionary fr
