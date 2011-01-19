@@ -6,6 +6,7 @@ my $optlangue = $ARGV[0] ;
 my @langues = qw(fr en it de es) ;
 my $langue = 'fr' ;
 my $racine = 'http://download.wikimedia.org' ;
+my $toolserver = 'willow.toolserver.org' ;
 my $projet = 'wiktionary' ;
 my $log = "$langue$projet"."_log.txt" ;
 my $datadir = "$ENV{HOME}/2/data/wikt/" ;
@@ -13,7 +14,6 @@ my $workdir = "$ENV{HOME}/Documents/Travaux/wiktio/scripts/anagrimes/scripts" ;
 my $tabledir = 'tables';
 my $outputs = 'fr-wikt_'.$ENV{date} ;
 my $output7z = "$outputs.7z" ;
-`mkdir -p tables` ;
 
 if ($optlangue) {
 	if ($optlangue ~~ @langues) {
@@ -152,21 +152,21 @@ my $datadir_t = 'data/tables' ;
 
 # 9) Copy data to toolserver
 print STDERR "Copie archive serveur\n" ;
-system("scp $datadir/$tabledir/$output7z darkdadaah\@nightshade.toolserver.org:$datadir_t") and die() ;
+system("scp $datadir/$tabledir/$output7z darkdadaah\@$toolserver:$datadir_t") and die() ;
 
 # 10) clean toolserver before update
 print STDERR "Décompression archive serveur\n" ;
-system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"pwd ; rm -f -v ".$datadir_t."/*.csv\"") and die() ;
-system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"pwd ; 7z e -o$datadir_t $datadir_t/$output7z\"") and die() ;
-system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"pwd ; cd $datadir_t && pwd && rename s/_.+_/_current_/ *.csv\"") and die() ;
+system("ssh darkdadaah\@$toolserver bash -c \"pwd ; rm -f -v ".$datadir_t."/*.csv\"") and die() ;
+system("ssh darkdadaah\@$toolserver bash -c \"pwd ; 7z e -o$datadir_t $datadir_t/$output7z\"") and die() ;
+system("ssh darkdadaah\@$toolserver bash -c \"pwd ; cd $datadir_t && pwd && rename s/_.+_/_current_/ *.csv\"") and die() ;
 
 # 11) Update toolserver databases
 print STDERR "Mise à jour base de données du serveur\n" ;
-system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"scripts/update_anagrimes/update_db.sh\"") ;
+system("ssh darkdadaah\@$toolserver bash -c \"scripts/update_anagrimes/update_db.sh\"") ;
 
 ############################################################################################
 # 12) Update lists
-system("ssh darkdadaah\@nightshade.toolserver.org bash -c \"scripts/journaux/extrait_mots.sh\"") ;
+system("ssh darkdadaah\@$toolserver bash -c \"scripts/journaux/extrait_mots.sh\"") ;
 
 # FIN Change la version
 open(T, ">$last_file") or die("$!") ;
