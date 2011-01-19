@@ -52,7 +52,7 @@ sub init()
 	usage( "Chemin de la liste de mots (-I)" ) if not $opt{I} ;
 	usage( "Chemin du fichier de sortie (-o)" ) if not $opt{o} ;
 	$opt{o} .= '.txt' if not $opt{o} =~ /\.[a-z0-9]+$/ ;
-	$opt{p} = '' ;
+	$opt{p} = '' if not $opt{p} ;
 }
 
 sub get_dico
