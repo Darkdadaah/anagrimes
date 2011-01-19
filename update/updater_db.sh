@@ -12,18 +12,6 @@ PERL5LIB=$PERL5LIB:$HOME/bin/lib
 PERL5LIB=$PERL5LIB:$HOME/scripts/anagrimes
 export PERL5LIB
 
-date=`date +%F`
-export date
-
-if [ -z $date ] ; then
-        echo "No date"
-	exit
-fi
-if [ -z $1 ] ; then
-        echo "No input file"
-	exit
-fi
-
 # Reinit logs
 echo '' > $HOME/logs/table_extractor/update_db.e
 echo '' > $HOME/logs/table_extractor/update_db.o
