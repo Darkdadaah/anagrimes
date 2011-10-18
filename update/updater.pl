@@ -158,7 +158,7 @@ system("scp $datadir/$tabledir/$output7z darkdadaah\@$toolserver:$datadir_t") an
 print STDERR "Décompression archive serveur\n" ;
 system("ssh darkdadaah\@$toolserver bash -c \"pwd ; rm -f -v ".$datadir_t."/*.csv\"") and die() ;
 system("ssh darkdadaah\@$toolserver bash -c \"pwd ; 7z e -o$datadir_t $datadir_t/$output7z\"") and die() ;
-system("ssh darkdadaah\@$toolserver bash -c \"pwd ; cd $datadir_t && pwd && rename s/_.+_/_current_/ *.csv\"") and die() ;
+system("ssh darkdadaah\@$toolserver bash -c \"pwd ; cd $datadir_t && pwd && /home/darkdadaah/bin/rename s/_.+_/_current_/ *.csv\"") and die() ;
 
 # 11) Update toolserver databases
 print STDERR "Mise à jour base de données du serveur\n" ;
@@ -168,7 +168,7 @@ sleep 1000 ;
 
 ############################################################################################
 # 12) Update lists
-system("ssh darkdadaah\@$toolserver bash -c \"scripts/journaux/extrait_mots.sh\"") ;
+system("ssh darkdadaah\@$toolserver bash -c \"qsub scripts/journaux/extrait_mots.qsub\"") ;
 
 # FIN Change la version
 open(T, ">$last_file") or die("$!") ;
@@ -181,3 +181,4 @@ print STDERR "Version mise à jour\n" ;
 
 
 exit 0 ;
+

@@ -49,6 +49,7 @@ sub special_log
 
 our $level3 = {
 	'étym' => 'etymologie',
+	'étymologie' => 'etymologie',
 	'etym' => 'etymologie',	# Beuh
 	'éty' => 'etymologie',	# Beuh
 	'étyl' => 'etymologie',	# Beuh
@@ -65,7 +66,9 @@ our $word_type = {
 	'flex-nom' => 1,
 	'nom-pr' => 1,
 	'adj' => 1,
+	'adjectif' => 1,
 	'flex-adj' => 1,
+	'flex-adjectif' => 1,
 	'adv' => 1,
 	'adv-pron' => 1,
 	'adv-rel' => 1,
@@ -90,6 +93,7 @@ our $word_type = {
 	'flex-adj-indéf' => 1,
 	'adj-int' => 1,
 	'adj-num' => 1,
+	'flex-adj-num' => 1,
 	'adj-pos' => 1,
 	'art' => 1,
 	'art-def' => 1,
@@ -138,6 +142,7 @@ our $word_type = {
 	'aux' => 1,
 	'class' => 1,
 	'lettre' => 1,
+	'flex-lettre' => 1,
 	'corrélatif' => 1,
 	'abr' => 1,
 	'symb' => 1,
@@ -164,6 +169,7 @@ our $word_type = {
 	'nom-nn' => 1,
 	'nom-npl' => 1,
 	'radical' => 1,
+	'racine' => 1,
 	
 	# Verbe
 	'verb' => 1,
@@ -171,6 +177,11 @@ our $word_type = {
 	'loc-verb' => 1,
 	'flex-loc-verb' => 1,
 	'verb-pr' => 1,
+	'verbe' => 1,
+	'flex-verbe' => 1,
+	'loc-verbe' => 1,
+	'flex-loc-verbe' => 1,
+	'verbe-pr' => 1,
 	
 	# Nombres
 	'numér' => 1,
