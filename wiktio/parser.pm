@@ -296,10 +296,11 @@ sub parseType
 			$level = $templevel ;
 			$sections->{$level} = () ;
 		} else {
-			print "[[$title]]	Level4:\t$templevel\t$title\n" ;
+			special_log('level4', $title, $templevel) ;
 		}
 	} else {
 		# This article does not contain any level4 section
+		special_log('nolevel4', $title) ;
 		return $sections ;
 	}
 	
@@ -314,7 +315,7 @@ sub parseType
 				$sections->{$level} = () ;
 				next ;
 			} else {
-				print "[[$title]]	Level4\t$templevel\t$title\n" ;
+				special_log('level4', $title, $templevel) ;
 			}
 		}
 		

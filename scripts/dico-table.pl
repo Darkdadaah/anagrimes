@@ -284,17 +284,20 @@ sub article
 		$mot{'transcrit_plat'} = '' ;
 		$mot{'r_transcrit_plat'} = '' ;
 		
-		# Alphabet latin ?
+		# Pas alphabet latin ? Transcrire
 		if (not unicode_NFKD($mot{'titre_plat'}) =~ /[a-z]/) {
 			my @langues = keys %{$article_section->{language}} ;
 			$mot{'transcrit_plat'} = transcription($mot{'titre_plat'}, \@langues) ;
 			
+			# Pas de transcription au final : passer
 			if (not $mot{'transcrit_plat'}) {
 				return ;
+			# Pas complètement transcrit : loguer
 			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
 				special_log('transcription', $titre, $mot{'transcrit_plat'}) ;
 				
 				return ;
+			# Bien transcrit : continuer
 			} else {
 				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
 			}
@@ -327,7 +330,7 @@ while(<DUMP>) {
 		push @article, "$1\n" ;
 		$complete_article = 1 ;
 		
-		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
+	} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
 		@article = () ;
 		push @article, "$1\n" ;
 		while ( <DUMP> ) {
@@ -357,6 +360,8 @@ while(<DUMP>) {
 			printf STDERR "%7d articles traités\r", $n if $n % 1000 == 0 ;
 		}
 		$complete_article = 0 ;
+		$title = '' ;
+		@article = () ;
 	}
 }
 $| = 0 ;

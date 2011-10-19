@@ -108,7 +108,7 @@ sub anagramme
 	
 	my $mot = lc(ascii_strict($mot0)) ;
 	
-	# Sort
+	# Sort and create alphagram
 	if ($mot) {
 		my @lettres = split('', $mot) ;
 		$mot = join('', sort @lettres) ;
@@ -157,6 +157,9 @@ sub transcription
 			# Caractères muets
 			$transcrit =~ s/[ЪъЬь]//g ;
 			
+			# Copule zéro
+			$transcrit =~ s/ ?—//g ;
+			
 			# Transcription directe
 			$transcrit =~ tr/абвгґдежзіиклмнопрстфыэ/abvggdejziiklmnoprstfye/ ;
 			$transcrit =~ tr/АБГҐДЕЖЗІИКЛМНОПРСТФЫЭ/ABGGDEJZIIKLMNOPRSTFYE/ ;
@@ -172,7 +175,7 @@ sub transcription
 # 			$transcrit =~ tr/абвгдежзиклмнопрстуф/abvgdejziklmnoprstuf/ ;
 # 			print "[$l] transcrit: $transcrit\n" ;
 
-			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+			if ($transcrit and not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
 				#print STDERR "[[$titre]]\tTranscription du cyrillique ratée : '$transcrit'\n" ;
 				special_log('bad_cyrillique', $titre, '', $transcrit) ;
 			}
@@ -210,13 +213,15 @@ sub transcription
 		
 		if ($langues_transcrites->{'arabe'}->{$l}) {
 			# De droite à gauche
-# 			$transcrit = reverse($transcrit) ;
-			my $bad_char = chr(8204) ;
-			if ($transcrit =~ /$bad_char/) {
-				#print STDERR "[[$titre]]\tFaux-espace (chr 8204, 200c)\n" ;
-				special_log('bad_espace', $titre) ;
-				$transcrit =~ s/$bad_char//g ;
-			}
+			$transcrit = reverse($transcrit) ;
+			
+			# Zero-width non joiner
+			my $zwnj = chr(8204) ;
+			$transcrit =~ s/$zwnj/ /g ;
+			
+			# Zero width joiner
+			my $zwj = chr(8205) ;
+			$transcrit =~ s/$zwj//g ;
 			
 			# hamza
 # 			$transcrit =~ tr/ء/’/ ;			# Standard
