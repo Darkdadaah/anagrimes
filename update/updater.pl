@@ -3,8 +3,8 @@
 use Digest::MD5;
 
 my $optlangue = $ARGV[0] ;
-my $download = 0 ;
-my $updateserver = 0 ;
+my $download = 1 ;
+my $updateserver = 1 ;
 
 my @langues = qw(fr en it de es) ;
 my $langue = 'fr' ;
@@ -177,7 +177,7 @@ sleep 1000 ;
 
 ############################################################################################
 # 12) Update lists
-system("ssh darkdadaah\@$toolserver bash -c \"qsub scripts/journaux/extrait_mots.qsub\"") ;
+system("ssh darkdadaah\@$toolserver bash -c \"source /sge62/default/common/settings.sh ; qsub scripts/journaux/extrait_mots.qsub\"") ;
 
 # FIN Change la version
 open(T, ">$last_file") or die("$!") ;
