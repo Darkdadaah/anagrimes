@@ -108,11 +108,16 @@ sub article
 	my ($titre, $article, $dico, $sql) = @_ ;
 	
 	# Précorrection
-	
 	foreach my $line (@$article) {
 		# Ligne de traduction ou prononciation
 		$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g ;
 	}
+	
+	# Wikisource qualité
+#	my $quality = 0 ;
+#	if ($article->[0] =~ /<pagequality level="([012345])"/) {
+#		$quality = $1 ;
+#	}
 	
 	my $line = join(' ', @$article) ;
 	my $mots_article = {} ;
@@ -176,7 +181,10 @@ sub article
 	
 	# Save mots_article in the sqlfile
 	foreach my $m (keys %$mots_article) {
-		print $sql "$m\t$titre\t$mots_article->{$m}\n" ;
+		my @cols = ($m, $titre, $mots_article->{$m}) ;
+		#push @cols, $quality ;
+		my $cols = join("\t", @cols) ;
+		print $sql "$cols\n" ;
 		$num_mots++ ;
 	}
 	
