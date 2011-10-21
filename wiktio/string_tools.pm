@@ -213,7 +213,11 @@ sub transcription
 		
 		if ($langues_transcrites->{'arabe'}->{$l}) {
 			# De droite à gauche
-			$transcrit = reverse($transcrit) ;
+			# Désactivé : pas besoin d'inverser ??
+			#$transcrit = reverse($transcrit) ;
+			
+			# Diacritiques
+			$transcrit = NFKD($transcrit) ;
 			
 			# Zero-width non joiner
 			my $zwnj = chr(8204) ;
@@ -227,9 +231,18 @@ sub transcription
 # 			$transcrit =~ tr/ء/’/ ;			# Standard
 # 			$transcrit =~ tr/ء/'/ ;			# Simplification
 			$transcrit =~ s/ء// ;			# Ultra simplifié
+			
+			# DIACRITIQUES
+			#fatha
+			my $fatha = chr(0x064E) ;
+			my $kasrah = chr(0x0650) ;
+			my $dammah = chr(0x064F) ;
+			
+			$transcrit =~ tr/$fatha$kasrah$dammah/ai/ ;
+			
 			# alif
-			#$transcrit =~ tr/ﺎا/ââ/ ;
-			$transcrit =~ tr/ﺎا/aa/ ;		# Plus simple, non ambigu
+			$transcrit =~ tr/ﺎا/ââ/ ;
+			
 			# ba
 			$transcrit =~ tr/ﺒﺑبﺐ/bbbb/ ;
 			# ta 1
@@ -272,8 +285,8 @@ sub transcription
 			$transcrit =~ tr/ظﻇﻈﻆ/zzzz/ ;	# Simplification
 			# ayn
 # 			$transcrit =~ tr/عﻋﻌﻊ/‘‘‘‘/ ;	# Standard
-# 			$transcrit =~ tr/عﻋﻌﻊ/''''/ ;	# Simplifié
-			$transcrit =~ s/[عﻋﻌﻊ]//g ;		# Ultra simplifié
+			$transcrit =~ tr/عﻋﻌﻊ/''''/ ;	# Simplifié
+# 			$transcrit =~ s/[عﻋﻌﻊ]//g ;		# Ultra simplifié
 			# gayn
 			$transcrit =~ s/[غﻏﻐﻎ]/gh/g ;
 			# fa
@@ -326,15 +339,6 @@ sub transcription
 			# Voyelles
 			$transcrit =~ tr/ی/i/ ;
 			
-
-
-# 			$transcrit =~ s/[]//g ;
-# 			$transcrit =~ s/[]//g ;
-# 			$transcrit =~ s/[]//g ;
-			$transcrit =~ tr/// ;
-			$transcrit =~ tr/// ;
-			$transcrit =~ tr/// ;
-			
 			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
 				my $left = $transcrit ;
 				$left =~ s/[a-z ]//g ;
@@ -342,7 +346,7 @@ sub transcription
 				#print STDERR "[[$titre]]\tTranscription de l'arabe ratée : '$transcrit' (reste $len lettres : '$left')\n" ;
 				special_log('bad_arabe', $titre, "reste $len lettres : '$left", $transcrit) ;
 			} else {
-# 				print "[[$titre]]\tTranscription de l'arabe réussie : '$transcrit' !!\n" ;
+				#print "[[$titre]]\tTranscription de l'arabe réussie : '$transcrit' !!\n" ;
 			}
 			return $transcrit ;
 		}
