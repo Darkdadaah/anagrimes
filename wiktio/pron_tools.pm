@@ -17,11 +17,15 @@ use Exporter ;
 	cherche_prononciation
 	section_prononciation
 	simple_prononciation
+	extrait_rimes
 ) ;
 
 use strict ;
 use warnings ;
 use wiktio::basic ;
+
+my @voyelles = qw( a ɑ ɒ æ e ɛ ə i ɪ o œ ɔ u y ɯ ʊ ʌ ) ;
+push @voyelles, ('ɑ̃', 'ɛ̃', 'œ̃', 'ɔ̃') ;
 
 sub cherche_tables
 {
@@ -457,13 +461,46 @@ sub simple_prononciation
 	
 	# Cas spéciaux
 	# r: identique partout
-	$pron =~ s/[ʁrɹʀ]/r/g ;
+	$pron =~ s/[ʁrɹʀɾ]/r/g ;
 	# Autres
 	$pron =~ s/ʧ/tʃ/ ;
 	$pron =~ s/ʤ/dʒ/ ;
 	return $pron ;
 }
 
+sub extrait_rimes
+{
+	my ($pron0) = @_ ;
+	my @lettres = split(//, $pron0) ;
+	
+	# Concat diacritics
+	my @let = () ;
+	foreach my $l (@lettres) {
+		# Diac? Concat
+		if ($l eq '̃' and $let[$#let]) {
+			$let[$#let] .= $l ;
+		} else {
+			push @let, $l ;
+		}
+	}
+	
+	my %rimes = (pauvre=>'', suffisante=>'', riche=>'', voyelle=>'') ;
+	$rimes{pauvre} = $let[-1] if @let >=1 and $let[-1] ;
+	$rimes{suffisante} = join('', @let[-2..-1]) if @let >=2 ;
+	$rimes{riche} = join('', @let[-3..-1]) if @let >=3 ;
+	
+	# Get last voyelle
+	VOY : for (my $i = $#let ; $i > 0 ; $i--) {
+		if ($let[$i] ~~ @voyelles) {
+			$rimes{voyelle} = $let[$i] ;
+			last VOY ;
+		}
+	}
+	
+	return \%rimes ;
+}
+
 1 ;
 
 __END__
+

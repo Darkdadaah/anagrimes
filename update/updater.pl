@@ -1,10 +1,14 @@
 #!/usr/bin/perl -w
 
 use Digest::MD5;
+############################
+my $force_update = 0 ;
+my $download = 1 ;
+my $compute = 1 ;
+my $updateserver = 1 ;
+############################
 
 my $optlangue = $ARGV[0] ;
-my $download = 1 ;
-my $updateserver = 1 ;
 
 my @langues = qw(fr en it de es) ;
 my $langue = 'fr' ;
@@ -77,7 +81,8 @@ if (-s $last_file) {
 # 4) Compare
 if ($date ~~ $old) {
 	print STDERR "Pas de nouvelle version ($date)\n" ;
-	exit 0 ;
+	exit 0 unless $force_update ;
+	print STDERR "Mise à jour forcée\n" ;
 } elsif (not $date) {
 	print STDERR "Impossible de trouver la dernière version. Le serveur est peut-être KO\n" ;
 	print STDERR "Vérifier : http://download.wikimedia.org/frwiktionary/\n" ;
@@ -144,14 +149,16 @@ $fichier =~ s/\.bz2// ;
 # 7) Extraction des tables de données
 print STDERR "Extraction des données\n" ;
 
-chdir($workdir) ;
-`dico-table.pl -i $datadir/$fichier -o $datadir/$tabledir/$outputs -l $logdir/$date/log_$date` ;
-chdir($datadir) ;
-
-# 8) Archivage 7z
-print STDERR "\nArchivage 7z\n" ;
- print STDERR "7z a $tabledir/$output7z $tabledir/$outputs*.csv\n" ;
- `7z a $tabledir/$output7z $tabledir/$outputs*.csv` ;
+if ($compute) {
+	chdir($workdir) ;
+	`dico-table.pl -i $datadir/$fichier -o $datadir/$tabledir/$outputs -l $logdir/$date/log_$date` ;
+	chdir($datadir) ;
+	
+	# 8) Archivage 7z
+	print STDERR "\nArchivage 7z\n" ;
+	print STDERR "7z a $tabledir/$output7z $tabledir/$outputs*.csv\n" ;
+	`7z a $tabledir/$output7z $tabledir/$outputs*.csv` ;
+}
 
 exit(0) if not $updateserver ;
 
@@ -171,13 +178,14 @@ system("ssh darkdadaah\@$toolserver bash -c \"pwd ; cd $datadir_t && pwd && /hom
 
 # 11) Update toolserver databases
 print STDERR "Mise à jour base de données du serveur\n" ;
-system("ssh darkdadaah\@$toolserver bash -c \"scripts/update_anagrimes/update_db.sh\"") ;
-
-sleep 1000 ;
+system("ssh darkdadaah\@$toolserver \"source /sge62/default/common/settings.sh ; qsub scripts/update_anagrimes/update_db.qsub\"") ;
 
 ############################################################################################
 # 12) Update lists
-system("ssh darkdadaah\@$toolserver bash -c \"source /sge62/default/common/settings.sh ; qsub scripts/journaux/extrait_mots.qsub\"") ;
+
+# Wait database update
+sleep 1000 ;
+system("ssh darkdadaah\@$toolserver \"source /sge62/default/common/settings.sh ; qsub scripts/journaux/extrait_mots.qsub\"") ;
 
 # FIN Change la version
 open(T, ">$last_file") or die("$!") ;

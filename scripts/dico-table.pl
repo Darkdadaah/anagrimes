@@ -13,7 +13,7 @@ use lib '..' ;
 use wiktio::basic ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
-use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation) ;
+use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation extrait_rimes section_prononciation) ;
 our %opt ;
 my $redirects = '' ;
 my $articles = '' ;
@@ -77,7 +77,7 @@ sub init()
 	# Ordre des colonnes des tables
 	print STDERR 'REDIRECTS: titre, cible'."\n" ;
 	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n" ;
-	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, num, flex, loc, gent, rand' . "\n" ;
+	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, rime_pauvre, rime_suffisante, rime_riche, rime_voyelle, num, flex, loc, gent, rand' . "\n" ;
 	print STDERR 'LANGUES: langue, num, num_min'."\n" ;
 	
 	# Initialisation des fichiers
@@ -186,6 +186,9 @@ sub ajout_langue
 			foreach my $p (@pron) {
 				my $p_simple = simple_prononciation($p) ;
 				my $r_p_simple = reverse($p_simple) ;
+				my $rime = {pauvre=>'', suffisante=>'', riche=>''} ;
+				$rime = extrait_rimes($p_simple) ;
+				
 				# Nombre de langue
 				if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
 				else { $langues_total{$langue} = 1 ; }
@@ -197,7 +200,7 @@ sub ajout_langue
 					else { $langues_filtre{$langue} = 1 ; }
 					$rand = $langues_filtre{$langue} ;
 				}
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $rand) ;
+				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, $num, $flex, $loc, $gent, $rand) ;
 			}
 		} else {
 			my $p = '' ;
