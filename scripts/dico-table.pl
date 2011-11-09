@@ -13,7 +13,7 @@ use lib '..' ;
 use wiktio::basic ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
-use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation extrait_rimes section_prononciation) ;
+use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes) ;
 our %opt ;
 my $redirects = '' ;
 my $articles = '' ;
@@ -114,11 +114,18 @@ sub ajout_mot
 {
 	open(MOTS, ">> $mots") or die "Impossible d'écrire $mots : $!\n" ;
 # 	print "Ajoute mot $_[0]\n" ;
-	print MOTS '"'.$_[0].'"' ;
+	my @ligne = () ;
+	
+	push @ligne, '"' . $_[0] . '"' ;
 	for (my $i=1; $i<@_; $i++) {
-		print MOTS ',"'.$_[$i].'"' ;
+		# Number?
+		#if ($_[$i] =~ /^[0-9]+$/) {
+		#	push @ligne, $_[$i] ;
+		#} else
+			push @ligne, '"' . $_[$i] . '"' ;
+		#}
 	}
-	print MOTS "\n" ;
+	print MOTS join(',', @ligne) . "\n" ;
 	close(MOTS) ;
 }
 
@@ -186,7 +193,7 @@ sub ajout_langue
 			foreach my $p (@pron) {
 				my $p_simple = simple_prononciation($p) ;
 				my $r_p_simple = reverse($p_simple) ;
-				my $rime = {pauvre=>'', suffisante=>'', riche=>''} ;
+				my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''} ;
 				$rime = extrait_rimes($p_simple) ;
 				
 				# Nombre de langue
@@ -200,12 +207,13 @@ sub ajout_langue
 					else { $langues_filtre{$langue} = 1 ; }
 					$rand = $langues_filtre{$langue} ;
 				}
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, $num, $flex, $loc, $gent, $rand) ;
+				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand) ;
 			}
 		} else {
 			my $p = '' ;
 			my $p_simple = '' ;
 			my $r_p_simple = '' ;
+			my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''} ;
 			my $num = 1 ;
 			# Nombre dans la langue
 			if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
@@ -218,7 +226,7 @@ sub ajout_langue
 				else { $langues_filtre{$langue} = 1 ; }
 				$rand = $langues_filtre{$langue} ;
 			}
-			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $num, $flex, $loc, $gent, $rand) ;
+			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand) ;
 		}
 	}
 }

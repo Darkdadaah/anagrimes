@@ -18,13 +18,14 @@ use Exporter ;
 	section_prononciation
 	simple_prononciation
 	extrait_rimes
+	nombre_de_syllabes
 ) ;
 
 use strict ;
 use warnings ;
 use wiktio::basic ;
 
-my @voyelles = qw( a ɑ ɒ æ e ɛ ə i ɪ o œ ɔ u y ɯ ʊ ʌ ) ;
+my @voyelles = qw( a ɑ ɒ æ e ɛ ɜ ɝ ə i ɪ o œ ɔ u y ɯ ʊ ʌ ) ;
 push @voyelles, ('ɑ̃', 'ɛ̃', 'œ̃', 'ɔ̃') ;
 
 sub cherche_tables
@@ -498,6 +499,20 @@ sub extrait_rimes
 	}
 	
 	return \%rimes ;
+}
+
+sub nombre_de_syllabes
+{
+	my ($pron) = @_ ;
+	
+	return 0 if not $pron ;
+	
+	$pron =~ s/^[\. ˈ:]// ;
+	$pron =~ s/[\. ˈ:]$// ;
+	my @syllabes = split(/[\. ˈ:]+/, $pron) ;
+	my $nsyl = @syllabes ;
+	
+	return $nsyl ;
 }
 
 1 ;

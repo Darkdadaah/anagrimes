@@ -2,8 +2,8 @@
 
 use Digest::MD5;
 ############################
-my $force_update = 0 ;
-my $download = 1 ;
+my $force_update = 1 ;
+my $download = 0 ;
 my $compute = 1 ;
 my $updateserver = 1 ;
 ############################
