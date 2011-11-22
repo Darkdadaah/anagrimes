@@ -14,10 +14,12 @@ use Exporter ;
 @EXPORT = qw(
 	$log
 	special_log
+	$true $false
 ) ;
 
 @EXPORT_OK = qw(
 	$word_type
+	$word_type_syn
 	$level3
 	$level4
 	$langues_transcrites
@@ -27,6 +29,9 @@ use Exporter ;
 
 use strict ;
 use warnings ;
+
+our $true = 1 ;
+our $false = 0 ;
 
 our $log = 'log.txt' ;
 
@@ -218,12 +223,34 @@ our $word_type = {
 	# Désuets
 	'corrélatif' => 2,
 	'abr' => 2,
-	'cont' => 1,
+	'cont' => 2,
 	
 	# Beuh
 	'erreur' => 2,
 	'var-typo' => 2,
 	#'drv' => 2,
+} ;
+
+our $word_type_syn = {
+	'verbe' => 'verb',
+	'loc-verbe' => 'loc-verb',
+	'flex-verbe' => 'flex-verb',
+	'flex-loc-verbe' => 'flex-loc-verb',
+	'verbe-pr' => 'verb-pr',
+	'numér' => 'numéral',
+	'part' => 'particule',
+	'pref' => 'préf',
+	'adj' => 'adjectif',
+	'loc-adjectif' => 'loc-adj',
+	'flex-adjectif' => 'flex-adj',
+	'flex-loc-adjectif' => 'flex-loc-adj',
+	'adverbe' => 'adv',
+	'loc-adverbe' => 'loc-adv',
+	'flex-adverbe' => 'flex-adv',
+	'flex-loc-adverbe' => 'flex-loc-adv',
+	'prep' => 'prép',
+	'loc-prep' => 'loc-prép',
+	'flex-prep' => 'flex-prép',
 } ;
 
 our $level4 = {
@@ -244,6 +271,7 @@ our $level4 = {
 	'exp' => 1,
 	'compos' => 1,
 	'var' => 1,
+	'var-ortho' => 1,
 	'dial' => 1,
 	'trad' => 1,
 	'voc' => 1,

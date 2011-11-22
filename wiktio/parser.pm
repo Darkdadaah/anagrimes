@@ -19,7 +19,7 @@ use Exporter ;		# So that we can export functions and vars
 use strict ;
 use warnings ;
 use wiktio::basic ;
-use wiktio::basic 	qw( $level3 $word_type $level4 step ) ;
+use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step ) ;
 
 sub parseArticle
 {
@@ -119,7 +119,7 @@ sub printArticle
 
 sub parseLanguage
 {
-	my ( $article, $title ) = @_ ;
+	my ( $article, $title, $lang ) = @_ ;
 	die "Not an array (parseLanguage)\n" if not ref($article) eq 'ARRAY' ;
 	die "Empty array (parseLanguage)\n" if $#{$article} == -1 ;
 	
@@ -130,11 +130,11 @@ sub parseLanguage
 	$sections->{'prononciation'}  = () ;
 	$sections->{'voir'}  = () ;
 	$sections->{'references'}  = () ;
-	$sections->{'types'}  = {} ;
+	$sections->{'types'}  = {} ;	# Array
 	
 	my $line ;
 	
-	# HEAD
+	# Get the HEAD if any
 	while ( $line = shift @$article ) {
 		unless ( $line =~ /\{\{-.+?-[\|\}]/ ) {
 			push @{$sections->{'head'}}, $line ;
@@ -142,68 +142,81 @@ sub parseLanguage
 			last ;
 		}
 	}
-	# ETYM, TYPES?
-	my $level = '' ;
-	my $num = '' ;
-	if ($line and ($line =~ /\{\{-(.+?)-[\|\}]/ or $line =~ /\{\{-(.+?)-\|.+[\|\}]/)) {
-		$level = $1 ;
-		
-		# Initialize level3
-		# Normal level3?
-		if ( exists $level3->{$level} ) {
-			$sections->{$level3->{$level}} = () ;
-		# Word type?
-		} elsif ( exists $word_type->{$level} ) {
-			if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
-				$num = '-'.$1 ;
-			} else {
-				$num = '' ;
-			}
-			$sections->{type}->{$level.$num} = () ;
-		} else {
-			#print STDERR "[[$title]]	Level3 inexistant :\t$level\t$title\n" ;
-			special_log('level3', $title, $level) ;
-		}
-	} else {
-		# This article does not contain any level3 section
-		return $sections ;
-	}
 	
-	# continue to retrieve the sections
+	# Put back the line
+	unshift(@$article, $line) ;
+	
+	# Continue to retrieve the sections
+	my $level = '' ;
+	my $key = '' ;
+	
 	while ( $line = shift @$article ) {
-		# Another section?
-		if ( $line and ($line =~ /{{-(.+?)-[\|\}]/ or $line =~ /\{\{-(.+?)-\|.+[\|\}]/)) {
+		# Is it a new section?
+		if ( $line and $line =~ /\{\{-(.+?)-[\|\}]/ ) {
 			my $templevel = $1 ;
 			
+			# Any level3 header? (except type)
 			if ( exists $level3->{$templevel} ) {
 				$level = $templevel ;
-				$sections->{$level3->{$level}} = () ;
+				$key = '' ;
+				# Save
+				$sections->{$level3->{$level}}->{lines} = [] ;
 				next ;
 			}
-			elsif ( exists $word_type->{$templevel} ) {
-				if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
-					$num = '-'.$1 ;
+			
+			# Else supposedly a type
+			else {
+				my $type = $templevel ;
+				my ($flex, $loc) = ($false, $false) ;
+				# Detect "flexion"
+				if ($type =~ s/^flex-//) { $flex = $true ; } else { $flex = $false ; }
+				# Detect "locution"
+				if ($type =~ s/^loc-//) { $loc = $true ; } else { $loc = $false ; }
+				
+				# Is it a registered type3 header?
+				if ( exists $word_type->{$type} ) {
+					# Number (if any)
+					my $num = 1 ;
+					if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
+						$num = $1 ;
+					}
+					# Solve synonyms
+					$type = $word_type_syn->{$type} ? $word_type_syn->{$type} : $type ;
+					# Save
+					$key = $type . $num . $flex . $loc ;
+					$level = '' ;
+					special_log('level3error', $title, "$lang\t$templevel\t$key") if exists($sections->{type}->{$key}) ;
+					$sections->{type}->{$key}->{lines} = [] ;
+					$sections->{type}->{$key}->{flex} = $flex ;
+					$sections->{type}->{$key}->{loc} = $loc ;
+					$sections->{type}->{$key}->{num} = $num ;
+					$sections->{type}->{$key}->{type} = $type ;
+					next ;
+				# Level4: don't care, continue
+				} elsif (exists $level4->{$type}) {
+					#########################
+				# Unknown level3: log
 				} else {
-					$num = '' ;
+					$key = '' ;
+					$level = '' ;
+					special_log('level3', $title, "$templevel\t$type") ;
 				}
-				$level = $templevel ;
-				$sections->{type}->{$level.$num} = () ;
-				next ;
 			}
 		}
 		
-		# Continue this language
-		if ( exists $level3->{$level} ) {
-			push @{$sections->{$level3->{$level}}}, $line ;
+		# Retrieve text
+		# Level3 section text
+		if ( $level ) {
+			push @{ $sections->{ $level3->{$level} }->{lines} }, $line ;
 		}
-		# Word type?
-		elsif ( exists $word_type->{$level} ) {
-			push @{$sections->{type}->{$level.$num}}, $line ;
+		# Type section text
+		elsif ( $key ) {
+			push @{ $sections->{type}->{$key}->{lines} }, $line ;
 		}
 	}
 	
-	# Clean up
-	if ( $sections->{'etymologie'} and $#{$sections->{'etymologie'}} == 0 and ${$sections->{'etymologie'}}[0] =~ /\{\{ébauche-étym/ ) {
+	# Clean up "ébauches"
+	if ( $sections->{'etymologie'} and $#{$sections->{'etymologie'}->{lines}} == 0 and ${$sections->{'etymologie'}->{lines}}[0] =~ /\{\{ébauche-étym/ ) {
 		delete $sections->{'etymologie'} ;
 	}
 	

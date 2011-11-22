@@ -135,25 +135,29 @@ sub ajout_langue
 	
 	###############################################
 	# Travail sur la section de langue
-	my $lang_section = parseLanguage($section, $titre) ;
+	# Extrait les sections de niveau 3 : étymo, types, pron...
+	my $lang_section = parseLanguage($section, $titre, $langue) ;
 	
 	# Section prononciation?
-	my @prononciations = section_prononciation($lang_section->{'prononciation'}, $titre) ;
+	my @prononciations = section_prononciation($lang_section->{'prononciation'}->{lines}, $titre) ;
 	
+	# Analyse de chaque section de type
 	my @sections = keys %{$lang_section} ;
 	my @types = keys %{$lang_section->{'type'}} ;
 	foreach my $type (@types) {
-		next if $type eq 'erreur' ;
+		next if $type eq 'erreur' ;	# Pas prendre en compte les type erreurs
 		my %type_pron = () ;
 		my $gent = 0 ;
 		
-		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}, $langue, $titre) ;
+		# Récupère les différences prononciations de ce mot-type
+		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type) ;
 		
+		# Crée autant de lignes qu'il y a de prononciations distinctes (à améliorer)
 		foreach my $p (@$prons) {
 			$type_pron{$p} = 1 ;
 		}
 		
-		# Prononciations dispos?
+		# Tri des prononciations non redondantes
 		my @pron = () ;
 		if (keys %type_pron == 0) {
 			push @pron, @prononciations ;
@@ -161,31 +165,15 @@ sub ajout_langue
 			@pron = keys(%type_pron) ;
 		}
 		
-		# Si prononciations
-		my $type_nom = $type ;
-		my $num = 0 ;
-		my ($flex,$loc) = (0,0) ;
-		
-		# Nombre?
-		if ($type =~ /^(.+)-([0-9])$/) {
-			$type_nom = $1 ;
-			$num = $2 ;
-		}
-		# Flexion?
-		if ($type_nom =~ /^flex-(.+)$/) {
-			$type_nom = $1 ;
-			$flex = 1 ;
-		}
-		# Locution?
-		if ($type_nom =~ /^loc-(.+)$/) {
-			$type_nom = $1 ;
-			$loc = 1 ;
-		}
+		# Si prononciations : déterminer le type
+		my $flex = $lang_section->{'type'}->{$type}->{type} ;
+		my $loc = $lang_section->{'type'}->{$type}->{loc} ;
+		my $num = $lang_section->{'type'}->{$type}->{num} ;
+		my $type_nom = $lang_section->{'type'}->{$type}->{type} ;
 		
 		# gentile?
-		if ($type_nom eq 'nom' or $type_nom eq 'adj' or $type_nom eq 'loc-nom' or $type_nom eq 'loc-adj') {
-			$gent = is_gentile($lang_section->{'type'}->{$type}) ;
-# 			print "[[$titre]]\tgentilé (?)\n" if $gent ;
+		if ($type_nom eq 'nom' or $type_nom eq 'adj') {
+			$gent = is_gentile($lang_section->{'type'}->{$type}->{lines}) ;
 		}
 		
 		if (@pron) {
