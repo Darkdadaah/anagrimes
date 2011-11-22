@@ -166,7 +166,7 @@ sub ajout_langue
 		}
 		
 		# Si prononciations : déterminer le type
-		my $flex = $lang_section->{'type'}->{$type}->{type} ;
+		my $flex = $lang_section->{'type'}->{$type}->{flex} ;
 		my $loc = $lang_section->{'type'}->{$type}->{loc} ;
 		my $num = $lang_section->{'type'}->{$type}->{num} ;
 		my $type_nom = $lang_section->{'type'}->{$type}->{type} ;

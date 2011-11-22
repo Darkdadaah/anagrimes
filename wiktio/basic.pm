@@ -68,17 +68,11 @@ our $word_type = {
 	
 	# Noms
 	'nom' => 1,
-	'loc-nom' => 1,
-	'flex-nom' => 1,
-	'flex-loc-nom' => 1,
 	'nom-sciences' => 1,
 	'nom-pr' => 1,
-	'flex-nom-pr' => 1,
 	'marque' => 1,
 	'prénom' => 1,
-	'flex-prénom' => 1,
 	'nom-fam' => 1,
-	'flex-nom-fam' => 1,
 	
 	'nom-ni' => 1,
 	'nom-nu' => 1,
@@ -88,87 +82,53 @@ our $word_type = {
 	# Adjectif qualificatif
 	'adj' => 1,
 	'adjectif' => 1,
-	'loc-adj' => 1,
-	'flex-adj' => 1,
-	'flex-loc-adj' => 1,
-	'flex-adjectif' => 1,
 	
 	# Verbe
 	'verb' => 1,
 	'verbe' => 1,
-	'loc-verb' => 1,
-	'loc-verbe' => 1,
-	'flex-verb' => 1,
-	'flex-verbe' => 1,
-	'flex-loc-verb' => 1,
-	'flex-loc-verbe' => 1,
 	'verb-pr' => 1,
 	'verbe-pr' => 1,
 	'aux' => 1,
-	'flex-aux' => 1,
 	
 	# Adverbe
 	'adv' => 1,
 	'adverbe' => 1,
-	'loc-adv' => 1,
-	'flex-adv' => 1,
-	'flex-loc-adv' => 1,
 	'adv-pron' => 1,
 	'adv-rel' => 1,
 	'adv-int' => 1,
 	
 	# Conjonction
 	'conj' => 1,
-	'loc-conj' => 1,
-	'flex-conj' => 1,
 	'conj-coord' => 1,
 	
 	# Prépositions
 	'prep' => 1,
 	'prép' => 1,
-	'loc-prep' => 1,
-	'loc-prép' => 1,
-	'flex-prep' => 1,
-	'flex-prép' => 1,
 	
 	# Pronom
 	'pronom' => 1,
-	'loc-pronom' => 1,
-	'flex-pronom' => 1,
-	'flex-loc-pronom' => 1,
 	'pronom-def' => 1,
 	'pronom-déf' => 1,
 	'pronom-indef' => 1,
 	'pronom-indéf' => 1,
-	'flex-pronom-indéf' => 1,
 	'pronom-int' => 1,
-	'flex-pronom-int' => 1,
 	'pronom-pers' => 1,
-	'flex-pronom-pers' => 1,
 	'pronom-pos' => 1,
-	'flex-pronom-pos' => 1,
 	'pronom-refl' => 1,
 	'pronom-réfl' => 1,
 	'pronom-rel' => 1,
-	'flex-pronom-rel' => 1,
 	'pronom-dem' => 1,
 	'pronom-dém' => 1,
-	'flex-pronom-dém' => 1,
 	
 	# Adjectifs déterminants
 	'adj-dem' => 1,
 	'adj-dém' => 1,
-	'flex-adj-dém' => 1,
 	'adj-excl' => 1,
 	'adj-indef' => 1,
 	'adj-indéf' => 1,
-	'flex-adj-indéf' => 1,
 	'adj-int' => 1,
-	'flex-adj-int' => 1,
 	'adj-num' => 1,
-	'flex-adj-num' => 1,
 	'adj-pos' => 1,
-	'flex-adj-pos' => 1,
 	
 	# Articles
 	'art' => 1,
@@ -177,17 +137,10 @@ our $word_type = {
 	'art-indef' => 1,
 	'art-indéf' => 1,
 	'art-part' => 1,
-	'flex-art' => 1,
-	'flex-art-def' => 1,
-	'flex-art-déf' => 1,
-	'flex-art-indef' => 1,
-	'flex-art-indéf' => 1,
-	'flex-art-part' => 1,
 	
 	# Parties
 	'aff' => 1,
 	'suf' => 1,
-	'flex-suf' => 1,
 	'pref' => 1,
 	'préf' => 1,
 	'post' => 1,
@@ -207,13 +160,10 @@ our $word_type = {
 	# Exclamations
 	'interj' => 1,
 	'interjection' => 1,
-	'loc-interj' => 1,
-	'flex-interj' => 1,
 	'onoma' => 1,
 	
 	# Caractères
 	'lettre' => 1,
-	'flex-lettre' => 1,
 	'symb' => 1,
 	'symbole' => 1,
 	'class' => 1,
@@ -233,24 +183,13 @@ our $word_type = {
 
 our $word_type_syn = {
 	'verbe' => 'verb',
-	'loc-verbe' => 'loc-verb',
-	'flex-verbe' => 'flex-verb',
-	'flex-loc-verbe' => 'flex-loc-verb',
 	'verbe-pr' => 'verb-pr',
 	'numér' => 'numéral',
 	'part' => 'particule',
 	'pref' => 'préf',
 	'adj' => 'adjectif',
-	'loc-adjectif' => 'loc-adj',
-	'flex-adjectif' => 'flex-adj',
-	'flex-loc-adjectif' => 'flex-loc-adj',
 	'adverbe' => 'adv',
-	'loc-adverbe' => 'loc-adv',
-	'flex-adverbe' => 'flex-adv',
-	'flex-loc-adverbe' => 'flex-loc-adv',
 	'prep' => 'prép',
-	'loc-prep' => 'loc-prép',
-	'flex-prep' => 'flex-prép',
 } ;
 
 our $level4 = {
