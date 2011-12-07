@@ -171,7 +171,7 @@ sub parseLanguage
 				# Detect "flexion"
 				if ($type =~ s/^flex-//) { $flex = $true ; } else { $flex = $false ; }
 				# Detect "locution"
-				if ($type =~ s/^loc-//) { $loc = $true ; } else { $loc = $false ; }
+				if ($type =~ s/^loc-// or $type eq 'prov') { $loc = $true ; } else { $loc = $false ; }
 				
 				# Is it a registered type3 header?
 				if ( exists $word_type->{$type} ) {

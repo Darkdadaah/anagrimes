@@ -3,9 +3,9 @@
 use Digest::MD5;
 ############################
 my $force_update = 0 ;
-my $download = 0 ;
+my $download = 1 ;
 my $compute = 1 ;
-my $updateserver = 0 ;
+my $updateserver = 1 ;
 ############################
 
 my $optlangue = $ARGV[0] ;
