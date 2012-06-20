@@ -2,8 +2,8 @@
 
 use utf8 ;
 use open ':encoding(utf8)';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+binmode STDOUT, ":encoding(utf8)";
+binmode STDERR, ":encoding(utf8)";
 
 use strict ;
 use warnings ;

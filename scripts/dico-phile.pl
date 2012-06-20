@@ -114,10 +114,10 @@ sub article
 	}
 	
 	# Wikisource qualité
-#	my $quality = 0 ;
-#	if ($article->[0] =~ /<pagequality level="([012345])"/) {
-#		$quality = $1 ;
-#	}
+# 	my $quality = 0 ;
+# 	if ($article->[0] =~ /<pagequality level="([012345])"/) {
+# 		$quality = $1 ;
+# 	}
 	
 	my $line = join(' ', @$article) ;
 	my $mots_article = {} ;
@@ -182,7 +182,7 @@ sub article
 	# Save mots_article in the sqlfile
 	foreach my $m (keys %$mots_article) {
 		my @cols = ($m, $titre, $mots_article->{$m}) ;
-		#push @cols, $quality ;
+# 		push @cols, $quality ;
 		my $cols = join("\t", @cols) ;
 		print $sql "$cols\n" ;
 		$num_mots++ ;

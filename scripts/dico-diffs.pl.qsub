@@ -22,6 +22,6 @@ echo '' > $HOME/logs/diff/diff.e
 echo '' > $HOME/logs/diff/diff.o
 
 cd $HOME/scripts/anagrimes/scripts
-frfile=$HOME/data/dump/frwiktionary-20100330-pages-articles.xml
-enfile=$HOME/data/dump/enwiktionary-20100403-pages-articles.xml
-$HOME/scripts/anagrimes/scripts/diff.pl -i $frfile -I $enfile -l fr -L en -c en -o $HOME/data/listes/en_in_fr.txt
+frfile=$HOME/data/xml/frwiktionary.xml
+enfile=$HOME/data/xml/enwiktionary.xml
+$HOME/scripts/anagrimes/scripts/diff.pl -i $frfile -I $enfile -l fr -L en -c en -o $HOME/data/listes/diffs/en_in_fr.txt

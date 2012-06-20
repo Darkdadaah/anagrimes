@@ -1,0 +1,20 @@
+#! /bin/sh
+#$ -N anagrimes
+#$ -m e
+#$ -e $HOME/logs/anagrimes_tables.err
+#$ -o $HOME/logs/anagrimes_tables.out
+#$ -V
+#$ -l sql=1
+#$ -l fs-user-store=1
+#$ -l h_rt=24:00:00
+#$ -l virtual_free=128M
+#$ -v LANG=fr_FR.UTF-8
+
+# Reinit logs
+#echo '' > $HOME/logs/anagrimes_tables.err
+#echo '' > $HOME/logs/anagrimes_tables.out
+
+export PERL5LIB=$PERL5LIB:$HOME/scripts/anagrimes
+
+# Launch anagrimes update
+perl $HOME/scripts/anagrimes/scripts/anagrimes_updater.pl
