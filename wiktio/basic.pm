@@ -169,6 +169,7 @@ our $word_type = {
 	'class' => 1,
 	'numér' => 1,
 	'numéral' => 1,
+	'sinogramme' => 1,
 	
 	# Désuets
 	'corrélatif' => 2,
