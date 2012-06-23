@@ -77,12 +77,14 @@ sub init()
 	# Ordre des colonnes des tables
 	print STDERR 'REDIRECTS: titre, cible'."\n" ;
 	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n" ;
+	print STDERR 'TRANSCRITS: titre, transcrit, transcrit_plat, r_transcrit_plat'."\n" ;
 	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, rime_pauvre, rime_suffisante, rime_riche, rime_voyelle, num, flex, loc, gent, rand' . "\n" ;
 	print STDERR 'LANGUES: langue, num, num_min'."\n" ;
 	
 	# Initialisation des fichiers
 	open(REDIRECTS, "> $redirects") or die "Impossible d'initier $redirects: $!\n" ; close(REDIRECTS) ;
 	open(ARTICLES, "> $articles") or die "Impossible d'initier $articles : $!\n" ; close(ARTICLES) ;
+	open(TRANSCRITS, "> $transcrits") or die "Impossible d'initier $transcrits : $!\n" ; close(TRANSCRITS) ;
 	open(MOTS, "> $mots") or die "Impossible d'initier $mots : $!\n" ; close(MOTS) ;
 	open(LANGUES, "> $langues") or die "Impossible d'initier $langues : $!\n" ; close(LANGUES) ;
 }
@@ -108,6 +110,18 @@ sub ajout_article
 		print "Empty article.\n" ;
 	}
 	close(ARTICLES) ;
+}
+
+sub ajout_transcription
+{
+	open(TRANSCRITS, ">> $transcrits") or die "Impossible d'écrire $transcrits : $!\n" ;
+	
+	if (@_) {
+		print TRANSCRITS '"'.join('","', @_)."\"\n" ;
+	} else {
+		print "Empty article.\n" ;
+	}
+	close(TRANSCRITS) ;
 }
 
 sub ajout_mot
@@ -146,13 +160,13 @@ sub ajout_langue
 	my @types = keys %{$lang_section->{'type'}} ;
 	foreach my $type (@types) {
 		next if $type eq 'erreur' ;	# Pas prendre en compte les type erreurs
-		my %type_pron = () ;
 		my $gent = 0 ;
 		
 		# Récupère les différences prononciations de ce mot-type
 		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type) ;
 		
 		# Crée autant de lignes qu'il y a de prononciations distinctes (à améliorer)
+		my %type_pron = () ;
 		foreach my $p (@$prons) {
 			$type_pron{$p} = 1 ;
 		}
@@ -217,6 +231,20 @@ sub ajout_langue
 			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand) ;
 		}
 	}
+	
+	# Transcriptions éventuelles (jap seul pour tester)
+	if ($langue eq 'ja') {
+		my $transc = cherche_transcriptions($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type);
+		
+		# Transcriptions uniques (sans répétition)
+		my @transcu = keys %{ { map{$_ ne ''} @transc } };
+		
+		foreach my $t (sort @transcu) {
+			my $t_plat = lc(ascii_strict($t));
+			my $rt_plat = reverse($t_plat);
+			ajout_transcription($titre, $t, $tplat, $rt_plat);
+		}
+	}
 }
 
 ###################################
@@ -255,7 +283,6 @@ sub article
 	# Travail sur le titre
 	$mot{'titre_plat'} = lc(ascii_strict($titre)) ;
 	$mot{'anagramme_id'} = anagramme($titre) ;
-# 	delete $mot{'anagramme_id'} if length($mot{'anagramme_id'})==1 ;
 	
 	if ($mot{'titre_plat'}) {
 		##########################
