@@ -13,7 +13,7 @@ use lib '..' ;
 use wiktio::basic ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
-use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes) ;
+use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes) ;
 our %opt ;
 my $redirects = '' ;
 my $articles = '' ;
@@ -154,6 +154,7 @@ sub ajout_langue
 	
 	# Section prononciation?
 	my @prononciations = section_prononciation($lang_section->{'prononciation'}->{lines}, $titre) ;
+	my %transc = ();
 	
 	# Analyse de chaque section de type
 	my @sections = keys %{$lang_section} ;
@@ -230,20 +231,21 @@ sub ajout_langue
 			}
 			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand) ;
 		}
+		
+		# Transcriptions éventuelles (jap seul pour tester)
+		if ($langue eq 'ja') {
+			my $transc_type = cherche_transcription($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type);
+			foreach my $t (@$transc_type) {
+				$transc{$t}++;
+			}
+		}
 	}
 	
-	# Transcriptions éventuelles (jap seul pour tester)
-	if ($langue eq 'ja') {
-		my $transc = cherche_transcriptions($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type);
-		
-		# Transcriptions uniques (sans répétition)
-		my @transcu = keys %{ { map{$_ ne ''} @transc } };
-		
-		foreach my $t (sort @transcu) {
-			my $t_plat = lc(ascii_strict($t));
-			my $rt_plat = reverse($t_plat);
-			ajout_transcription($titre, $t, $tplat, $rt_plat);
-		}
+	# Calcul des transcriptions
+	foreach my $t (sort keys %transc) {
+		my $t_plat = lc(ascii_strict($t));
+		my $rt_plat = reverse($t_plat);
+		ajout_transcription($titre, $t, $t_plat, $rt_plat);
 	}
 }
 
@@ -289,11 +291,13 @@ sub article
 		# Sections
 		my $article_section = parseArticle($article, $titre) ;
 		
+		my $lang_ok = $false;
 		if ($opt{L}) {
 			my $langue = $opt{L} ;
 			my $langue_section = $article_section->{language}->{$langue} ;
 			if ($#{$langue_section}+1 > 0) {
 				ajout_langue($titre, $langue_section, $langue) ;
+				$lang_ok = $true;
 			}
 		} else {
 			foreach my $langue (keys %{$article_section->{language}}) {
@@ -301,7 +305,9 @@ sub article
 				next if not $langue_section ;
 				ajout_langue($titre, $langue_section, $langue) ;
 			}
+			$lang_ok = $true;
 		}
+		return if not $lang_ok;
 		
 		##########################
 		# Graphie
@@ -385,7 +391,7 @@ while(<DUMP>) {
 		if ($article[0] =~ /#redirect/i) {
 			######################################
 			# Traiter les redirects ici
-			redirect($title, \@article) ;
+			redirect($title, \@article) unless $opt{L};
 			######################################
 			$redirect++ ;
 		} else {
