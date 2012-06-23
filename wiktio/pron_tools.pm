@@ -15,6 +15,7 @@ use Exporter ;
 @ISA=('Exporter') ;
 @EXPORT_OK = qw(
 	cherche_prononciation
+	cherche_transcription
 	section_prononciation
 	simple_prononciation
 	extrait_rimes
@@ -201,7 +202,8 @@ sub cherche_prononciation
 	# Extrait les infos de toutes les tables
 	if (not $type =~ /^flex-/) {
 		my $tables = cherche_tables($lignes, $lang, $titre) ;
-	
+		
+		# TABLES EN FRANÇAIS - FRENCH
 		if ($lang eq 'fr') {
 			for (my $i=0; $i < @$tables; $i++) {
 				my $nom = $tables->[$i]->{'nom'} ;
@@ -359,6 +361,34 @@ sub cherche_prononciation
 	my @prononciations = keys %pron ;
 	@prononciations = sort (check_prononciation(\@prononciations, $titre)) ;
 	return \@prononciations ;
+}
+
+sub cherche_transcription
+{
+	my ($lignes, $lang, $titre, $type) = @_ ;
+	my $tables = cherche_tables($lignes, $lang, $titre) ;
+	
+	my %transcriptions = ();
+	
+	# TABLES EN JAPONAIS - JAPANESE
+	if ($lang eq 'ja') {
+		for (my $i=0; $i < @$tables; $i++) {
+			my $nom = $tables->[$i]->{'nom'} ;
+			my $arg = $tables->[$i]->{'arg'} ;
+			
+			# Table kanji, romaji, prononciation -> transcription !
+			# OBSOLETE mais encore utilisé
+			if ($nom eq 'ka') {
+				# 1 = kana
+				# 2 = transcription Hepburn
+				if ($arg->{2}) {
+					$transcriptions{$arg->{2}}++;
+				}
+			}
+		}
+	}
+	my @transcriptions = sort keys %transcriptions;
+	return \@transcriptions;
 }
 
 sub section_prononciation
