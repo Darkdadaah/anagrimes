@@ -35,8 +35,8 @@ sub cherche_tables
 	
 	my @tables = () ;
 	
-	if ($lang eq 'fr') {
-		print "[[$titre]]\t'$lang'\n" if ref($lignes) eq '' ;
+	#if ($lang eq 'fr') {
+		print STDERR "[[$titre]]\t'$lang'\n" if ref($lignes) eq '' ;
 		for (my $i=0 ; $i < @$lignes ; $i++) {
 			my $ligne = $lignes->[$i] ;
 			
@@ -102,7 +102,7 @@ sub cherche_tables
 						$table{'arg'}{$1} = $2 ;
 					# Numéro?
 					} else {
-						while ($table{'arg'}{$num}) {
+						while (defined($table{'arg'}{$num})) {
 							$num++ ;
 						}
 						$table{'arg'}{$num} = $texte ;
@@ -120,7 +120,7 @@ sub cherche_tables
 				push @tables, \%table ;
 			}
 		}
-	}
+	#}
 	
 	return \@tables ;
 }
@@ -383,6 +383,21 @@ sub cherche_transcription
 				# 2 = transcription Hepburn
 				if ($arg->{2}) {
 					$transcriptions{$arg->{2}}++;
+				}
+			} elsif ($nom eq 'trans') {
+				# 1 ou kanji 	Optionnel. Graphie en kanji si elle existe.
+				# kanji2 	Optionnel. Si il existe une variante orthographique ou des kanjis alternatifs.
+				# kanji3 	Optionnel. Pareil que le paramètre kanji2.
+				# 2 ou hira 	Optionnel. Graphie en hiragana
+				# 3 ou kata 	Optionnel. Graphie en katakana.
+				# 4 ou tr 	Optionnel. Transcription romaji utilisant la méthode Hepburn.
+				# 5 ou pron 	Optionnel. Prononciation en alphabet phonétique international (API).
+				
+				# Get transcription
+				if ($arg->{4}) {
+					$transcriptions{$arg->{4}}++;
+				} elsif ($arg->{tr}) {
+					$transcriptions{$arg->{tr}}++;
 				}
 			}
 		}
