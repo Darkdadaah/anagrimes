@@ -18,6 +18,8 @@ our %opt ;
 my $redirects = '' ;
 my $articles = '' ;
 
+our @bots_names = qw(Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ);
+
 # Defaut
 # $opt{i} = '' ;
 
@@ -39,6 +41,7 @@ sub usage
 	-p <str>  : pattern to search
 	-n <str>  : pattern to exclude
 	-S <str>  : use this namespace
+	-A <str>  : only edited by (one or several separated by a comma): bot,IP,user
 	
 	-s        : special (see script)
 	
@@ -56,12 +59,13 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:p:n:S:L:N:F:s', \%opt ) or usage() ;
+	getopts( 'hi:o:O:p:n:S:A:L:N:F:s', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	if (not $opt{F}) {
-		if (not $opt{s} and not $opt{p}) {
+		if (not $opt{s} and not $opt{p} and not $opt{A}) {
 			usage( "Pattern needed (-p)" ) ;
+			usage( "or Author needed (-A)" ) ;
 			usage( "Only 1 language option (-L|-N)" ) if $opt{L} and $opt{N} ;
 		}
 	}
@@ -198,13 +202,13 @@ sub read_article
 			$no_pattern = "<< $1 >> ($n)" ;
 			$no = 1 ;
 		}
-		if ($line =~ /($opt{p})/) {
+		if ($opt{p} and $line =~ /($opt{p})/) {
 			$count++ if not $no ;
 			$ok_pattern = "<< $1 >> ($n)" ;
 			$ok = 1 ;
 			$line =~ s/$opt{p}// ;
 		}
-		while ($line =~ /($opt{p})/) {
+		while ($opt{p} and $line =~ /($opt{p})/) {
 			$count++ if not $no ;
 			$ok_pattern .= "\t<< $1 >> ($n)" ;
 			$line =~ s/$opt{p}// ;
@@ -233,22 +237,81 @@ sub read_article
 init() ;
 
 # Connect
-open(DUMP, $opt{i}) or die "Couldn't open '$opt{i}': $!\n" ;
+# Open file (compressed or not)
+my $input = '';
+if ($opt{i} =~ /\.bz2$/) {
+	$input = "bzcat $opt{i} |";
+} elsif ($opt{i} =~ /\.gz$/) {
+	$input = "gunzip -c $opt{i} |";
+} elsif ($opt{i} =~ /\.7z$/) {
+	$input = "7z x -so $opt{i} 2>/dev/null |";
+} elsif ($opt{i} =~ /\.xml$/) {
+	$input = $opt{i};
+} else {
+	print STDERR "Error: unsupported file format or compression: $opt{i}\n";
+	exit(1);
+}
+open(DUMP, $input) or die "Couldn't open '$input': $!\n" ;
 my $title = '' ;
 my ($n, $redirect) = (0,0) ;
 my $complete_article = 0 ;
 my %already = () ;
 my @article = () ;
 my $count = {} ;
+my $keepauthor = 0;
+
+# Get author type list
+my %auth = ();
+for (split /,/, $opt{A}) {
+	$auth{'nouser'} = 1 if /^nousers?$/;
+}
 
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1 ;
+		$keepauthor = 0;
 		# Exclut toutes les pages en dehors de l'espace principal
 		if ($opt{S}) {
 			$title = '' if not $title =~ /^$opt{S}:/ ;
 		} else {
 			$title = '' if $title =~ /[:\/]/ ;
+		}
+		
+		# History: authors filter
+		if ($opt{A}) {
+			next if not $title;
+			my %authors = ();
+			my $mark = tell(DUMP);
+			HISTORY : while(<DUMP>) {
+				# User?
+				if (/<username>(.+?)<\/username>/) {
+					$authors{$1}++;
+				}
+				if ( /<revision>/ ) {
+					$mark = tell(DUMP) ;
+				}
+				# Woops, on est arrivé à la fin
+				elsif (/<\/page>/) {
+					last HISTORY ;
+				}
+			}
+			# Retour au début de la dernière version
+			seek(DUMP, $mark, 0) ;
+			
+			# Check authors
+			if ($auth{nouser}) {
+				for (keys %authors) {
+					# Check bots names
+					delete $authors{$_} if $_ ~~ @bots_names;
+					# Check IPs
+					#delete if $_ =~ /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
+					delete $authors{$_} if $_ =~ /:/;
+				}
+				# Usernames left?
+				if (keys %authors == 0) {
+					$keepauthor = 1;
+				}
+			}
 		}
 		
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
@@ -272,13 +335,14 @@ while(<DUMP>) {
 	}
 	if ($complete_article) {
 		if ($article[0] =~ /#redirect/i) {
+			print "*$title\n" if $keepauthor;
 			if ($opt{s}) {
 				my $target = $article[0] ;
 				$target =~ s/^.*\[\[(.+)\]\].*$/$1/ ;
 				chomp($target) ;
 				push @{$already{ lc($title) }}, "$title|]][[:$target|<sup>(<small>redirect</small>)</sup>" ;
 				$n++ ;
-				print "[$n] $title\n" if $n%500==0 ;
+				print STDERR "[$n] $title\n" if $n%500==0 ;
 				$title = '' ;
 				$redirect++ ;
 			} else {
@@ -289,10 +353,11 @@ while(<DUMP>) {
 				$redirect++ ;
 			}
 		} else {
+			print "$title\n" if $keepauthor;
 			if ($opt{s}) {
 				push @{$already{ lc($title) }}, "$title|" ;
 				$n++ ;
-				print "[$n] $title\n" if $n%500==0 ;
+				print STDERR "[$n] $title\n" if $n%500==0 ;
 				$title = '' ;
 			} else {
 				######################################
@@ -304,18 +369,18 @@ while(<DUMP>) {
 			}
 			######################################
 			$n++ ;
-			print "[$n] $title\n" if $n%10000==0 ;
+			print STDERR "[$n] $title\n" if $n%10000==0 ;
 		}
 		$complete_article = 0 ;
 	}
 }
 close(DUMP) ;
 
-print "Total = $n\n" ;
-print "Total_redirects = $redirect\n" ;
+print STDERR "Total = $n\n" ;
+print STDERR "Total_redirects = $redirect\n" ;
 
 if ($opt{s}) {
-	print "Recherche des doublons: " ;
+	print STDERR "Recherche des doublons: " ;
 	# Filter special
 	open(SPECIAL, ">> $opt{o}") or die("Couldn't write $opt{o}: $!\n") ;
 	my $space = '' ;
@@ -338,10 +403,10 @@ if ($opt{s}) {
 	}
 	close(SPECIAL) ;
 	my $total = keys %already ;
-	print "$total\n" ;
+	print STDERR "$total\n" ;
 } else {
 	foreach my $c (keys %$count) {
-		print "$c:\t$count->{$c}\n" ;
+		print STDERR "$c:\t$count->{$c}\n" ;
 	}
 }
 
