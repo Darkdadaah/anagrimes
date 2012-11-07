@@ -49,7 +49,7 @@ sub parseArticle
 			return $sections ;
 		}
 		# HEAD?
-		unless ( $line =~ /\{\{=(.+?)=\}\}/ ) {
+		unless ( $line =~ /^== *\{\{langue\|(.+?)\}\} *==$/ ) {
 			push @{$sections->{'head'}}, $line ;
 		} else {
 			$language = $1 ;
@@ -60,6 +60,8 @@ sub parseArticle
 	
 	# continue to retrieve the languages
 	while ($line = shift @$article) {
+		special_log('oldlevel2', $title) if $line =~ /\{\{=.+=\}\}/;
+		
 		# TAIL ?
 		if (
 		$line =~ /^\{\{clé de tri/
@@ -72,7 +74,7 @@ sub parseArticle
 		}
 		
 		# Another language?
-		elsif ( $line =~ /{{=(.+?)=}}/ ) {
+		elsif ( $line =~ /^== *{{langue\|(.+?)}} *==$/ ) {
 			$language = $1 ;
 			$sections->{'language'}->{$language} = () ;
 		
