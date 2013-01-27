@@ -53,15 +53,17 @@ sub special_log
 }
 
 our $level3 = {
-	'étym' => 'etymologie',
 	'étymologie' => 'etymologie',
-	'etym' => 'etymologie',	# Beuh
-	'éty' => 'etymologie',	# Beuh
-	'étyl' => 'etymologie',	# Beuh
+		'étym' => 'etymologie',
+		'etym' => 'etymologie',	# Beuh
+		'éty' => 'etymologie',	# Beuh
+		'étyl' => 'etymologie',	# Beuh
 	'pron' => 'prononciation',
 	'voir' => 'voir',
 	'anagr'  => 'anagrammes',
-	'réf'  => 'references',
+	'références'  => 'references',
+		'réf'  => 'references',
+		'ref'  => 'references',
 } ;
 
 our $word_type = {
@@ -69,7 +71,8 @@ our $word_type = {
 	# Noms
 	'nom' => 1,
 	'nom-sciences' => 1,
-	'nom-pr' => 1,
+	'nom-propre' => 1,
+		'nom-pr' => 1,
 	'marque' => 1,
 	'prénom' => 1,
 	'nom-fam' => 1,
@@ -80,19 +83,19 @@ our $word_type = {
 	'nom-npl' => 1,
 	
 	# Adjectif qualificatif
-	'adj' => 1,
 	'adjectif' => 1,
+		'adj' => 1,
 	
 	# Verbe
-	'verb' => 1,
 	'verbe' => 1,
-	'verb-pr' => 1,
+		'verb' => 1,
 	'verbe-pr' => 1,
+		'verb-pr' => 1,
 	'aux' => 1,
 	
 	# Adverbe
-	'adv' => 1,
 	'adverbe' => 1,
+		'adv' => 1,
 	'adv-pron' => 1,
 	'adv-rel' => 1,
 	'adv-int' => 1,
@@ -107,74 +110,78 @@ our $word_type = {
 	
 	# Pronom
 	'pronom' => 1,
-	'pronom-def' => 1,
 	'pronom-déf' => 1,
-	'pronom-indef' => 1,
+		'pronom-def' => 1,
 	'pronom-indéf' => 1,
+		'pronom-indef' => 1,
 	'pronom-int' => 1,
 	'pronom-pers' => 1,
 	'pronom-pos' => 1,
-	'pronom-refl' => 1,
 	'pronom-réfl' => 1,
+		'pronom-refl' => 1,
 	'pronom-rel' => 1,
-	'pronom-dem' => 1,
 	'pronom-dém' => 1,
+		'pronom-dem' => 1,
 	
 	# Adjectifs déterminants
-	'adj-dem' => 1,
 	'adj-dém' => 1,
+		'adj-dem' => 1,
 	'adj-excl' => 1,
-	'adj-indef' => 1,
 	'adj-indéf' => 1,
+		'adj-indef' => 1,
 	'adj-int' => 1,
 	'adj-num' => 1,
 	'adj-pos' => 1,
 	
 	# Articles
 	'art' => 1,
-	'art-def' => 1,
 	'art-déf' => 1,
-	'art-indef' => 1,
+		'art-def' => 1,
 	'art-indéf' => 1,
+		'art-indef' => 1,
 	'art-part' => 1,
 	
 	# Parties
 	'aff' => 1,
 	'suf' => 1,
-	'pref' => 1,
 	'préf' => 1,
+		'pref' => 1,
 	'post' => 1,
 	'inf' => 1,
 	'circonf' => 1,
-	'part' => 1,
 	'particule' => 1,
+		'part' => 1,
 	'radical' => 1,
 	'racine' => 1,
 	'part-num' => 1,
 	
 	# Phrases et locutions
 	'loc' => 1,
-	'loc-phr' => 1,
+	'phr' => 1,	# loc-phr
+		'phrase' => 1,
 	'prov' => 1,
 	
 	# Exclamations
-	'interj' => 1,
 	'interjection' => 1,
-	'onoma' => 1,
+		'interj' => 1,
+	'onomatopée' => 1,
+		'onom' -> 1,
+		'onoma' -> 1,
 	
 	# Caractères
 	'lettre' => 1,
-	'symb' => 1,
 	'symbole' => 1,
+		'symb' => 1,
 	'class' => 1,
-	'numér' => 1,
 	'numéral' => 1,
+	'numér' => 1,
 	'sinogramme' => 1,
 	
 	# Désuets
 	'corrélatif' => 2,
 	'abr' => 2,
 	'cont' => 2,
+	'sigle' => 2,
 	
 	# Beuh
 	'erreur' => 2,
@@ -195,9 +202,12 @@ our $word_type_syn = {
 
 our $level4 = {
 	'ortho-alt' => 1,
-	'syn' => 1,
+	'ortho-arch' => 1,
+	'synonymes' => 1,
+		'syn' => 1,
 	'q-syn' => 1,
 	'ant' => 1,
+		'anto' => 1,
 	'gent' => 1,
 	'hyper' => 1,
 	'hypo' => 1,
@@ -206,20 +216,34 @@ our $level4 = {
 	'méro' => 1,
 	'mero' => 1,
 	'drv' => 1,
+		'dérivés' => 1,
 	'drv-int' => 1,
 	'apr' => 1,
+		'app' => 1,
 	'exp' => 1,
 	'compos' => 1,
 	'var' => 1,
 	'var-ortho' => 1,
+	'dimin' => 1,	# Diminutif -< prénom
+	'nom-vern' => 1, # Nom vernaculaire
 	'dial' => 1,
 	'trad' => 1,
 	'voc' => 1,
 	'note' => 1,
+		# alias rem
+		# alias notes
 	'homo' => 1,
-	'paro' => 1,
+		'homophones' => 1,
+	'paronymes' => 1,
+		'paro' => 1,
 	'anagr' => 1,
+		'anagrammes' => 1 
 	'abrév' => 1,
+		'abrev' => 1;
+	'trans' => 1,	# For numbers only
+	'hist' => 1,	# sub étymologie
+	'faux-amis' => 1,
+	'faux-prov' => 1,
 } ;
 
 our $langues_transcrites = {
