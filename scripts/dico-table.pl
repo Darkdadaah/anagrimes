@@ -74,6 +74,8 @@ sub init()
 	$langues = $opt{o} ;
 	$langues =~ s/^(.+?)(\.[a-z0-9]+)$/$1_langues$2/ ;
 	
+	print STDERR "Files in $opt{o}\n";
+	
 	# Ordre des colonnes des tables
 	print STDERR 'REDIRECTS: titre, cible'."\n" ;
 	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n" ;
