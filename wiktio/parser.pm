@@ -74,7 +74,7 @@ sub parseArticle
 		}
 		
 		# Another language?
-		elsif ( $line =~ /^== *{{langue\|(.+?)}} *==$/ ) {
+		elsif ( $line =~ /^== *\{\{langue\|(.+?)\}\} *==$/) {
 			$language = $1 ;
 			$sections->{'language'}->{$language} = () ;
 		
