@@ -165,8 +165,8 @@ our $word_type = {
 	'interjection' => 1,
 		'interj' => 1,
 	'onomatopée' => 1,
-		'onom' -> 1,
-		'onoma' -> 1,
+		'onom' => 1,
+		'onoma' => 1,
 	
 	# Caractères
 	'lettre' => 1,
@@ -237,9 +237,9 @@ our $level4 = {
 	'paronymes' => 1,
 		'paro' => 1,
 	'anagr' => 1,
-		'anagrammes' => 1 
+		'anagrammes' => 1,
 	'abrév' => 1,
-		'abrev' => 1;
+		'abrev' => 1,
 	'trans' => 1,	# For numbers only
 	'hist' => 1,	# sub étymologie
 	'faux-amis' => 1,
