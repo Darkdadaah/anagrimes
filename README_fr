@@ -1,3 +1,7 @@
+Cet outil est appelé "Anagrimes" (de anagrammes + rimes) et est utilisé pour extraire des informations des dumps de projets Wiktionary.
+
+Il a été développé principalement pour la version française (Wiktionnaire).
+
 Liste des outils de base :
 * dico-diffs.pl = différences d'articles entre deux dumps de Wiktionary de langues différentes
 * dico-genie.pl = création d'un dico xml simple à partir d'un dump de Wiktionary fr (INCOMPLET)
