@@ -70,7 +70,7 @@ sub recherche
 	my $recherche = '' ;
 	
 	if ($wiktlang eq 'fr') {
-		$recherche = '\{\\{='.$lang.'=\}\}' ;
+		$recherche = '\{\{langue\|'.$lang.'\}\}' ;
 	} elsif ($wiktlang eq 'en') {
 		$recherche = "^== *$languages->{$wiktlang}->{$lang} *==" ;
 	} else {
