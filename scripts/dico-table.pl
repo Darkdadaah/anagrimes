@@ -19,7 +19,7 @@ use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_pr
 
 # Output files:
 my %output_files = (
-'redirect' => '',
+'redirects' => '',
 'articles' => '',
 'transcrits' => '',
 'mots' => '',
@@ -93,7 +93,7 @@ sub add_to_file
 {
 	my ($type, $line) = @_;
 	
-	open(TYPE, ">> $output_files{$type}") or die "Impossible d'écrire $output_files{$type}: $!\n";
+	open(TYPE, ">> $output_files{$type}") or die "Impossible d'écrire $output_files{$type} (type $type): $!\n";
 	print TYPE '"' . join( '","' , @$line) . "\"\n";	# Print line in csv style: "A","B","C"\n
 	close(TYPE);
 }
@@ -188,7 +188,7 @@ sub ajout_langue
 					$rand = $langues_filtre{$langue} ;
 				}
 				my @word_line = ($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
-				add_to_file('mot', \@word_line);
+				add_to_file('mots', \@word_line);
 			}
 		} else {
 			my $p = '' ;
@@ -208,7 +208,7 @@ sub ajout_langue
 				$rand = $langues_filtre{$langue} ;
 			}
 			my @word_line = ($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
-			add_to_file('mot', \@word_line);
+			add_to_file('mots', \@word_line);
 		}
 		
 		# Transcriptions éventuelles (jap seul pour tester)
@@ -249,7 +249,7 @@ sub redirect
 	}
 	
 	my @redirect_line = ($titre, $cible);
-	add_to_file('redirect', \@redirect_line);
+	add_to_file('redirects', \@redirect_line);
 }
 
 ###################################
@@ -316,7 +316,7 @@ sub article
 			}
 		}
 		my @article_line = ($titre, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'});
-		add_to_file('article', \@article_line) ;
+		add_to_file('articles', \@article_line) ;
 	}
 }
 
