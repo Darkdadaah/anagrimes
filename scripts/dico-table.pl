@@ -1,28 +1,35 @@
 #!/usr/bin/perl -w
 
+use strict ;
+use warnings ;
+use Getopt::Std ;
+
+# Need utf8 compatibility for input/outputs
 use utf8 ;
 use open ':encoding(utf8)';
 binmode STDOUT, ":encoding(utf8)";
 binmode STDERR, ":encoding(utf8)";
 
-use strict ;
-use warnings ;
-use Getopt::Std ;
-
+# Useful Anagrimes libraries
 use lib '..' ;
 use wiktio::basic ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes) ;
-our %opt ;
-my $redirects = '' ;
-my $articles = '' ;
-my $transcrits = '' ;
-my $mots = '' ;
-my $langues = '' ;
 
-my %langues_total = () ;
-my %langues_filtre = () ;
+# Output files:
+my %output_files = (
+'redirect' => '',
+'articles' => '',
+'transcrits' => '',
+'mots' => '',
+'langues' => '',
+);
+
+my %langues_total = ();
+my %langues_filtre = ();
+
+our %opt ;	# Getopt options
 
 #################################################
 # Message about this program and how to use it
@@ -31,17 +38,17 @@ sub usage
 	print STDERR "[ $_[0] ]\n" if $_[0] ;
 	print STDERR << "EOF";
 	
-	Ce script extrait des articles du Wiktionnaire et créé des tables.
+	This script extract data from a Wiktionary dump and create tables that can be imported in an SQL database.
+	Right now the only version supported is the French Wiktionary (Wiktionnaire).
 	
 	usage: $0 -i fr-wikt.xml -o fr-wikt_table [-L fr]
 	
 	-h        : this (help) message
-	-i <path> : dump path
-	-o <path> : output path
-	-L <code> : language code to extract alone (2 or 3 letters)
+	-i <path> : input dump path (compressed or not)
+	-o <path> : output path (this needs to be a path + prefix of the file names that will be created: path/filename)
 	
-	-l <path> : special log_files
-	
+	-L <code> : language code to extract alone (2 or 3 letters) [optional]
+	-l <path> : special log_files (like -o path + prefix). Those files log specific errors defined in the parser.
 EOF
 	exit ;
 }
@@ -50,99 +57,67 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'i:o:L:l:', \%opt ) or usage() ;
-	usage() if $opt{h} ;
+	getopts( 'i:o:L:l:', \%opt ) or usage();
+	usage() if $opt{h};
 	
-	$log = $opt{l} if $opt{l} ;
+	$log = $opt{l} if $opt{l};
 	
-	usage( "Dump path needed (-i)" ) if not $opt{i} ;
-	usage( "Output file path needed (-o)" ) if not $opt{o} ;
-	$opt{o} .= '.csv' if not $opt{o} =~ /\.[a-z0-9]+$/ ;
+	usage( "Dump path needed (-i)" ) if not $opt{i};
+	usage( "Output file path needed (-o)" ) if not $opt{o};
 	
-	$redirects = $opt{o} ;
-	$redirects =~ s/^(.+?)(\.[a-z0-9]+)$/$1_redirects$2/ ;
-	
-	$articles = $opt{o} ;
-	$articles =~ s/^(.+?)(\.[a-z0-9]+)$/$1_articles$2/ ;
-	
-	$transcrits = $opt{o} ;
-	$transcrits =~ s/^(.+?)(\.[a-z0-9]+)$/$1_transcrits$2/ ;
-	
-	$mots = $opt{o} ;
-	$mots =~ s/^(.+?)(\.[a-z0-9]+)$/$1_mots$2/ ;
-	
-	$langues = $opt{o} ;
-	$langues =~ s/^(.+?)(\.[a-z0-9]+)$/$1_langues$2/ ;
-	
+	# Prepare output file path
+	$opt{o} .= '.csv' if not $opt{o} =~ /\.[a-z0-9]+$/;
 	print STDERR "Files in $opt{o}\n";
 	
-	# Ordre des colonnes des tables
-	print STDERR 'REDIRECTS: titre, cible'."\n" ;
-	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n" ;
-	print STDERR 'TRANSCRITS: titre, transcrit, transcrit_plat, r_transcrit_plat'."\n" ;
-	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, rime_pauvre, rime_suffisante, rime_riche, rime_voyelle, num, flex, loc, gent, rand' . "\n" ;
-	print STDERR 'LANGUES: langue, num, num_min'."\n" ;
+	# Prepare output files
+	foreach my $type (keys %output_files) {
+		# Name of the file for this type
+		$output_files{$type} = $opt{o};
+		$output_files{$type} =~ s/^(.+?)(\.[a-z0-9]+)$/$1_$type$2/;
+		
+		# Init the file
+		open(TYPE, "> $output_files{$type}") or die "Impossible d'initier $output_files{$type}: $!\n";
+		close(TYPE);
+	}
 	
-	# Initialisation des fichiers
-	open(REDIRECTS, "> $redirects") or die "Impossible d'initier $redirects: $!\n" ; close(REDIRECTS) ;
-	open(ARTICLES, "> $articles") or die "Impossible d'initier $articles : $!\n" ; close(ARTICLES) ;
-	open(TRANSCRITS, "> $transcrits") or die "Impossible d'initier $transcrits : $!\n" ; close(TRANSCRITS) ;
-	open(MOTS, "> $mots") or die "Impossible d'initier $mots : $!\n" ; close(MOTS) ;
-	open(LANGUES, "> $langues") or die "Impossible d'initier $langues : $!\n" ; close(LANGUES) ;
+	# Print columns order so that the user know what is written where (should not be hard coded like that...)
+	print STDERR 'REDIRECTS: titre, cible'."\n";
+	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n";
+	print STDERR 'TRANSCRITS: titre, transcrit, transcrit_plat, r_transcrit_plat'."\n";
+	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, rime_pauvre, rime_suffisante, rime_riche, rime_voyelle, num, flex, loc, gent, rand' . "\n";
+	print STDERR 'LANGUES: langue, num, num_min'."\n";
 }
 
-sub ajout_redirect
+# Write to the various output files
+sub add_to_file
 {
-	open(REDIRECTS, ">> $redirects") or die "Impossible d'écrire $redirects: $!\n" ;
-	print REDIRECTS '"'.$_[0].'"' ;
-	for (my $i=1; $i<@_; $i++) {
-		print REDIRECTS ',"'.$_[$i].'"' ;
-	}
-	print REDIRECTS "\n" ;
-	close(REDIRECTS) ;
+	my ($type, $line) = @_;
+	
+	open(TYPE, ">> $output_files{$type}") or die "Impossible d'écrire $output_files{$type}: $!\n";
+	print TYPE '"' . join( '","' , @$line) . "\"\n";	# Print line in csv style: "A","B","C"\n
+	close(TYPE);
 }
 
-sub ajout_article
+sub add_to_file_langues
 {
-	open(ARTICLES, ">> $articles") or die "Impossible d'écrire $articles : $!\n" ;
-	
-	if (@_) {
-		print ARTICLES '"'.join('","', @_)."\"\n" ;
-	} else {
-		print "Empty article.\n" ;
+	my ($line) = @_;
+	open(LANG, "> $output_files{langues}") or die "Can't write $output_files{langues}: $!\n";
+	foreach my $l (sort keys(%langues_total)) {
+		my $filtre = $langues_filtre{$l} ? $langues_filtre{$l} : 0 ;
+		my @lang_line = ($l, $langues_total{$l}, $filtre);
+		print LANG '"' . join( '","' , @lang_line) . "\"\n";	# Print line in csv style: "A","B","C"\n
 	}
-	close(ARTICLES) ;
+	close(LANG);
 }
 
-sub ajout_transcription
+sub chronometer_end
 {
-	open(TRANSCRITS, ">> $transcrits") or die "Impossible d'écrire $transcrits : $!\n" ;
+	my ($past) = @_;
+	my $diff = time() - $past;
+	my $mDiff = int($diff / 60);
+	my $sDiff = sprintf("%02d", $diff - 60 * $mDiff);
 	
-	if (@_) {
-		print TRANSCRITS '"'.join('","', @_)."\"\n" ;
-	} else {
-		print "Empty article.\n" ;
-	}
-	close(TRANSCRITS) ;
-}
-
-sub ajout_mot
-{
-	open(MOTS, ">> $mots") or die "Impossible d'écrire $mots : $!\n" ;
-# 	print "Ajoute mot $_[0]\n" ;
-	my @ligne = () ;
-	
-	push @ligne, '"' . $_[0] . '"' ;
-	for (my $i=1; $i<@_; $i++) {
-		# Number?
-		#if ($_[$i] =~ /^[0-9]+$/) {
-		#	push @ligne, $_[$i] ;
-		#} else
-			push @ligne, '"' . $_[$i] . '"' ;
-		#}
-	}
-	print MOTS join(',', @ligne) . "\n" ;
-	close(MOTS) ;
+	print STDERR "diff = $diff -> $mDiff\:$sDiff\n";
 }
 
 sub ajout_langue
@@ -212,7 +187,8 @@ sub ajout_langue
 					else { $langues_filtre{$langue} = 1 ; }
 					$rand = $langues_filtre{$langue} ;
 				}
-				ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand) ;
+				my @word_line = ($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
+				add_to_file('mot', \@word_line);
 			}
 		} else {
 			my $p = '' ;
@@ -231,7 +207,8 @@ sub ajout_langue
 				else { $langues_filtre{$langue} = 1 ; }
 				$rand = $langues_filtre{$langue} ;
 			}
-			ajout_mot($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand) ;
+			my @word_line = ($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
+			add_to_file('mot', \@word_line);
 		}
 		
 		# Transcriptions éventuelles (jap seul pour tester)
@@ -247,7 +224,8 @@ sub ajout_langue
 	foreach my $t (sort keys %transc) {
 		my $t_plat = lc(ascii_strict($t));
 		my $rt_plat = reverse($t_plat);
-		ajout_transcription($titre, $t, $t_plat, $rt_plat);
+		my @transcript_line = (($titre, $t, $t_plat, $rt_plat));
+		add_to_file('transcrits', \@transcript_line);
 	}
 }
 
@@ -270,7 +248,8 @@ sub redirect
 		map { chomp; print STDERR "'$_'\n" ; } @$article ;
 	}
 	
-	ajout_redirect($titre, $cible) ;
+	my @redirect_line = ($titre, $cible);
+	add_to_file('redirect', \@redirect_line);
 }
 
 ###################################
@@ -336,7 +315,8 @@ sub article
 				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
 			}
 		}
-		ajout_article($titre, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'}) ;
+		my @article_line = ($titre, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'});
+		add_to_file('article', \@article_line) ;
 	}
 }
 
@@ -344,7 +324,7 @@ sub article
 # MAIN
 init() ;
 
-my $past = time() ;
+my $past = time() ;	# Chronometer start
 
 open(DUMP, dump_input($opt{i})) or die("Couldn't open '$opt{i}': $!\n");
 my $title = '';
@@ -354,66 +334,58 @@ my @article = ();
 $| = 1;
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
-		$title = $1 ;
-		# Exclut toutes les pages en dehors de l'espace principal
-		$title = '' if $title =~ /[:\/]/ ;
+		$title = $1;
+		$title = '' if $title =~ /[:\/]/; # Exclude all articles outside of the main namespace
 	
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
-		@article = () ;
-		push @article, "$1\n" ;
-		$complete_article = 1 ;
+		@article = ();
+		push @article, "$1\n";
+		$complete_article = 1;
 		
 	} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
-		@article = () ;
-		push @article, "$1\n" ;
+		@article = ();
+		push @article, "$1\n";
 		while ( <DUMP> ) {
-			next if /^\s+$/ ;
+			next if /^\s+$/;
 			if ( /^(.*?)<\/text>/ ) {
-				push @article, "$1\n" ;
-				last ;
+				push @article, "$1\n";
+				last;
 			} else {
-				push @article, $_ ;
+				push @article, $_;
 			}
 		}
-		$complete_article = 1 ;
+		$complete_article = 1;
 	}
 	if ($complete_article) {
 		if ($article[0] =~ /#redirect/i) {
 			######################################
-			# Traiter les redirects ici
+			# REDIRECTIONS are treated here
 			redirect($title, \@article) unless $opt{L};
 			######################################
-			$redirect++ ;
+			$redirect++;
 		} else {
 			######################################
-			# Traiter les articles ici
-			article($title, \@article) ;
+			# ARTICLES are treated here
+			article($title, \@article);
 			######################################
 			$n++ ;
-			printf STDERR "%7d articles traités\r", $n if $n % 1000 == 0 ;
+			printf STDERR "%7d articles\r", $n if $n % 1000 == 0;
 		}
-		$complete_article = 0 ;
-		$title = '' ;
-		@article = () ;
+		$complete_article = 0;
+		$title = '';
+		@article = ();
 	}
 }
-$| = 0 ;
-close(DUMP) ;
+$| = 0;
+close(DUMP);
 
-# Print the langues list
-open(LANGUES, "> $langues") or die "Impossible d'écrire $langues : $!\n" ;
-foreach my $l (sort keys(%langues_total)) {
-	my $filtre = $langues_filtre{$l} ? $langues_filtre{$l} : 0 ;
-	print LANGUES "\"$l\",\"$langues_total{$l}\",\"$filtre\"\n" ;
-}
-close(LANGUES) ;
+# Print the language list
+add_to_file_language();
 
-print "Total = $n\n" ;
-print "Total_redirects = $redirect\n" ;
+# Lastly, some stats
+print "Total = $n\n";
+print "Total_redirects = $redirect\n";
+chronometer_end($past);
 
-my $diff = time() - $past;
-my $mDiff = int($diff / 60);
-my $sDiff = sprintf("%02d", $diff - 60 * $mDiff);
-print "diff = $diff -> $mDiff\:$sDiff\n";
 
 __END__
