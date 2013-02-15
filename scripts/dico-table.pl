@@ -98,7 +98,7 @@ sub add_to_file
 	close(TYPE);
 }
 
-sub add_to_file_langues
+sub add_to_file_lang
 {
 	my ($line) = @_;
 	open(LANG, "> $output_files{langues}") or die "Can't write $output_files{langues}: $!\n";
@@ -282,7 +282,7 @@ sub parse_language_sections
 			@pron = keys(%type_pron);
 		}
 		
-		# Two cases: if there are severy pronunciations, or no pronunciation at all
+		# Two cases: if there are several pronunciations, or no pronunciation at all
 		
 		# >=1 prononciation? Add one entry for each one (not very good, but ok for now)
 		if (@pron) {
@@ -427,7 +427,7 @@ $| = 0;
 close(DUMP);
 
 # Print the language list
-add_to_file_language();
+add_to_file_lang();
 
 # Lastly, some stats
 print "Total = $n\n";
