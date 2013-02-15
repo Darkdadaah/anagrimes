@@ -5,6 +5,9 @@ use strict ;
 use warnings ;
 use Getopt::Std ;
 
+use lib '..' ;
+use wiktio::basic ;
+
 use utf8 ;
 use Encode qw(decode encode) ;
 use open IO => ':utf8';
@@ -55,7 +58,7 @@ sub get_list
 {
 	my ($input) = @_;
 	my %list = ();
-	return \%list if not -s $input;
+	return \%list if not $input or not -s $input;
 	
 	open(LIST, $input) or die "Couldn't open '$input': $!\n";
 	while(<LIST>) {
@@ -104,22 +107,7 @@ sub words
 # MAIN
 init() ;
 
-# Connect
-# Open file (compressed or not)
-my $input = '';
-if ($opt{i} =~ /\.bz2$/) {
-	$input = "bzcat $opt{i} |";
-} elsif ($opt{i} =~ /\.gz$/) {
-	$input = "gunzip -c $opt{i} |";
-} elsif ($opt{i} =~ /\.7z$/) {
-	$input = "7z x -so $opt{i} 2>/dev/null |";
-} elsif ($opt{i} =~ /\.xml$/) {
-	$input = $opt{i};
-} else {
-	print STDERR "Error: unsupported file format or compression: $opt{i}\n";
-	exit(1);
-}
-open(DUMP, $input) or die "Couldn't open '$input': $!\n" ;
+open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n" ;
 my $title = '' ;
 my ($n, $word_count, $redirect) = (0,0,0) ;
 my $complete_article = 0 ;

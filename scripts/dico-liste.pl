@@ -12,6 +12,7 @@ binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
 use lib '..' ;
+use wiktio::basic ;
 use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
 use wiktio::parser		qw(parseArticle parseLanguage parseType) ;
 our %opt ;
@@ -261,22 +262,7 @@ sub read_article
 # MAIN
 init() ;
 
-# Connect
-# Open file (compressed or not)
-my $input = '';
-if ($opt{i} =~ /\.bz2$/) {
-	$input = "bzcat $opt{i} |";
-} elsif ($opt{i} =~ /\.gz$/) {
-	$input = "gunzip -c $opt{i} |";
-} elsif ($opt{i} =~ /\.7z$/) {
-	$input = "7z x -so $opt{i} 2>/dev/null |";
-} elsif ($opt{i} =~ /\.xml$/) {
-	$input = $opt{i};
-} else {
-	print STDERR "Error: unsupported file format or compression: $opt{i}\n";
-	exit(1);
-}
-open(DUMP, $input) or die "Couldn't open '$input': $!\n" ;
+open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n" ;
 my $title = '' ;
 my ($n, $redirect) = (0,0) ;
 my $complete_article = 0 ;
@@ -287,8 +273,10 @@ my $keepauthor = 0;
 
 # Get author type list
 my %auth = ();
-for (split /,/, $opt{A}) {
-	$auth{'nouser'} = 1 if /^nousers?$/;
+if ($opt{A}) {
+	for (split /,/, $opt{A}) {
+		$auth{'nouser'} = 1 if /^nousers?$/;
+	}
 }
 
 while(<DUMP>) {

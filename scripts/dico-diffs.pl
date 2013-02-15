@@ -85,7 +85,8 @@ sub getWiktionaryList
 	my ($file, $recherche) = @_ ;
 	my $list = {} ;
 	
-	open(DUMP, $file) or die "Couldn't open '$file': $!\n" ;
+	
+	open(DUMP, dump_input($file)) or die "Couldn't open '$file': $!\n" ;
 	
 	my $title = '' ;
 	while(my $line = <DUMP>) {

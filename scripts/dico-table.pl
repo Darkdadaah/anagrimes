@@ -346,19 +346,7 @@ init() ;
 
 my $past = time() ;
 
-# Open file (compressed or not)
-my $input = '';
-if ($opt{i} =~ /\.bz2$/) {
-	$input = "bzcat $opt{i} |";
-} elsif ($opt{i} =~ /\.gz$/) {
-	$input = "gunzip -c $opt{i} |";
-} elsif ($opt{i} =~ /\.xml$/) {
-	$input = $opt{i};
-} else {
-	print STDERR "Error: unsupported file format or compression: $opt{i}\n";
-	exit(1);
-}
-open(DUMP, $input) or die("Couldn't open '$input': $!\n");
+open(DUMP, dump_input($opt{i})) or die("Couldn't open '$opt{i}': $!\n");
 my $title = '';
 my ($n, $redirect) = (0,0);
 my $complete_article = 0;

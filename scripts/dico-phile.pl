@@ -11,6 +11,7 @@ binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
 use lib '..' ;
+use wiktio::basic ;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation) ;
@@ -223,7 +224,7 @@ my $past = time() ;
 #close(DICO) ;
 
 # Read dump
-open(DUMP, $opt{i}) or die "Couldn't open '$opt{i}': $!\n" ;
+open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n" ;
 my $title = '' ;
 my $n = 0 ;
 my $complete_article = 0 ;

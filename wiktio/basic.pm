@@ -14,6 +14,7 @@ use Exporter ;
 @EXPORT = qw(
 	$log
 	special_log
+	dump_input
 	$true $false
 ) ;
 
@@ -38,6 +39,7 @@ our $log = 'log.txt' ;
 sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n" } ;
 sub stepl { print STDERR $_[0] ? "$_[0]" : "" } ;
 
+# Log specific errors in separate files
 sub special_log
 {
 	my ($nom, $titre, $texte, $other) = @_ ;
@@ -50,6 +52,27 @@ sub special_log
 	$raw_texte .= "\t($other)" if $other ;
 	print LOG "* [[$titre]]\t$raw_texte\n" ;
 	close(LOG) ;
+}
+
+# Change the input to automatically handle file compression
+sub dump_input
+{
+	my $infile = shift;
+	
+	# Open file (compressed or not)
+	my $input = '';
+	if ($infile =~ /\.bz2$/) {
+		$input = "bzcat $infile |";
+	} elsif ($infile =~ /\.gz$/) {
+		$input = "gunzip -c $infile |";
+	} elsif ($infile =~ /\.xml$/) {
+		$input = $infile;
+	} else {
+		print STDERR "Error: unsupported dump file format or compression: $infile\n";
+		exit(1);
+	}
+	
+	return $input;
 }
 
 our $level3 = {
