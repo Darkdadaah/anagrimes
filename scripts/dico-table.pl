@@ -293,85 +293,27 @@ sub parse_language_sections
 		
 		# Two cases: if there are several pronunciations, or no pronunciation at all
 		
+		my %word_values = (
+			'titre' => $title,
+			'langue' => $lang,
+			'type' => $type_nom,
+			'num' => $num,
+			'flex' => $flex,
+			'loc' => $loc,
+			'gent' => $gent,
+		);
+		
 		# >=1 prononciation? Add one entry for each one (not very good, but ok for now)
 		if (@pron) {
-			foreach my $p (@pron) {
-				my $p_simple = simple_prononciation($p);
-				my $r_p_simple = reverse($p_simple);
-				my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''};
-				$rime = extrait_rimes($p_simple);
-				
-				# Nombre de langue
-				if ($lang_total{$lang}) { $lang_total{$lang}++; }
-				else { $lang_total{$lang} = 1; }
-				
-				# Nombre dans la langue (filtré)
-				my $rand = 0;
-				if (not $gent and not $flex and $type ne 'nom-pr' and not $title =~ /[0-9]/) {
-					if ($lang_filter{$lang}) { $lang_filter{$lang}++; }
-					else { $lang_filter{$lang} = 1; }
-					$rand = $lang_filter{$lang};
-				}
-				my %word_values = (
-					'titre' => $title,
-					'langue' => $lang,
-					'type' => $type_nom,
-					'pron' => $p,
-					'pron_simple' => $p_simple,
-					'pr_ron_simple' => $r_p_simple,
-					'rime_pauvre' => $rime->{pauvre},
-					'rime_suffisante' => $rime->{suffisante},
-					'rime_riche' => $rime->{riche},
-					'rime_voyelle' => $rime->{voyelle},
-					'syllabes' => nombre_de_syllabes($p),
-					'num' => $num,
-					'flex' => $flex,
-					'loc' => $loc,
-					'gent' => $gent,
-					'rand' => $rand,
-				);
-				add_to_file('mots', \%word_values);
+			foreach my $pronunciation (@pron) {
+				my %values = %word_values;	# clone
+				add_entry(\%values, $pronunciation);
 			}
 		
 		# No pronunciation: no need to compute pronunciation-related data -> a single entry is enough
 		} else {
-			my $p = '';
-			my $p_simple = '';
-			my $r_p_simple = '';
-			my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''};
-			my $num = 1;
-			
-			# Nombre dans la langue
-			if ($lang_total{$lang}) { $lang_total{$lang}++; }
-			else { $lang_total{$lang} = 1; }
-			
-			# Nombre dans la langue (filtré)
-			my $rand = 0;
-			if (not $gent and not $flex and $type ne 'nom-pr' and not $title =~ /[0-9]/) {
-				if ($lang_filter{$lang}) { $lang_filter{$lang}++; }
-				else { $lang_filter{$lang} = 1; }
-				$rand = $lang_filter{$lang};
-			}
-			
-			my %word_values = (
-				'titre' => $title,
-				'langue' => $lang,
-				'type' => $type_nom,
-				'pron' => $p,
-				'pron_simple' => $p_simple,
-				'pr_ron_simple' => $r_p_simple,
-				'rime_pauvre' => $rime->{pauvre},
-				'rime_suffisante' => $rime->{suffisante},
-				'rime_riche' => $rime->{riche},
-				'rime_voyelle' => $rime->{voyelle},
-				'syllabes' => nombre_de_syllabes($p),
-				'num' => $num,
-				'flex' => $flex,
-				'loc' => $loc,
-				'gent' => $gent,
-				'rand' => $rand,
-			);
-			add_to_file('mots', \%word_values);
+			my %values = %word_values;	# clone
+			add_entry(\%values);
 		}
 		
 		# Additional work: try to get language specific transcription in this section
@@ -395,6 +337,68 @@ sub parse_language_sections
 		);
 		add_to_file('transcrits', \%transcript_values);
 	}
+}
+
+sub add_entry
+{
+	my ($word_values, $p) = @_;
+	# $p = pronunciation of this entry
+	
+	my %pron_values = ();
+	if ($p) {
+		my $p_simple = simple_prononciation($p);
+		my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''};
+		$rime = extrait_rimes($p_simple);
+		
+		%pron_values = (
+			'pron' => $p,
+			'pron_simple' => $p_simple,
+			'pr_ron_simple' => reverse($p_simple),
+			'rime_pauvre' => $rime->{pauvre},
+			'rime_suffisante' => $rime->{suffisante},
+			'rime_riche' => $rime->{riche},
+			'rime_voyelle' => $rime->{voyelle},
+			'syllabes' => nombre_de_syllabes($p),
+		);
+	}
+	
+	# Fuse all information from word and pronunciation
+	my %values = (%$word_values, %pron_values);
+	
+	# Add a random number so that the entry may be chosen randomly
+	$values{'rand'} = random_counter($word_values);
+	
+	# Save all the values as an entry in the table mots
+	add_to_file('mots', \%values);
+}
+
+# Manage random number for the entry
+sub random_counter
+{
+	my ($values) = @_;
+	
+	my $lang = $values->{'langue'};
+	
+	# Increase the random language counter
+	if ($lang_total{$lang}) { $lang_total{$lang}++; }
+	else { $lang_total{$lang} = 1; }
+	
+	# Ok to be a random word?
+	if (not $values->{gent} 					# No inhabitant names/adjectives
+		and not $values->{flex}					# No flexion
+		and $values->{type} ne 'nom-pr'			# No proper nouns
+		and not $values->{titre} =~ /[0-9]/)	# No number
+		{
+		# Increase the filtered language counter
+		if ($lang_filter{$lang}) {$lang_filter{$lang}++; }
+		else { $lang_filter{$lang} = 1; }
+		
+		# Save the number for the random search
+		return $lang_filter{$lang};
+	}
+	
+	# Default: random number=0
+	return 0;
 }
 
 ###################
