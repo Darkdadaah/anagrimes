@@ -30,27 +30,45 @@ sub usage
 	print STDERR "[ $_[0] ]\n" if $_[0] ;
 	print STDERR << "EOF";
 	
-	This script parse a Wiktionary dump and extract article names
+	This script parses a Wiktionary dump and extracts article names.
 	
 	usage: $0 [-h] -f file
 	
 	-h        : this (help) message
+	
+	INPUT
 	-i <path> : dump path
+	
+	OUTPUT
 	-o <path> : list of all the articles selected
 	-O <path> : list of all articles with the pattern but excluded
-	-p <str>  : pattern to search
-	-n <str>  : pattern to exclude
-	-S <str>  : use this namespace
-	-A <str>  : only edited by (one or several separated by a comma): bot,IP,user
 	
-	-s        : special (see script)
+	FILTER
+	-p <str>  : regexp pattern to search
+	-n <str>  : regexp pattern to exclude
+	-F <path> : path to a list of patterns (see below)
+	
+	-S <str>  : use this namespace
+	
+	-A <str>  : only edited by (one or several separated by a comma): bot,IP,user
 	
 	-L <str>  : language to include only
 	-N <str>  : language to exclude
 	
-	-F <path> : path to a list of general patterns to search
+	-s        : special (see script)
 	
-	example: $0 -i data/frwikt.xml
+	# The pattern file format -F consist of blocks of text ended with // like:
+	lang=xxx		# language of the sections to search
+	no_lang=xxx		# language of the sections to avoid
+	pattern=xxx		# Pattern to search
+	no_pattern=xxx	# Pattern to avoid
+	output=xxx		# path where the matched articles will be saved
+	no_output=xxx	# path where the unmatched articles will be saved
+	//
+	
+	example:
+	# Search the section language templates {{=xxx=}} but exclude {{=fr=}}
+	$0 -i data/frwikt.xml -p "\{\{=(.+)=\}\}" -n "\{\{=(.+)=\}\}"
 EOF
 	exit ;
 }
@@ -86,7 +104,8 @@ sub init()
 }
 
 ###################################
-
+#----------------------------------
+# Correct the pattern so that it can match the special characters < and > in the text of the xml file
 sub correct_pattern
 {
 	my $p = shift ;
@@ -98,11 +117,14 @@ sub correct_pattern
 	return $p ;
 }
 
-# REDIRECTS
+#----------------------------------
+# REDIRECTS in case there is something to do in a redirect page (by default: nothing)
 sub redirect
 {
 }
 
+#----------------------------------
+# Parse the patterns file
 sub get_patterns
 {
 	my ($file) = @_ ;
@@ -144,6 +166,8 @@ sub get_patterns
 
 ###################################
 # ARTICLE
+#----------------------------------
+# Search the given article with every provided pattern
 sub article
 {
 	my ($article, $title) = @_ ;
@@ -161,6 +185,7 @@ sub article
 	return \%count ;
 }
 
+#----------------------------------
 sub read_article
 {
 	my ($article0, $title) = @_ ;
