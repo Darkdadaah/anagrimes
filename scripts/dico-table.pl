@@ -19,17 +19,17 @@ use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_pr
 
 # Output files:
 my %output_files = (
-'redirects' => '',
-'articles' => '',
-'transcrits' => '',
-'mots' => '',
-'langues' => '',
+'redirects' => {'file' => '', 'fields' => [ qw(titre cible) ] },
+'articles' => {'file' => '', 'fields' => [ qw(titre r_titre titre_plat r_titre_plat transcrit_plat r_transcrit_plat anagramme_id) ] },
+'transcrits' => {'file' => '', 'fields' => [ qw(titre transcrit transcrit_plat r_transcrit_plat) ] },
+'mots' => {'file' => '', 'fields' => [ qw(titre langue type pron pron_simple r_pron_simple rime_pauvre rime_suffisante rime_riche rime_voyelle syllabes num flex loc gent rand) ] },
+'langues' => {'file' => '', 'fields' => [ qw( langue num num_min ) ] },
 );
 
-my %langues_total = ();
-my %langues_filtre = ();
+my %lang_total = ();
+my %lang_filter = ();
 
-our %opt ;	# Getopt options
+our %opt;	# Getopt options
 
 #################################################
 # Message about this program and how to use it
@@ -72,39 +72,46 @@ sub init()
 	# Prepare output files
 	foreach my $type (keys %output_files) {
 		# Name of the file for this type
-		$output_files{$type} = $opt{o};
-		$output_files{$type} =~ s/^(.+?)(\.[a-z0-9]+)$/$1_$type$2/;
+		$output_files{$type}{file} = $opt{o};
+		$output_files{$type}{file} =~ s/^(.+?)(\.[a-z0-9]+)$/$1_$type$2/;
 		
 		# Init the file
-		open(TYPE, "> $output_files{$type}") or die "Impossible d'initier $output_files{$type}: $!\n";
+		open(TYPE, "> $output_files{$type}{file}") or die "Impossible d'initier $output_files{$type}{file}: $!\n";
 		close(TYPE);
 	}
 	
-	# Print columns order so that the user know what is written where (should not be hard coded like that...)
-	print STDERR 'REDIRECTS: titre, cible'."\n";
-	print STDERR 'ARTICLES: titre, r_titre, titre_plat, r_titre_plat, transcrit_plat, r_transcrit_plat, anagramme_id'."\n";
-	print STDERR 'TRANSCRITS: titre, transcrit, transcrit_plat, r_transcrit_plat'."\n";
-	print STDERR 'MOTS: titre, langue, type, pron, pron_simple, r_pron_simple, rime_pauvre, rime_suffisante, rime_riche, rime_voyelle, num, flex, loc, gent, rand' . "\n";
-	print STDERR 'LANGUES: langue, num, num_min'."\n";
+	# Print columns order so that the user know what is written where
+	foreach my $outs (sort keys %output_files) {
+		print STDERR "$outs: ", join(', ', @{ $output_files{$outs}{fields} }), "\n";
+	}
 }
 
 # Write to the various output files
 sub add_to_file
 {
-	my ($type, $line) = @_;
+	my ($type, $values) = @_;
 	
-	open(TYPE, ">> $output_files{$type}") or die "Impossible d'écrire $output_files{$type} (type $type): $!\n";
-	print TYPE '"' . join( '","' , @$line) . "\"\n";	# Print line in csv style: "A","B","C"\n
+	open(TYPE, ">> $output_files{$type}{file}") or die "Impossible d'écrire $output_files{$type}{file} (type $type): $!\n";
+	
+	my @line = ();
+	foreach my $f (@{ $output_files{$type}{fields} }) {
+		if (defined($values->{$f})) {
+			push @line, $values->{$f};
+		} else {
+			push @line, '';
+		}
+	}
+	print TYPE '"' . join( '","' , @line) . "\"\n";	# Print line in csv style: "A","B","C"\n
 	close(TYPE);
 }
 
 sub add_to_file_lang
 {
 	my ($line) = @_;
-	open(LANG, "> $output_files{langues}") or die "Can't write $output_files{langues}: $!\n";
-	foreach my $l (sort keys(%langues_total)) {
-		my $filtre = $langues_filtre{$l} ? $langues_filtre{$l} : 0 ;
-		my @lang_line = ($l, $langues_total{$l}, $filtre);
+	open(LANG, "> $output_files{langues}{file}") or die "Can't write $output_files{langues}{file}: $!\n";
+	foreach my $l (sort keys(%lang_total)) {
+		my $filter = $lang_filter{$l} ? $lang_filter{$l} : 0 ;
+		my @lang_line = ($l, $lang_total{$l}, $filter);
 		print LANG '"' . join( '","' , @lang_line) . "\"\n";	# Print line in csv style: "A","B","C"\n
 	}
 	close(LANG);
@@ -131,8 +138,11 @@ sub parse_redirect
 	# If we find a redirection, store the pair
 	if ($article->[0] =~ /\# *REDIRECT[^\[]*\[\[(.+?)\]\]/i) {
 		$target = $1;
-		my @redirect_line = ($title, $target);
-		add_to_file('redirects', \@redirect_line);
+		my %redirect_values = (
+			'titre' => $title,
+			'cible' => $target,
+		);
+		add_to_file('redirects', \%redirect_values);
 	
 	# Wait, no redirection? But the parser said... well let's log this
 	} else {
@@ -229,8 +239,7 @@ sub parse_article
 			}
 		}
 		
-		my @article_line = ($title, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'});
-		add_to_file('articles', \@article_line);
+		add_to_file('articles', \%mot);
 	}
 }
 
@@ -238,10 +247,10 @@ sub parse_article
 # LANGUAGE SECTION
 sub parse_language_sections
 {
-	my ($title, $section, $langue) = @_ ;
+	my ($title, $section, $lang) = @_ ;
 	
 	# First extract all level 3 sections, even the etymology, pron, ref, etc.
-	my $lang_section = parseLanguage($section, $title, $langue);
+	my $lang_section = parseLanguage($section, $title, $lang);
 	my @sections = keys %{$lang_section};
 	my @types = keys %{$lang_section->{'type'}};
 	
@@ -266,7 +275,7 @@ sub parse_language_sections
 		}
 		
 		# Get all pronunciations for this word that we an find in the text (marked with models usually)
-		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $langue, $title, $type);
+		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type);
 		
 		# This should be improved: add an entry for every different entry
 		my %type_pron = ();
@@ -293,18 +302,35 @@ sub parse_language_sections
 				$rime = extrait_rimes($p_simple);
 				
 				# Nombre de langue
-				if ($langues_total{$langue}) { $langues_total{$langue}++; }
-				else { $langues_total{$langue} = 1; }
+				if ($lang_total{$lang}) { $lang_total{$lang}++; }
+				else { $lang_total{$lang} = 1; }
 				
 				# Nombre dans la langue (filtré)
 				my $rand = 0;
 				if (not $gent and not $flex and $type ne 'nom-pr' and not $title =~ /[0-9]/) {
-					if ($langues_filtre{$langue}) { $langues_filtre{$langue}++; }
-					else { $langues_filtre{$langue} = 1; }
-					$rand = $langues_filtre{$langue};
+					if ($lang_filter{$lang}) { $lang_filter{$lang}++; }
+					else { $lang_filter{$lang} = 1; }
+					$rand = $lang_filter{$lang};
 				}
-				my @word_line = ($title, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
-				add_to_file('mots', \@word_line);
+				my %word_values = (
+					'titre' => $title,
+					'langue' => $lang,
+					'type' => $type_nom,
+					'pron' => $p,
+					'pron_simple' => $p_simple,
+					'pr_ron_simple' => $r_p_simple,
+					'rime_pauvre' => $rime->{pauvre},
+					'rime_suffisante' => $rime->{suffisante},
+					'rime_riche' => $rime->{riche},
+					'rime_voyelle' => $rime->{voyelle},
+					'syllabes' => nombre_de_syllabes($p),
+					'num' => $num,
+					'flex' => $flex,
+					'loc' => $loc,
+					'gent' => $gent,
+					'rand' => $rand,
+				);
+				add_to_file('mots', \%word_values);
 			}
 		
 		# No pronunciation: no need to compute pronunciation-related data -> a single entry is enough
@@ -316,24 +342,42 @@ sub parse_language_sections
 			my $num = 1;
 			
 			# Nombre dans la langue
-			if ($langues_total{$langue}) { $langues_total{$langue}++; }
-			else { $langues_total{$langue} = 1; }
+			if ($lang_total{$lang}) { $lang_total{$lang}++; }
+			else { $lang_total{$lang} = 1; }
 			
 			# Nombre dans la langue (filtré)
 			my $rand = 0;
 			if (not $gent and not $flex and $type ne 'nom-pr' and not $title =~ /[0-9]/) {
-				if ($langues_filtre{$langue}) { $langues_filtre{$langue}++; }
-				else { $langues_filtre{$langue} = 1; }
-				$rand = $langues_filtre{$langue};
+				if ($lang_filter{$lang}) { $lang_filter{$lang}++; }
+				else { $lang_filter{$lang} = 1; }
+				$rand = $lang_filter{$lang};
 			}
-			my @word_line = ($title, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
-			add_to_file('mots', \@word_line);
+			
+			my %word_values = (
+				'titre' => $title,
+				'langue' => $lang,
+				'type' => $type_nom,
+				'pron' => $p,
+				'pron_simple' => $p_simple,
+				'pr_ron_simple' => $r_p_simple,
+				'rime_pauvre' => $rime->{pauvre},
+				'rime_suffisante' => $rime->{suffisante},
+				'rime_riche' => $rime->{riche},
+				'rime_voyelle' => $rime->{voyelle},
+				'syllabes' => nombre_de_syllabes($p),
+				'num' => $num,
+				'flex' => $flex,
+				'loc' => $loc,
+				'gent' => $gent,
+				'rand' => $rand,
+			);
+			add_to_file('mots', \%word_values);
 		}
 		
 		# Additional work: try to get language specific transcription in this section
 		# Should not be hard coded like that (loop through available transcriptions dictionary)
-		if ($langue eq 'ja') {
-			my $transc_type = cherche_transcription($lang_section->{'type'}->{$type}->{lines}, $langue, $title, $type);
+		if ($lang eq 'ja') {
+			my $transc_type = cherche_transcription($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type);
 			foreach my $t (@$transc_type) {
 				$transc{$t}++;
 			}
@@ -342,10 +386,14 @@ sub parse_language_sections
 	
 	# Afterwork: Save all transcriptions found in the text of this article!
 	foreach my $t (sort keys %transc) {
-		my $t_plat = lc(ascii_strict($t));		# Unhyphenated transcript
-		my $rt_plat = reverse($t_plat);			# Same, reversed for sql
-		my @transcript_line = (($title, $t, $t_plat, $rt_plat));
-		add_to_file('transcrits', \@transcript_line);
+		my $t_plat = lc(ascii_strict($t));
+		my %transcript_values = (
+			'titre' => $title,
+			'transcrit' => $t,
+			'transcrit_plat' => $t_plat,				# Unhyphenated transcript
+			'r_transcrit_plat' => reverse($t_plat),		# Same, reversed for sql
+		);
+		add_to_file('transcrits', \%transcript_values);
 	}
 }
 

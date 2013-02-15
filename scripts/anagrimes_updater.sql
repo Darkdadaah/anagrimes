@@ -17,7 +17,7 @@ INTO TABLE mots_temp FIELDS
 	TERMINATED BY ','
 	ENCLOSED BY '"' LINES
 	TERMINATED BY '\n'
-(titre,langue,type,pron,pron_simple,r_pron_simple,num,flex,loc,gent,rand);
+(titre, langue, type, pron, pron_simple, r_pron_simple, rime_pauvre, rime_suffisante, rime_riche, rime_voyelle, syllabes, num, flex, loc, gent, rand);
 
 SELECT '- Filling the temporary LANGUES table...' AS '' ;
 CREATE TABLE langues_temp LIKE langues;
@@ -27,7 +27,6 @@ INTO TABLE langues_temp FIELDS
 	ENCLOSED BY '"' LINES
 	TERMINATED BY '\n'
 (langue,num,num_min);
-
 
 SELECT '- Replace the old tables by the new ones' AS '' ;
 RENAME TABLE    articles TO articles_old,
