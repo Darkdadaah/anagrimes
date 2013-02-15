@@ -120,203 +120,232 @@ sub chronometer_end
 	print STDERR "diff = $diff -> $mDiff\:$sDiff\n";
 }
 
-sub ajout_langue
+###################################
+# REDIRECTS
+sub parse_redirect
 {
-	my ($titre, $section, $langue) = @_ ;
+	my ($title, $article) = @_;
 	
-	###############################################
-	# Travail sur la section de langue
-	# Extrait les sections de niveau 3 : étymo, types, pron...
-	my $lang_section = parseLanguage($section, $titre, $langue) ;
+	my $target = '';
 	
-	# Section prononciation?
-	my @prononciations = section_prononciation($lang_section->{'prononciation'}->{lines}, $titre) ;
-	my %transc = ();
+	# If we find a redirection, store the pair
+	if ($article->[0] =~ /\# *REDIRECT[^\[]*\[\[(.+?)\]\]/i) {
+		$target = $1;
+		my @redirect_line = ($title, $target);
+		add_to_file('redirects', \@redirect_line);
 	
-	# Analyse de chaque section de type
-	my @sections = keys %{$lang_section} ;
-	my @types = keys %{$lang_section->{'type'}} ;
-	foreach my $type (@types) {
-		next if $type eq 'erreur' ;	# Pas prendre en compte les type erreurs
-		my $gent = 0 ;
+	# Wait, no redirection? But the parser said... well let's log this
+	} else {
+		special_log('noredirect', $title);
+	}
+}
+
+###################################
+# ARTICLES
+sub parse_article
+{
+	my ($title, $article) = @_;
+	
+	# This will stock the important values that will be put in the table
+	my %mot = ();
+	
+	# Discard any *ffixes
+	return if $title =~ /^-/ or $title =~ /-$/;
+	$mot{'titre'} = $title;
+	
+	###########################
+	# From the title only we can get (-> table articles)
+	$mot{'r_titre'} = reverse($title);					# Reverse title (for sql search)
+	$mot{'titre_plat'} = lc(ascii_strict($title));		# titre_plat (no hyphenation)
+	$mot{'r_titre_plat'} = reverse($mot{'titre_plat'});	# Same, reversed
+	$mot{'anagramme_id'} = anagramme($title);			# anagramme_id (alphagram, key for anagrams)
+	
+	# Can't get a correct unhyphenated word (should only be symbols and such)
+	if (not $mot{'titre_plat'}) {
+		special_log('titre_plat', $title);	# Log just to be sure
 		
-		# Récupère les différences prononciations de ce mot-type
-		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type) ;
+	# Everything is ok thus far
+	} else {
+		# Let's parse the whole article and divide it into languages sections
+		my $article_section = parseArticle($article, $title);
 		
-		# Crée autant de lignes qu'il y a de prononciations distinctes (à améliorer)
-		my %type_pron = () ;
-		foreach my $p (@$prons) {
-			$type_pron{$p} = 1 ;
-		}
+		# If we are only interested in one language, only parse this one further
+		my $lang_ok = $false;
+		if ($opt{L}) {
+			# Ok, so it there such a section?
+			my $lang = $opt{L};
+			my $lang_section = $article_section->{language}->{$lang};
+			
+			# Yes there is: let's parse it further (-> table mots)
+			if ($#{$lang_section}+1 > 0) {
+				parse_language_sections($title, $lang_section, $lang);
+				$lang_ok = $true;
+				
+			# No: then no need to stay here
+			} else {
+				return;
+			}
 		
-		# Tri des prononciations non redondantes
-		my @pron = () ;
-		if (keys %type_pron == 0) {
-			push @pron, @prononciations ;
+		# We want all languages: parse everything
 		} else {
-			@pron = keys(%type_pron) ;
+			foreach my $lang (keys %{$article_section->{language}}) {
+				my $lang_section = $article_section->{language}->{$lang};
+				
+				# No content? Something's not right
+				if (not $lang_section) {
+					special_log('empty_lang', $title, $lang);	# Log just to be sure
+					
+				# Everything is here, let's part this section (-> table mots)
+				} else {
+					parse_language_sections($title, $lang_section, $lang);
+				}
+			}
+			$lang_ok = $true;
+		}
+		return if not $lang_ok;
+		
+		# If the script is not latin, let's try transcriptions (language-specific)
+		# We will only keep unhyphenated transcripts here
+		$mot{'transcrit_plat'} = '';	# unhyphenated transcript (non-latin words)
+		$mot{'r_transcrit_plat'} = '';	# same, reversed for sql
+		
+		# Not latin script? Let's try to compute a transcript!
+		if (not unicode_NFKD($mot{'titre_plat'}) =~ /[a-z]/) {
+			my @langs = keys %{$article_section->{language}};
+			$mot{'transcrit_plat'} = transcription($mot{'titre_plat'}, \@langs);
+			
+			# No transcription could be done (unsupported script)
+			if (not $mot{'transcrit_plat'}) {
+				$mot{'transcrit_plat'}='';
+			
+			# Uncomplete transcription (should be supported! -> log)
+			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
+				special_log('incomplete_transcription', $title, $mot{'transcrit_plat'});
+				$mot{'transcrit_plat'}='';
+				
+			# We have a correct transcript!
+			} else {
+				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'});
+			}
 		}
 		
-		# Si prononciations : déterminer le type
-		my $flex = $lang_section->{'type'}->{$type}->{flex} ;
-		my $loc = $lang_section->{'type'}->{$type}->{loc} ;
-		my $num = $lang_section->{'type'}->{$type}->{num} ;
-		my $type_nom = $lang_section->{'type'}->{$type}->{type} ;
+		my @article_line = ($title, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'});
+		add_to_file('articles', \@article_line);
+	}
+}
+
+###################################
+# LANGUAGE SECTION
+sub parse_language_sections
+{
+	my ($title, $section, $langue) = @_ ;
+	
+	# First extract all level 3 sections, even the etymology, pron, ref, etc.
+	my $lang_section = parseLanguage($section, $title, $langue);
+	my @sections = keys %{$lang_section};
+	my @types = keys %{$lang_section->{'type'}};
+	
+	# Can we get pronunciations from the dedicated section?
+	my @prononciations = section_prononciation($lang_section->{'prononciation'}->{lines}, $title);
+	my %transc = ();	# Prepare to store every transcription found in the text as well
+	
+	# Look into every word type section
+	foreach my $type (@types) {
 		
-		# gentile?
+		# Additionnal informations for the word
+		my $type_nom = $lang_section->{'type'}->{$type}->{type};
+		my $flex = $lang_section->{'type'}->{$type}->{flex};
+		my $loc = $lang_section->{'type'}->{$type}->{loc};
+		my $num = $lang_section->{'type'}->{$type}->{num};
+		next if $type eq 'erreur';	# Not interested in error sections
+		
+		#  Special, name of inhabitants should be marked to be avoidable in searches as there is *a lot*
+		my $gent = 0;
 		if ($type_nom eq 'nom' or $type_nom eq 'adj') {
-			$gent = is_gentile($lang_section->{'type'}->{$type}->{lines}) ;
+			$gent = is_gentile($lang_section->{'type'}->{$type}->{lines});
 		}
 		
+		# Get all pronunciations for this word that we an find in the text (marked with models usually)
+		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $langue, $title, $type);
+		
+		# This should be improved: add an entry for every different entry
+		my %type_pron = ();
+		foreach my $p (@$prons) {
+			$type_pron{$p} = 1;
+		}
+		
+		# Sort non-redundant pronunciations
+		my @pron = ();
+		if (keys %type_pron == 0) {
+			push @pron, @prononciations;
+		} else {
+			@pron = keys(%type_pron);
+		}
+		
+		# Two cases: if there are severy pronunciations, or no pronunciation at all
+		
+		# >=1 prononciation? Add one entry for each one (not very good, but ok for now)
 		if (@pron) {
-			# Ajoute autant de ligne qu'il y a de prononciation
 			foreach my $p (@pron) {
-				my $p_simple = simple_prononciation($p) ;
-				my $r_p_simple = reverse($p_simple) ;
-				my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''} ;
-				$rime = extrait_rimes($p_simple) ;
+				my $p_simple = simple_prononciation($p);
+				my $r_p_simple = reverse($p_simple);
+				my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''};
+				$rime = extrait_rimes($p_simple);
 				
 				# Nombre de langue
-				if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
-				else { $langues_total{$langue} = 1 ; }
+				if ($langues_total{$langue}) { $langues_total{$langue}++; }
+				else { $langues_total{$langue} = 1; }
 				
 				# Nombre dans la langue (filtré)
-				my $rand = 0 ;
-				if (not $gent and not $flex and $type ne 'nom-pr' and not $titre =~ /[0-9]/) {
-					if ($langues_filtre{$langue}) { $langues_filtre{$langue}++ ; }
-					else { $langues_filtre{$langue} = 1 ; }
-					$rand = $langues_filtre{$langue} ;
+				my $rand = 0;
+				if (not $gent and not $flex and $type ne 'nom-pr' and not $title =~ /[0-9]/) {
+					if ($langues_filtre{$langue}) { $langues_filtre{$langue}++; }
+					else { $langues_filtre{$langue} = 1; }
+					$rand = $langues_filtre{$langue};
 				}
-				my @word_line = ($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
+				my @word_line = ($title, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
 				add_to_file('mots', \@word_line);
 			}
+		
+		# No pronunciation: no need to compute pronunciation-related data -> a single entry is enough
 		} else {
-			my $p = '' ;
-			my $p_simple = '' ;
-			my $r_p_simple = '' ;
-			my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''} ;
-			my $num = 1 ;
+			my $p = '';
+			my $p_simple = '';
+			my $r_p_simple = '';
+			my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''};
+			my $num = 1;
+			
 			# Nombre dans la langue
-			if ($langues_total{$langue}) { $langues_total{$langue}++ ; }
-			else { $langues_total{$langue} = 1 ; }
+			if ($langues_total{$langue}) { $langues_total{$langue}++; }
+			else { $langues_total{$langue} = 1; }
 			
 			# Nombre dans la langue (filtré)
-			my $rand = 0 ;
-			if (not $gent and not $flex and $type ne 'nom-pr' and not $titre =~ /[0-9]/) {
-				if ($langues_filtre{$langue}) { $langues_filtre{$langue}++ ; }
-				else { $langues_filtre{$langue} = 1 ; }
-				$rand = $langues_filtre{$langue} ;
+			my $rand = 0;
+			if (not $gent and not $flex and $type ne 'nom-pr' and not $title =~ /[0-9]/) {
+				if ($langues_filtre{$langue}) { $langues_filtre{$langue}++; }
+				else { $langues_filtre{$langue} = 1; }
+				$rand = $langues_filtre{$langue};
 			}
-			my @word_line = ($titre, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
+			my @word_line = ($title, $langue, $type_nom, $p, $p_simple, $r_p_simple, $rime->{pauvre}, $rime->{suffisante}, $rime->{riche}, $rime->{voyelle}, nombre_de_syllabes($p), $num, $flex, $loc, $gent, $rand);
 			add_to_file('mots', \@word_line);
 		}
 		
-		# Transcriptions éventuelles (jap seul pour tester)
+		# Additional work: try to get language specific transcription in this section
+		# Should not be hard coded like that (loop through available transcriptions dictionary)
 		if ($langue eq 'ja') {
-			my $transc_type = cherche_transcription($lang_section->{'type'}->{$type}->{lines}, $langue, $titre, $type);
+			my $transc_type = cherche_transcription($lang_section->{'type'}->{$type}->{lines}, $langue, $title, $type);
 			foreach my $t (@$transc_type) {
 				$transc{$t}++;
 			}
 		}
 	}
 	
-	# Calcul des transcriptions
+	# Afterwork: Save all transcriptions found in the text of this article!
 	foreach my $t (sort keys %transc) {
-		my $t_plat = lc(ascii_strict($t));
-		my $rt_plat = reverse($t_plat);
-		my @transcript_line = (($titre, $t, $t_plat, $rt_plat));
+		my $t_plat = lc(ascii_strict($t));		# Unhyphenated transcript
+		my $rt_plat = reverse($t_plat);			# Same, reversed for sql
+		my @transcript_line = (($title, $t, $t_plat, $rt_plat));
 		add_to_file('transcrits', \@transcript_line);
-	}
-}
-
-###################################
-# REDIRECTS
-sub redirect
-{
-	my ($titre, $article) = @_ ;
-	
-	my $cible = '' ;
-	
-	if ($article->[0] =~ /\# *REDIRECT[^\[]*\[\[(.+?)\]\]/i) {
-		$cible = $1 ;
-# 	elsif      ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
-# 		$cible = $2 ;
-# 	} elsif ($article->[0] =~ /\# *REDIRECT(ION)? *:? *\[\[(.+?)\]\]/i) {
-# 		$cible = $2 ;
-	} else {
-		print STDERR "[[$titre]] Pas trouvé de redirect : " ;
-		map { chomp; print STDERR "'$_'\n" ; } @$article ;
-	}
-	
-	my @redirect_line = ($titre, $cible);
-	add_to_file('redirects', \@redirect_line);
-}
-
-###################################
-# ARTICLE
-sub article
-{
-	my ($titre, $article) = @_ ;
-	my %mot = () ;
-	# Ni préfixe ni suffixe, ni accent
-	return if $titre =~ /^-/ or $titre =~ /-$/ or $titre =~ /ـ/ ;
-	$mot{'titre'} = $titre ;
-	
-	###########################
-	# Travail sur le titre
-	$mot{'titre_plat'} = lc(ascii_strict($titre)) ;
-	$mot{'anagramme_id'} = anagramme($titre) ;
-	
-	if ($mot{'titre_plat'}) {
-		##########################
-		# Sections
-		my $article_section = parseArticle($article, $titre) ;
-		
-		my $lang_ok = $false;
-		if ($opt{L}) {
-			my $langue = $opt{L} ;
-			my $langue_section = $article_section->{language}->{$langue} ;
-			if ($#{$langue_section}+1 > 0) {
-				ajout_langue($titre, $langue_section, $langue) ;
-				$lang_ok = $true;
-			}
-		} else {
-			foreach my $langue (keys %{$article_section->{language}}) {
-				my $langue_section = $article_section->{language}->{$langue} ;
-				next if not $langue_section ;
-				ajout_langue($titre, $langue_section, $langue) ;
-			}
-			$lang_ok = $true;
-		}
-		return if not $lang_ok;
-		
-		##########################
-		# Graphie
-		$mot{'r_titre'} = reverse($titre) ;
-		$mot{'r_titre_plat'} = reverse($mot{'titre_plat'}) ;
-		$mot{'transcrit_plat'} = '' ;
-		$mot{'r_transcrit_plat'} = '' ;
-		
-		# Pas alphabet latin ? Transcrire
-		if (not unicode_NFKD($mot{'titre_plat'}) =~ /[a-z]/) {
-			my @langues = keys %{$article_section->{language}} ;
-			$mot{'transcrit_plat'} = transcription($mot{'titre_plat'}, \@langues) ;
-			
-			# Pas de transcription au final : passer
-			if (not $mot{'transcrit_plat'}) {
-				return ;
-			# Pas complètement transcrit : loguer
-			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
-				special_log('transcription', $titre, $mot{'transcrit_plat'}) ;
-				
-				return ;
-			# Bien transcrit : continuer
-			} else {
-				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'}) ;
-			}
-		}
-		my @article_line = ($titre, $mot{'r_titre'}, $mot{'titre_plat'}, $mot{'r_titre_plat'}, $mot{'transcrit_plat'}, $mot{'r_transcrit_plat'}, $mot{'anagramme_id'});
-		add_to_file('articles', \@article_line) ;
 	}
 }
 
@@ -326,22 +355,36 @@ init() ;
 
 my $past = time() ;	# Chronometer start
 
+# Read the dump
 open(DUMP, dump_input($opt{i})) or die("Couldn't open '$opt{i}': $!\n");
+
+# Temporary variables for each article
 my $title = '';
-my ($n, $redirect) = (0,0);
 my $complete_article = 0;
 my @article = ();
-$| = 1;
+
+# Counting variables
+my ($n, $redirect) = (0,0);
+$| = 1;	 # This allows the counter to rewrite itself on a single line
+
+# Actual scanning of every line of the dump
 while(<DUMP>) {
+	# Get the title of the article, starts a new article
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1;
 		$title = '' if $title =~ /[:\/]/; # Exclude all articles outside of the main namespace
+		
+		# Reinit temporary variables
+		$complete_article = 0;
+		@article = ();
 	
+	# Get text on only one line
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
 		@article = ();
 		push @article, "$1\n";
 		$complete_article = 1;
 		
+	# Get text with several lines
 	} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
 		@article = ();
 		push @article, "$1\n";
@@ -356,21 +399,25 @@ while(<DUMP>) {
 		}
 		$complete_article = 1;
 	}
+	
+	# The text of this article is fully read, we can now parse its content from the lines in @article
 	if ($complete_article) {
+		
+		# REDIRECT?
 		if ($article[0] =~ /#redirect/i) {
-			######################################
-			# REDIRECTIONS are treated here
-			redirect($title, \@article) unless $opt{L};
-			######################################
+			# Only parse redirects if there is no specific target language (because redirects have no language)
+			parse_redirect($title, \@article) unless $opt{L};
 			$redirect++;
+			
+		# FULL ARTICLE?
 		} else {
-			######################################
-			# ARTICLES are treated here
-			article($title, \@article);
-			######################################
+			# Fully parse the article (the extracted data are directly written in )
+			parse_article($title, \@article);
 			$n++ ;
-			printf STDERR "%7d articles\r", $n if $n % 1000 == 0;
+			printf STDERR "%7d articles\r", $n if $n % 10000 == 0;	# Simple counter
 		}
+		
+		# Now that the article was parsed, reinit these temporary variables to be used with the next article
 		$complete_article = 0;
 		$title = '';
 		@article = ();
