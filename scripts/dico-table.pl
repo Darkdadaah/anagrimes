@@ -128,7 +128,91 @@ sub chronometer_end
 }
 
 ###################################
-# REDIRECTS
+# PARSERS
+
+sub parse_dump
+{
+	my ($input) = @_;
+	
+	# Temporary variables for each article
+	my $title = '';
+	my $complete_article = 0;
+	my @article = ();
+
+	# Counting variables
+	my ($n, $redirect) = (0,0);
+	$| = 1;	 # This allows the counter to rewrite itself on a single line
+
+	# Scan every line of the dump
+	open(DUMP, dump_input($input)) or die("Couldn't open '$input': $!\n");
+	while(<DUMP>) {
+		# Get the title of the article, starts a new article
+		if ( /<title>(.+?)<\/title>/ ) {
+			$title = $1;
+			$title = '' if $title =~ /[:\/]/; # Exclude all articles outside of the main namespace
+			
+			# Reinit temporary variables
+			$complete_article = 0;
+			@article = ();
+		
+		# Get text on only one line
+		} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
+			@article = ();
+			push @article, "$1\n";
+			$complete_article = 1;
+			
+		# Get text with several lines
+		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
+			@article = ();
+			push @article, "$1\n";
+			while ( <DUMP> ) {
+				next if /^\s+$/;
+				if ( /^(.*?)<\/text>/ ) {
+					push @article, "$1\n";
+					last;
+				} else {
+					push @article, $_;
+				}
+			}
+			$complete_article = 1;
+		}
+		
+		# The text of this article is fully read, we can now parse its content from the lines in @article
+		if ($complete_article) {
+			
+			# REDIRECT?
+			if ($article[0] =~ /#redirect/i) {
+				# Only parse redirects if there is no specific target language (because redirects have no language)
+				parse_redirect($title, \@article) unless $opt{L};
+				$redirect++;
+				
+			# FULL ARTICLE?
+			} else {
+				# Fully parse the article (the extracted data are directly written in )
+				parse_article($title, \@article);
+				$n++ ;
+				printf STDERR "%7d articles\r", $n if $n % 10000 == 0;	# Simple counter
+			}
+			
+			# Now that the article was parsed, reinit these temporary variables to be used with the next article
+			$complete_article = 0;
+			$title = '';
+			@article = ();
+		}
+	}
+	$| = 0;
+	close(DUMP);
+
+	# Print the language list
+	add_to_file_lang();
+
+	# Lastly, some stats
+	print "Total = $n\n";
+	print "Total_redirects = $redirect\n";
+}
+
+###################################
+# REDIRECTS PARSER
 sub parse_redirect
 {
 	my ($title, $article) = @_;
@@ -151,7 +235,7 @@ sub parse_redirect
 }
 
 ###################################
-# ARTICLES
+# ARTICLES PARSER
 sub parse_article
 {
 	my ($title, $article) = @_;
@@ -407,83 +491,8 @@ init() ;
 
 my $past = time() ;	# Chronometer start
 
-# Read the dump
-open(DUMP, dump_input($opt{i})) or die("Couldn't open '$opt{i}': $!\n");
+parse_dump($opt{i});
 
-# Temporary variables for each article
-my $title = '';
-my $complete_article = 0;
-my @article = ();
-
-# Counting variables
-my ($n, $redirect) = (0,0);
-$| = 1;	 # This allows the counter to rewrite itself on a single line
-
-# Actual scanning of every line of the dump
-while(<DUMP>) {
-	# Get the title of the article, starts a new article
-	if ( /<title>(.+?)<\/title>/ ) {
-		$title = $1;
-		$title = '' if $title =~ /[:\/]/; # Exclude all articles outside of the main namespace
-		
-		# Reinit temporary variables
-		$complete_article = 0;
-		@article = ();
-	
-	# Get text on only one line
-	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
-		@article = ();
-		push @article, "$1\n";
-		$complete_article = 1;
-		
-	# Get text with several lines
-	} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
-		@article = ();
-		push @article, "$1\n";
-		while ( <DUMP> ) {
-			next if /^\s+$/;
-			if ( /^(.*?)<\/text>/ ) {
-				push @article, "$1\n";
-				last;
-			} else {
-				push @article, $_;
-			}
-		}
-		$complete_article = 1;
-	}
-	
-	# The text of this article is fully read, we can now parse its content from the lines in @article
-	if ($complete_article) {
-		
-		# REDIRECT?
-		if ($article[0] =~ /#redirect/i) {
-			# Only parse redirects if there is no specific target language (because redirects have no language)
-			parse_redirect($title, \@article) unless $opt{L};
-			$redirect++;
-			
-		# FULL ARTICLE?
-		} else {
-			# Fully parse the article (the extracted data are directly written in )
-			parse_article($title, \@article);
-			$n++ ;
-			printf STDERR "%7d articles\r", $n if $n % 10000 == 0;	# Simple counter
-		}
-		
-		# Now that the article was parsed, reinit these temporary variables to be used with the next article
-		$complete_article = 0;
-		$title = '';
-		@article = ();
-	}
-}
-$| = 0;
-close(DUMP);
-
-# Print the language list
-add_to_file_lang();
-
-# Lastly, some stats
-print "Total = $n\n";
-print "Total_redirects = $redirect\n";
 chronometer_end($past);
 
 
