@@ -83,11 +83,11 @@ sub init()
 	usage() if $opt{h} ;
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	if (not $opt{F}) {
-		if (not $opt{s} and not $opt{p} and not $opt{A}) {
-			usage( "Pattern needed (-p)" ) ;
-			usage( "or Author needed (-A)" ) ;
+		#if (not $opt{s} and not $opt{p} and not $opt{A}) {
+		#	usage( "Pattern needed (-p)" ) ;
+		#	usage( "or Author needed (-A)" ) ;
 			usage( "Only 1 language option (-L|-N)" ) if $opt{L} and $opt{N} ;
-		}
+		#}
 	}
 	
 	if ($opt{o}) {
@@ -223,39 +223,54 @@ sub read_article
 	my ($ok, $no) = (0,0) ;
 	my ($ok_pattern, $no_pattern) = ('','') ;
 	
-	foreach my $line (@$article) {
-		$n++ ;
-		if ($opt{n} and $line =~ /($opt{n})/) {
-			$no_pattern = "<< $1 >> ($n)" ;
-			$no = 1 ;
+	# Search for those patterns in the article
+	if ($opt{p} or $opt{n}) {
+		foreach my $line (@$article) {
+			$n++ ;
+			if ($opt{n} and $line =~ /($opt{n})/) {
+				$no_pattern = "<< $1 >> ($n)" ;
+				$no = 1 ;
+			}
+			if ($opt{p} and $line =~ /($opt{p})/) {
+				$count++ if not $no ;
+				$ok_pattern = "<< $1 >> ($n)" ;
+				$ok = 1 ;
+				$line =~ s/$opt{p}// ;
+			}
+			while ($opt{p} and $line =~ /($opt{p})/) {
+				$count++ if not $no ;
+				$ok_pattern .= "\t<< $1 >> ($n)" ;
+				$line =~ s/$opt{p}// ;
+			}
 		}
-		if ($opt{p} and $line =~ /($opt{p})/) {
-			$count++ if not $no ;
-			$ok_pattern = "<< $1 >> ($n)" ;
-			$ok = 1 ;
-			$line =~ s/$opt{p}// ;
+		$ok_pattern =~ s/\n/\\n/g ;
+		$ok_pattern =~ s/\r/\\r/g ;
+		$no_pattern =~ s/\n/\\n/g ;
+		$no_pattern =~ s/\r/\\r/g ;
+		
+		if ($ok and not $no and $opt{o}) {
+			open(ARTICLES, ">> $opt{o}") or die "Couldn't write $opt{o}: $!\n" ;
+			print ARTICLES "$title\t$ok_pattern\n" ;
+			close(ARTICLES) ;
 		}
-		while ($opt{p} and $line =~ /($opt{p})/) {
-			$count++ if not $no ;
-			$ok_pattern .= "\t<< $1 >> ($n)" ;
-			$line =~ s/$opt{p}// ;
+		if ($ok and $no and $opt{O}) {
+			open(ARTICLES, ">> $opt{O}") or die "Couldn't write $opt{O}: $!\n" ;
+			print ARTICLES "$title\t$ok_pattern\t$no_pattern\n" ;
+			close(ARTICLES) ;
 		}
-	}
-	$ok_pattern =~ s/\n/\\n/g ;
-	$ok_pattern =~ s/\r/\\r/g ;
-	$no_pattern =~ s/\n/\\n/g ;
-	$no_pattern =~ s/\r/\\r/g ;
 	
-	if ($ok and not $no and $opt{o}) {
-		open(ARTICLES, ">> $opt{o}") or die "Couldn't write $opt{o}: $!\n" ;
-		print ARTICLES "* [[$title]]\t$ok_pattern\n" ;
-		close(ARTICLES) ;
+	# No pattern: only count/list the article name
+	} else {
+		$count++ if not $no;
+		
+		# Print the list?
+		if ($opt{o}) {
+			open(ARTICLES, ">> $opt{o}") or die "Couldn't write $opt{o}: $!\n";
+			print ARTICLES "$title\n";
+			close(ARTICLES);
+		}
 	}
-	if ($ok and $no and $opt{O}) {
-		open(ARTICLES, ">> $opt{O}") or die "Couldn't write $opt{O}: $!\n" ;
-		print ARTICLES "* [[$title]]\t$ok_pattern\t$no_pattern\n" ;
-		close(ARTICLES) ;
-	}
+	
 	return $count ;
 }
 
