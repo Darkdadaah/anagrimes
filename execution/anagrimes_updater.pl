@@ -11,7 +11,7 @@ my $tables_dir = "/mnt/user-store/anagrimes/tables";
 my $logs_dir = "/mnt/user-store/anagrimes/logs";
 my $scripts_dir = "$ENV{HOME}/scripts/anagrimes/scripts";
 my $dico_tables_script = "$scripts_dir/dico-table.pl";
-my $sql_update = "$scripts_dir/anagrimes_updater.sql";
+my $sql_update = "$scripts_dir/anagrimes_updater_import.sql";
 my $db = 'u_darkdadaah';
 my @dico_tables = qw(articles mots langues redirects);
 

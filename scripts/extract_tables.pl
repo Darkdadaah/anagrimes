@@ -1,21 +1,21 @@
 #!/usr/bin/perl -w
 
-use strict ;
-use warnings ;
-use Getopt::Std ;
+use strict;
+use warnings;
+use Getopt::Std;
 
 # Need utf8 compatibility for input/outputs
-use utf8 ;
+use utf8;
 use open ':encoding(utf8)';
 binmode STDOUT, ":encoding(utf8)";
 binmode STDERR, ":encoding(utf8)";
 
 # Useful Anagrimes libraries
-use lib '..' ;
-use wiktio::basic ;
-use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
-use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
-use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes) ;
+use lib '..';
+use wiktio::basic;
+use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
+use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
+use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
 my %output_files = (
@@ -35,7 +35,7 @@ our %opt;	# Getopt options
 # Message about this program and how to use it
 sub usage
 {
-	print STDERR "[ $_[0] ]\n" if $_[0] ;
+	print STDERR "[ $_[0] ]\n" if $_[0];
 	print STDERR << "EOF";
 	
 	This script extract data from a Wiktionary dump and create tables that can be imported in an SQL database.
@@ -50,7 +50,7 @@ sub usage
 	-L <code> : language code to extract alone (2 or 3 letters) [optional]
 	-l <path> : special log_files (like -o path + prefix). Those files log specific errors defined in the parser.
 EOF
-	exit ;
+	exit;
 }
 
 ##################################

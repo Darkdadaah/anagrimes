@@ -1,34 +1,33 @@
 #!/usr/bin/perl -w
 
-# Test the functions ascii etc.
 use strict ;
-use warnings ;
-use Getopt::Std ;
+use warnings;
+use Getopt::Std;
 
-use utf8 ;
-use Encode qw(decode encode) ;
-use open IO => ':utf8';
+# Need utf8 compatibility for input/outputs
+use utf8;
+use open ':encoding(utf8)';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
+use Encode qw(decode);	# Needed?
 
-use lib '..' ;
-use wiktio::basic ;
-use wiktio::string_tools	qw(ascii ascii_strict anagramme) ;
-use wiktio::parser		qw(parseArticle parseLanguage parseType) ;
-our %opt ;
-my $redirects = '' ;
-my $articles = '' ;
+# Useful Anagrimes libraries
+use lib '..';
+use wiktio::basic;
+use wiktio::string_tools	qw(ascii ascii_strict anagramme);
+use wiktio::parser		qw(parseArticle parseLanguage parseType);
 
+# To filter the bots
+# Hard-coded list for fr.wikt
 our @bots_names = qw(Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ);
 
-# Defaut
-# $opt{i} = '' ;
+our %opt;	# Getopt options
 
 #################################################
 # Message about this program and how to use it
 sub usage
 {
-	print STDERR "[ $_[0] ]\n" if $_[0] ;
+	print STDERR "[ $_[0] ]\n" if $_[0];
 	print STDERR << "EOF";
 	
 	This script parses a Wiktionary dump and extracts article names.
@@ -43,6 +42,8 @@ sub usage
 	OUTPUT
 	-o <path> : list of all the articles selected
 	-O <path> : list of all articles with the pattern but excluded
+	
+	NB: if no output is defined, only the final count will be shown
 	
 	FILTER
 	-p <str>  : regexp pattern to search
@@ -71,7 +72,7 @@ sub usage
 	# Search the section language templates {{=xxx=}} but exclude {{=fr=}}
 	$0 -i data/frwikt.xml -p "\{\{=(.+)=\}\}" -n "\{\{=(.+)=\}\}"
 EOF
-	exit ;
+	exit;
 }
 
 ##################################
@@ -183,7 +184,7 @@ sub article
 		my $name = 'Count' ;
 		$count{$name} = read_article($article, $title) ;
 	}
-	return \%count ;
+	return \%count;
 }
 
 #----------------------------------
@@ -375,14 +376,14 @@ while(<DUMP>) {
 			} else {
 				######################################
 				# Traiter les articles ici
-				my $article_count = article(\@article, $title) ;
+				my $article_count = article(\@article, $title);
 				foreach my $num (keys %$article_count) {
-					$count->{$num} += $article_count->{$num}  ;
+					$count->{$num} += $article_count->{$num};
 				}
 			}
 			######################################
 			$n++ ;
-			print STDERR "[$n] $title\n" if $n%10000==0 ;
+			print STDERR "[$n] [$count->{Count}] $title\n" if $n%10000==0;
 		}
 		$complete_article = 0 ;
 	}
