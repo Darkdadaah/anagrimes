@@ -30,9 +30,11 @@ sub usage
 	-h        : this (help) message
 	-i <path> : dump path. Can be in xml, xml.gz, xml.bz2
 	-o <path> : list of all the words
+	-O <path> : list of all the words, without case
 	-n <path> : list of words not to list
 	
 	-L <num>  : maximum number of articles to parse
+	-C        : case insensitive
 	
 	example: $0 -i data/frwikt.xml
 EOF
@@ -43,7 +45,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:n:L:', \%opt ) or usage() ;
+	getopts( 'hi:o:O:n:L:C', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	usage( "Dump path needed (-i)" ) if not $opt{i} ;
 	
@@ -63,8 +65,16 @@ sub get_list
 	open(LIST, $input) or die "Couldn't open '$input': $!\n";
 	while(<LIST>) {
 		chomp;
-		my $word = split(/\t/, $_);
-		$list{$word}++ if $word;
+		my ($word) = split(/\t/, $_);
+		next if not $word;
+		
+		# Case insensitive?
+		if ($opt{C}) {
+			my $iword = lc($word);
+			$list{$iword}++;
+		} else {
+			$list{$word}++;
+		}
 	}
 	close(LIST);
 	return \%list;
@@ -72,8 +82,9 @@ sub get_list
 
 sub words
 {
-	my ($article, $dico, $nolist) = @_ ;
+	my ($article, $nolist, $dico, $idico) = @_ ;
 	my $count = 0;
+	
 	foreach my $line (@$article) {
 		# Split the article in words
 		
@@ -95,8 +106,18 @@ sub words
 			#next if $part =~ /[&# '_~\/\\\|]|-+/;	# Special words
 			#next if length($part) < 2;	# More than 1 letters please
 			next if $part =~ /\P{Latin}/;
-			next if $nolist->{$part};
-			$dico->{$part}++;
+			
+			# Case sensitive?
+			if ($opt{C}) {
+				my $ipart = lc($part);
+				next if $nolist->{$ipart};
+				$dico->{$part}++;				# Keep it as case sensitive in the final list nonetheless!
+				$idico->{$part}++ if $opt{O};	# Also keep a case insensitive list
+			} else {
+				next if $nolist->{$part};
+				$dico->{$part}++;
+				$idico->{$part}++ if $opt{O};	# Also keep a case insensitive list
+			}
 			$count++;
 		}
 	}
@@ -113,6 +134,7 @@ my ($n, $word_count, $redirect) = (0,0,0) ;
 my $complete_article = 0 ;
 my @article = () ;
 my $dico = {};
+my $idico = {};
 
 # Get list of words not to list
 my $nolist = get_list($opt{n});
@@ -150,11 +172,11 @@ while(<DUMP>) {
 		} else {
 			######################################
 			# Traiter les articles ici
-			$word_count += words(\@article, $dico, $nolist) ;
+			$word_count += words(\@article, $nolist, $dico, $idico) ;
 			
 			######################################
 			$n++ ;
-			if ($n % 100 == 0) {
+			if ($n % 10000 == 0) {
 				my $total_words = keys %$dico;
 				print STDERR sprintf("[%d] [%d]   %s                                                         \r", $n, $total_words, $title);
 			}
@@ -176,6 +198,16 @@ if ($opt{o}) {
 	foreach my $word (sort {$dico->{$b} <=> $dico->{$a}} keys %$dico) {
 		next if not $word;
 		print LIST "$word\t$dico->{$word}\n";
+	}
+	close(LIST) ;
+}
+
+# Print the ordered list of words without case
+if ($opt{O}) {
+	open(LIST, "> $opt{O}") or die "Couldn't write $opt{O}: $!\n" ;
+	foreach my $iword (sort {$idico->{$b} <=> $idico->{$a}} keys %$idico) {
+		next if not $iword;
+		print LIST "$iword\t$idico->{$iword}\n";
 	}
 	close(LIST) ;
 }
