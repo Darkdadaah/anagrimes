@@ -437,7 +437,7 @@ sub add_entry
 		%pron_values = (
 			'pron' => $p,
 			'pron_simple' => $p_simple,
-			'pr_ron_simple' => reverse($p_simple),
+			'r_pron_simple' => reverse($p_simple),
 			'rime_pauvre' => $rime->{pauvre},
 			'rime_suffisante' => $rime->{suffisante},
 			'rime_riche' => $rime->{riche},
