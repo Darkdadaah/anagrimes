@@ -60,7 +60,7 @@ sub init()
 	getopts( 'i:o:L:l:', \%opt ) or usage();
 	usage() if $opt{h};
 	
-	$log = $opt{l} if $opt{l};
+	$log = $opt{l} ? $opt{l} : '';
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i};
 	usage( "Output file path needed (-o)" ) if not $opt{o};
