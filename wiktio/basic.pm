@@ -43,6 +43,7 @@ sub stepl { print STDERR $_[0] ? "$_[0]" : "" } ;
 sub special_log
 {
 	my ($nom, $titre, $texte, $other) = @_ ;
+	return if not $log;
 	
 	my $logfile = $log.'_'.$nom ;
 	

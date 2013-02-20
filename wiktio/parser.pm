@@ -49,10 +49,12 @@ sub parseArticle
 			return $sections ;
 		}
 		# HEAD?
-		unless ( $line =~ /^== *\{\{langue\|(.+?)\}\} *==$/ ) {
-			push @{$sections->{'head'}}, $line ;
+		unless ( $line =~ /^([ =]*)== *\{\{langue\|(.+?)\}\} *==([ =]*)$/) {
+			push @{$sections->{'head'}}, $line;
 		} else {
-			$language = $1 ;
+			$language = $2 ;
+			special_log('level2_syntax', $title, "'^$1== $1'") if ($1 and $1 ne '');
+			special_log('level2_syntax', $title, "'$1 ==$3\$'") if ($3 and $3 ne '');
 			$sections->{'language'}->{$language} = () ;
 			last ;
 		}
@@ -74,8 +76,10 @@ sub parseArticle
 		}
 		
 		# Another language?
-		elsif ( $line =~ /^== *\{\{langue\|(.+?)\}\} *==$/) {
-			$language = $1 ;
+		elsif ( $line =~ /^([ =]*)== *\{\{langue\|(.+?)\}\} *==([ =]*)$/) {
+			$language = $2 ;
+			special_log('level2_syntax', $title, "'^$1== $1'") if ($1 and $1 ne '');
+			special_log('level2_syntax', $title, "'$1 ==$3\$'") if ($3 and $3 ne '');
 			$sections->{'language'}->{$language} = () ;
 		
 		# Continue this language
