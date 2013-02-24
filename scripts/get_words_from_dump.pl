@@ -112,11 +112,13 @@ sub words
 				my $ipart = lc($part);
 				next if $nolist->{$ipart};
 				$dico->{$part}++;				# Keep it as case sensitive in the final list nonetheless!
-				$idico->{$part}++ if $opt{O};	# Also keep a case insensitive list
+				$idico->{$ipart}++ if $opt{O};	# Also keep a case insensitive list
 			} else {
 				next if $nolist->{$part};
 				$dico->{$part}++;
-				$idico->{$part}++ if $opt{O};	# Also keep a case insensitive list
+				
+				my $ipart = lc($part);
+				$idico->{$ipart}++ if $opt{O};	# Also keep a case insensitive list
 			}
 			$count++;
 		}
