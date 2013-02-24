@@ -60,7 +60,7 @@ sub init()
 	getopts( 'i:o:L:l:', \%opt ) or usage();
 	usage() if $opt{h};
 	
-	$log = $opt{l} if $opt{l};
+	$log = $opt{l} ? $opt{l} : '';
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i};
 	usage( "Output file path needed (-o)" ) if not $opt{o};
@@ -431,13 +431,14 @@ sub add_entry
 	my %pron_values = ();
 	if ($p) {
 		my $p_simple = simple_prononciation($p);
+		my $r_p_simple = reverse($p_simple);
 		my $rime = {pauvre=>'', suffisante=>'', riche=>'', voyelle=>''};
 		$rime = extrait_rimes($p_simple);
 		
 		%pron_values = (
 			'pron' => $p,
 			'pron_simple' => $p_simple,
-			'pr_ron_simple' => reverse($p_simple),
+			'r_pron_simple' => $r_p_simple,
 			'rime_pauvre' => $rime->{pauvre},
 			'rime_suffisante' => $rime->{suffisante},
 			'rime_riche' => $rime->{riche},
