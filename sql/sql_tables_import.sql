@@ -3,7 +3,7 @@ SELECT '- Potential temporary tables dropped' AS '' ;
 
 CREATE TABLE articles_temp LIKE articles;
 SELECT '- Filling the temporary ARTICLES table...' AS '' ;
-LOAD /* SLOW_OK */ DATA LOCAL INFILE '/mnt/user-store/anagrimes/tables/current_articles.csv'
+LOAD /* SLOW_OK */ DATA LOCAL INFILE '/mnt/user-store/Wiktionnaire/anagrimes/tables/current_articles.csv'
 INTO TABLE articles_temp FIELDS
         TERMINATED BY ','
         ENCLOSED BY '"' LINES
@@ -12,7 +12,7 @@ INTO TABLE articles_temp FIELDS
 
 CREATE TABLE mots_temp LIKE mots;
 SELECT '- Filling the temporary MOTS table...' AS '' ;
-LOAD /* SLOW_OK */ DATA LOCAL INFILE '/mnt/user-store/anagrimes/tables/current_mots.csv'
+LOAD /* SLOW_OK */ DATA LOCAL INFILE '/mnt/user-store/Wiktionnaire/anagrimes/tables/current_mots.csv'
 INTO TABLE mots_temp FIELDS
 	TERMINATED BY ','
 	ENCLOSED BY '"' LINES
@@ -21,7 +21,7 @@ INTO TABLE mots_temp FIELDS
 
 SELECT '- Filling the temporary LANGUES table...' AS '' ;
 CREATE TABLE langues_temp LIKE langues;
-LOAD DATA LOCAL INFILE '/mnt/user-store/anagrimes/tables/current_langues.csv'
+LOAD DATA LOCAL INFILE '/mnt/user-store/Wiktionnaire/anagrimes/tables/current_langues.csv'
 INTO TABLE langues_temp FIELDS
 	TERMINATED BY ','
 	ENCLOSED BY '"' LINES
