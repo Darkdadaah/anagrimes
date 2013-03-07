@@ -141,10 +141,10 @@ sub parse_dump
 
 	# Counting variables
 	my ($n, $redirect) = (0,0);
-	$| = 1;	 # This allows the counter to rewrite itself on a single line
 
 	# Scan every line of the dump
 	open(DUMP, dump_input($input)) or die("Couldn't open '$input': $!\n");
+	$| = 1;	 # This allows the counter to rewrite itself on a single line
 	while(<DUMP>) {
 		# Get the title of the article, starts a new article
 		if ( /<title>(.+?)<\/title>/ ) {
@@ -191,7 +191,7 @@ sub parse_dump
 				# Fully parse the article (the extracted data are directly written in )
 				parse_article($title, \@article);
 				$n++ ;
-				printf STDERR "%7d articles\r", $n if $n % 10000 == 0;	# Simple counter
+				printf STDERR "%7d articles\r", $n if $n % 1000 == 0;	# Simple counter
 			}
 			
 			# Now that the article was parsed, reinit these temporary variables to be used with the next article
@@ -313,7 +313,7 @@ sub parse_article
 				$mot{'transcrit_plat'}='';
 			
 			# Uncomplete transcription (should be supported! -> log)
-			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z ]+$/) {
+			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z0-9â ]+$/) {
 				special_log('incomplete_transcription', $title, $mot{'transcrit_plat'});
 				$mot{'transcrit_plat'}='';
 				

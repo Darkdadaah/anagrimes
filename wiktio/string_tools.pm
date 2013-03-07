@@ -175,7 +175,7 @@ sub transcription
 # 			$transcrit =~ tr/абвгдежзиклмнопрстуф/abvgdejziklmnoprstuf/ ;
 # 			print "[$l] transcrit: $transcrit\n" ;
 
-			if ($transcrit and not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+			if ($transcrit and not unicode_NFKD($transcrit) =~ /^[a-z0-9 ]+$/) {
 				#print STDERR "[[$titre]]\tTranscription du cyrillique ratée : '$transcrit'\n" ;
 				special_log('bad_cyrillique', $titre, '', $transcrit) ;
 			}
@@ -183,8 +183,14 @@ sub transcription
 		}
 		
 		if ($langues_transcrites->{'grec'}->{$l}) {
-			$transcrit =~ tr/αβϐγδεϵζηικϰλμνξοπϖρϱσςϲτυφχψω/abbgdêêzeikklmnxopprrssstuô/ ;
-			$transcrit =~ tr/ΑΒΓΔΕΖΗΙΚΛΜΝΞΟΠΡΣϹΤΥΦΧΨΩ/ABGDÊZEIKLMNXOPRSSTUÔ/ ;
+			$transcrit =~ tr/αβϐγδεϵϝζηικϰλμνξοπϖρϱσςϲτυφχψω/abbgdêêwzeikklmnxopprrssstuô/ ;
+			$transcrit =~ tr/ΑΒΓΔΕϜΖΗΙΚΛΜΝΞΟΠΡΣϹΤΥΦΧΨΩ/ABGDÊWZEIKLMNXOPRSSTUÔ/ ;
+			
+			# Rares ou archaïque
+			$transcrit =~ tr/϶ϙϘϻϺϛϚ/êkKsS66/;
+			
+			# À vérifier
+			$transcrit =~ tr/ϸϷ/šŠ/;
 			
 			# Caractères doublés
 			$transcrit =~ s/[θϑ]/th/g ;
@@ -204,7 +210,7 @@ sub transcription
 			$transcrit =~ s/Χ/KH/g ;
 			$transcrit =~ s/Ψ/PS/g ;
 			
-			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+			if (not unicode_NFKD($transcrit) =~ /^[a-z0-9 ]+$/) {
 				#print STDERR "[[$titre]]\tTranscription du grec ratée : '$transcrit'\n" ;
 				special_log('bad_grec', $titre, '', $transcrit) ;
 			}
@@ -221,42 +227,47 @@ sub transcription
 			
 			# Zero-width non joiner
 			my $zwnj = chr(8204) ;
-			$transcrit =~ s/$zwnj/ /g ;
+			$transcrit =~ s/$zwnj/ /g;
 			
 			# Zero width joiner
 			my $zwj = chr(8205) ;
-			$transcrit =~ s/$zwj//g ;
+			$transcrit =~ s/$zwj//g;
 			
 			# hamza
 # 			$transcrit =~ tr/ء/’/ ;			# Standard
 # 			$transcrit =~ tr/ء/'/ ;			# Simplification
-			$transcrit =~ s/ء// ;			# Ultra simplifié
+			$transcrit =~ s/ء//g;			# Ultra simplifié
+			
+			# Nombres
+			$transcrit =~ tr/٠١٢٣٤٥٦٧٨٩/0123456789/;
+			# Persans
+			$transcrit =~ tr/۰۱۲۳۴۵۶۷۸۹/0123456789/;
 			
 			# DIACRITIQUES
 			#fatha
-			my $fatha = chr(0x064E) ;
-			my $kasrah = chr(0x0650) ;
-			my $dammah = chr(0x064F) ;
+			my $fatha = chr(0x064E);
+			my $kasra = chr(0x0650);
+			my $damma = chr(0x064F);
 			
-			$transcrit =~ tr/$fatha$kasrah$dammah/ai/ ;
+			$transcrit =~ tr/$fatha$kasrah$dammah/aiu/;
 			
 			# alif
-			$transcrit =~ tr/ﺎا/ââ/ ;
+			$transcrit =~ tr/ﺎا/ââ/;
 			
 			# ba
-			$transcrit =~ tr/ﺒﺑبﺐ/bbbb/ ;
+			$transcrit =~ tr/ﺒﺑبﺐ/bbbb/;
 			# ta 1
-			$transcrit =~ tr/تﺗﺘﺖ/tttt/ ;
+			$transcrit =~ tr/تﺗﺘﺖ/tttt/;
 			# ta 2
-			$transcrit =~ s/[ثﺛﺜﺚ]/th/g ;
+			$transcrit =~ s/[ثﺛﺜﺚ]/th/g;
 			# gim
-			$transcrit =~ s/[جﺟﺠﺞ]/dj/g ;
+			$transcrit =~ s/[جﺟﺠﺞ]/dj/g;
 			
 			# ha 1
-# 			$transcrit =~ tr/حﺣﺤﺢ/ḥḥḥḥ/ ;	# Standard
-			$transcrit =~ tr/حﺣﺤﺢ/hhhh/ ;	# Simplification
+# 			$transcrit =~ tr/حﺣﺤﺢ/ḥḥḥḥ/;	# Standard
+			$transcrit =~ tr/حﺣﺤﺢ/hhhh/;	# Simplification
 			# ha 2
-			$transcrit =~ s/[خﺧﺨﺦ]/kh/g ;
+			$transcrit =~ s/[خﺧﺨﺦ]/kh/g;
 			
 			# dal 1
 			$transcrit =~ tr/دﺪ/dd/ ;
@@ -281,7 +292,7 @@ sub transcription
 # 			$transcrit =~ s/[طﻃﻄﻂ]/ṭ/g ;	# Standard
 			$transcrit =~ s/[طﻃﻄﻂ]/t/g ;	# Simplification
 			# za
-			$transcrit =~ tr/ظﻇﻈﻆ/ẓẓẓẓ/ ;	# Standard
+			#$transcrit =~ tr/ظﻇﻈﻆ/ẓẓẓẓ/ ;	# Standard
 			$transcrit =~ tr/ظﻇﻈﻆ/zzzz/ ;	# Simplification
 			# ayn
 # 			$transcrit =~ tr/عﻋﻌﻊ/‘‘‘‘/ ;	# Standard
@@ -339,9 +350,9 @@ sub transcription
 			# Voyelles
 			$transcrit =~ tr/ی/i/ ;
 			
-			if (not unicode_NFKD($transcrit) =~ /^[a-z ]+$/) {
+			if (not unicode_NFKD($transcrit) =~ /^[a-zâ'0-9 ]+$/) {
 				my $left = $transcrit ;
-				$left =~ s/[a-z ]//g ;
+				$left =~ s/[a-zâ'0-9 ]//g ;
 				my $len = length($left) ;
 				#print STDERR "[[$titre]]\tTranscription de l'arabe ratée : '$transcrit' (reste $len lettres : '$left')\n" ;
 				special_log('bad_arabe', $titre, "reste $len lettres : '$left", $transcrit) ;
