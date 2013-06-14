@@ -482,7 +482,7 @@ sub check_prononciation
 			$p2 =~ s/'/ˈ/g ;
 			special_log('API_ton', $titre, "$p -> $p2") ;
 			push @pron, $p2 ;
-		} elsif ($p =~ /\/ ou \// or $p =~ / ou /) {
+		} elsif ($p =~ /\/( ou |, )\// or $p =~ /( ou |, )/) {
 			special_log('double_pron', $titre, $p) ;
 			my @ou_pron = split(/\/? ou \/?/, $p) ;
 			push @pron, @ou_pron ;

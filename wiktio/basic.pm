@@ -134,8 +134,6 @@ our $word_type = {
 	
 	# Pronom
 	'pronom' => 1,
-	'pronom-déf' => 1,
-		'pronom-def' => 1,
 	'pronom-indéf' => 1,
 		'pronom-indef' => 1,
 	'pronom-int' => 1,
@@ -176,7 +174,6 @@ our $word_type = {
 	'particule' => 1,
 		'part' => 1,
 	'radical' => 1,
-	'racine' => 1,
 	'part-num' => 1,
 	
 	# Phrases et locutions
@@ -206,6 +203,7 @@ our $word_type = {
 	'abr' => 2,
 	'cont' => 2,
 	'sigle' => 2,
+        'racine' => 2,
 	
 	# Beuh
 	'erreur' => 2,
