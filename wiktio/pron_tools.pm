@@ -141,53 +141,57 @@ sub cherche_prononciation
 		# Avec {{pron|}}
 		if ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}\}/) {
 			my $p = $1 ;
+			# Pron donnée mais sans code langue
 			if (not $p =~ /[=\|]/) {
 				$pron{$p} = 1 ;
-			} elsif ($p =~ /^lang=[^\|\}]+\|(.+)$/ or $p =~ /^(.+)\|lang=[^\|\}]+$/) {
-				$pron{$1} = 1 ;
-			} elsif ($p =~ /^lang=[^\|\}]+\|$/ or $p =~ /^\|lang=[^\|\}]+$/ or $p =~ /^lang=[^\|\}]+$/) {
-				# Second paramètre?
-			} elsif ($p =~ /^.+\|.+$/ and not $p =~ /=/) {
-				# Code langue ?
-				if ($p =~ /^(.+)\|[a-z]{2,3}$/) {
-					$pron{$1} = 1 ;
-				# Autre : erreur ou résidu
-				} else {
-					special_log('SAMPA', $titre, '', "p=$p") ;
-				}
-			# Vide avec code langue
-			} elsif ($p =~ /^\s*\|[a-z]{2,3}$/) {
-# 				print STDERR "[[$titre]]\t {{pron}} vide mais avec code langue (p='$p')\n" ;
+				special_log('bad_pron_nolang', $titre, '', "p='$p'") ;
+			# Pron donnée avec la langue donnée en paramètre lang=
+			} elsif ($p =~ /^lang=[^\|\}]+\|(.*)$/ or $p =~ /^(.*)\|lang=[^\|\}]+$/ or $p =~ /^(\s?)lang=[^\|\}]+$/) {
+				$pron{$1} = 1 if $1;
+			# Vide ou non, avec code langue
+			} elsif ($p =~ /^([^\|\}])*\|([^\|\}]+)$/) {
+				$pron{$1} = 1 if $1;
+			# Une erreur ?
 			} else {
 				special_log('bad_pron', $titre, '', "p='$p'") ;
 			}
 		}
-		elsif ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\} ou \{\{pron\|([^\}\r\n]+?)\}\}\}/) {
+		elsif ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}.+ \{\{pron\|([^\}\r\n]+?)\}\}\}/) {
 			my $p1 = $1 ;
 			my $p2 = $2 ;
+			# Pron donnée mais sans code langue
 			if (not $p1 =~ /[=\|]/) {
 				$pron{$p1} = 1 ;
-			} elsif ($p1 =~ /^lang=.{2,3}\|(.+)$/ or $p1 =~ /^(.+)\|lang=.{2,3}$/) {
+				special_log('bad_pron_nolang', $titre, '', "p1='$p1'") ;
+			# Pron donnée avec la langue donnée en paramètre lang=
+			} elsif ($p1 =~ /^lang=.+\|(.+)$/ or $p1 =~ /^(.+)\|lang=.+$/) {
 				$pron{$1} = 1 ;
-# 			} elsif ($p1 =~ /^lang=.{2,3}\|$/ or $p1 =~ /^\|lang=.{2,3}$/) {
-				# Vide
+			# Vide ou non, avec code langue
+			} elsif ($p1 =~ /^([^\|\}])*\|([^\|\}]+)$/) {
+				$pron{$1} = 1 if $1;
+			# Une erreur ?
 			} else {
 				special_log('bad_pron', $titre, '', "p1='$p1'") ;
 			}
 			
+			# Pron donnée mais sans code langue
 			if (not $p2 =~ /[=\|]/) {
 				$pron{$p2} = 1 ;
-			} elsif ($p2 =~ /^lang=.{2,3}\|(.+)$/ or $p2 =~ /^(.+)\|lang=.{2,3}$/) {
+				special_log('bad_pron_nolang', $titre, '', "p2='$p2'") ;
+			# Pron donnée avec la langue donnée en paramètre lang=
+			} elsif ($p2 =~ /^lang=.+\|(.+)$/ or $p2 =~ /^(.+)\|lang=.+$/) {
 				$pron{$1} = 1 ;
-# 			} elsif ($p2 =~ /^lang=.{2,3}\|$/ or $p2 =~ /^\|lang=.{2,3}$/) {
-				# Vide
+			# Vide ou non, avec code langue
+			} elsif ($p2 =~ /^([^\|\}])*\|([^\|\}]+)$/) {
+				$pron{$1} = 1 if $1;
+			# Une erreur ?
 			} else {
 				special_log('bad_pron', $titre, '', "p2='$p2'") ;
 			}
 		}
 		
 		# Ancien
-		if ($ligne =~ /^'''.+?'''.*?\/([^\/]*?)\/ ou \/([^\/]*?)\//) {
+		if ($ligne =~ /^'''.+?'''.*?\/([^\/]*?)\/.+ \/([^\/]*?)\//) {
 			$pron{$1} = 1 ;
 			$pron{$2} = 1 ;
 			#print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/, /$2/\n" ;
@@ -423,7 +427,7 @@ sub section_prononciation
 				$pron{$ps[0]} = 1 if $ps[0] ;
 			}
 		}
-		elsif ($ligne =~ /^\* .+ ?\{\{pron\|([^\}\r\n]+?)\}\}/ and not $ligne =~ /SAMPA/ and $1) {
+		elsif ($ligne =~ /^\* ?.+ ?\{\{pron\|([^\}\r\n]+?)\}\}/ and not $ligne =~ /SAMPA/ and $1) {
 			$p = $1 ;
 			my @ps = split(/\s*\|\s*/, $p) ;
 			if ($ps[0] =~ /lang=/) {
