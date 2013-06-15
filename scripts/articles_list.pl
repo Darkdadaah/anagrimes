@@ -306,6 +306,7 @@ while(<DUMP>) {
 			$title = '' if $title =~ /[:\/]/ ;
 		}
 		
+		
 		# History: authors filter
 		if ($opt{A}) {
 			next if not $title;
@@ -398,7 +399,7 @@ while(<DUMP>) {
 			}
 			######################################
 			$n++ ;
-			print STDERR "[$n] [$count->{Count}] $title\n" if $n%10000==0;
+			print STDERR "[$n] [$count->{Count}] $title\n" if $n%1000==0;
 		}
 		$complete_article = 0 ;
 	}
