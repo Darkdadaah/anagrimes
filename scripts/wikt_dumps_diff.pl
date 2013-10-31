@@ -16,7 +16,22 @@ my $languages = {
 		'en' => 'English',
 		'fr' => 'French',
 		'it' => 'Italian',
-	}
+		'ru' => 'Russian',
+	},
+	'de' => {
+		'de' => 'Deutch',
+		'en' => 'Englisch',
+		'fr' => 'Franz.+sisch',
+		'it' => 'Italienisch',
+		'ru' => 'Russisch',
+	},
+	'vi' => {
+		'fr' => 'fra',
+		'en' => 'eng',
+		'de' => 'deu',
+		'it' => 'ita',
+		'ru' => 'rus',
+	},
 } ;
 
 #################################################
@@ -73,8 +88,16 @@ sub recherche
 		$recherche = '\{\{langue\|'.$lang.'\}\}' ;
 	} elsif ($wiktlang eq 'en') {
 		$recherche = "^== *$languages->{$wiktlang}->{$lang} *==" ;
+	} elsif ($wiktlang eq 'de') {
+		$recherche = '\{\{Sprache\|' . $languages->{$wiktlang}->{$lang} . '\}\}';
 	} else {
-		$recherche = '\{\{-'.$lang.'-\}\}' ;
+		if ($languages->{$wiktlang}) {
+			my $code = $languages->{$wiktlang}->{$lang};
+			$code = $lang if not $code;
+			$recherche = '\{\{-'.$code.'-\}\}' ;
+		} else {
+			$recherche = '\{\{-'.$lang.'-\}\}' ;
+		}
 	}
 	stepl "(cherche '$recherche') " ;
 	return $recherche ;
@@ -84,9 +107,12 @@ sub getWiktionaryList
 {
 	my ($file, $recherche) = @_ ;
 	my $list = {} ;
+
+	if ($file =~ /\.bz2$/) {
+		$file = "bzcat $file |";
+	}
 	
-	
-	open(DUMP, dump_input($file)) or die "Couldn't open '$file': $!\n" ;
+	open(DUMP, $file) or die "Couldn't open '$file': $!\n" ;
 	
 	my $title = '' ;
 	while(my $line = <DUMP>) {
