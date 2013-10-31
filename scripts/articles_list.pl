@@ -295,6 +295,7 @@ if ($opt{A}) {
 	}
 }
 
+$|=1;
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1 ;
@@ -399,11 +400,13 @@ while(<DUMP>) {
 			}
 			######################################
 			$n++ ;
-			print STDERR "[$n] [$count->{Count}] $title\n" if $n%1000==0;
+			print STDERR "[$n] [$count->{Count}] $title                           \r" if $n%1000==0;
 		}
 		$complete_article = 0 ;
 	}
 }
+$|=0;
+print STDERR "\n";
 close(DUMP) ;
 
 print STDERR "Total = $n\n" ;
