@@ -16,6 +16,7 @@ use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD) ;
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile) ;
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation) ;
 our %opt ;
+my %count = ('pages' => 0, 'mots' => 0);
 
 #################################################
 # Message about this program and how to use it
@@ -38,6 +39,8 @@ sub usage
 	-p list,  : utiliser ces espaces de nommage
 	-m        : Utiliser les pages de l'espace principal (en combinaison avec -P or -p)
 	
+	-r <str>  : Ne garder que les pages ayant ce motif regex dans leur texte
+	
 EOF
 	exit ;
 }
@@ -46,7 +49,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:I:o:PHp:m', \%opt ) or usage() ;
+	getopts( 'hi:I:o:PHp:mr:', \%opt ) or usage() ;
 	usage() if $opt{h} ;
 	
 	usage( "Chemin du dump (-i)" ) if not $opt{i} ;
@@ -109,9 +112,18 @@ sub article
 	my ($titre, $article, $dico, $sql) = @_ ;
 	
 	# Précorrection
+	my $regexok = 0;
 	foreach my $line (@$article) {
+		if (not $regexok and $opt{r} and $line =~ /$opt{r}/) {
+			$regexok=1;
+		}
 		# Ligne de traduction ou prononciation
 		$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g ;
+	}
+	
+	# Pas trouvé le motif indispensable
+	if ($opt{r} and not $regexok) {
+		return 0;
 	}
 	
 	# Wikisource qualité
@@ -187,6 +199,7 @@ sub article
 		my $cols = join("\t", @cols) ;
 		print $sql "$cols\n" ;
 		$num_mots++ ;
+		$count{mots}++;
 	}
 	
 	return $num_mots ;
@@ -226,7 +239,6 @@ my $past = time() ;
 # Read dump
 open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n" ;
 my $title = '' ;
-my $n = 0 ;
 my $complete_article = 0 ;
 my @article = () ;
 
@@ -237,6 +249,7 @@ my @namespaces = split(/\s*,\s*/, $opt{p}) ;
 print STDERR "Allowed namespaces: ".join(", ", @namespaces)."\n" ;
 open(my $sql, ">$sqlfile") or die("$sqlfile: $!") ;
 
+$|=1;
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1 ;
@@ -305,16 +318,19 @@ while(<DUMP>) {
 			my $mots_en_plus = article($title, \@article, $dico, $sql) ;
 			$num_mots += $mots_en_plus if $mots_en_plus ;
 			######################################
-			$n++ ;
-			print "[$n] $title\n" if $n%10000==0 ;
+			$count{pages}++ ;
+			print STDERR "[$count{pages}] [$count{mots}] $title          \r" if $count{pages}%1000==0 ;
 		}
 		$complete_article = 0 ;
 	}
 }
+$|=0;
+print STDERR "\n";
 close(DUMP) ;
 close($sql) ;
 
-print "Total = $n\n" ;
+print "Total = $count{pages}\n" ;
+print "Total = $count{mots}\n" if $count{mots};
 
 my $num_dico = keys %$dico ;
 print "Articles dico: $num_dico\n" ;
