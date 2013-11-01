@@ -6,7 +6,7 @@ use warnings;
 use Getopt::Std;
 
 use lib '..';
-use wiktio::basic		qw(step stepl print_value);
+use wiktio::basic		qw(step stepl print_value dump_input);
 use wiktio::parser		qw(parseArticle);
 our %opt;
 
@@ -118,14 +118,10 @@ sub prepare_language_section
 # Parse a dump
 sub get_articles_list
 {
-	my ($file, $recherche) = @_;
+	my ($file, $lang_section) = @_;
 	my $list = {};
-
-	if ($file =~ /\.bz2$/) {
-		$file = "bzcat $file |";
-	}
 	
-	open(DUMP, $file) or die "Couldn't open '$file': $!\n";
+	open(DUMP, dump_input($file)) or die "Couldn't open '$file': $!\n";
 	
 	my $title = '';
 	while(my $line = <DUMP>) {
@@ -139,7 +135,7 @@ sub get_articles_list
 		} elsif ($title and $line =~ /<text xml:space="preserve">(.*?)$/) {
 			my $head = $1;
 			# Search for the language section already
-			if ($head =~ /$recherche/) {
+			if ($head =~ /$lang_section/) {
 				$list->{$title} = 1;
 				$title = '';
 				next;
@@ -150,7 +146,7 @@ sub get_articles_list
 				}
 				while (my $inline = <DUMP>) {
 					# Continue to search for the language section
-					if ($inline =~ /$recherche/) {
+					if ($inline =~ /$lang_section/) {
 						$list->{$title} = 1;
 						$title='';
 					}
@@ -214,14 +210,14 @@ init();
 
 # Get list from the first Wiktionary
 stepl "Parse $opt{l} Wiktionary: ";
-my $lang_section_1 = prepare_language_section(find_words($opt{l}, $opt{c});
+my $lang_section_1 = prepare_language_section($opt{l}, $opt{c});
 my $first = get_articles_list($opt{i}, $lang_section_1);
 print_value("%d articles in $opt{c}", $first);
 
 # Get list from the second Wiktionary
 stepl "Parse $opt{L} Wiktionary: ";
-my $lang_section_2 = prepare_language_section(find_words($opt{L}, $opt{c});
-my $first = get_articles_list($opt{I}, $lang_section_2);
+my $lang_section_2 = prepare_language_section($opt{L}, $opt{c});
+my $second = get_articles_list($opt{I}, $lang_section_2);
 print_value("%d articles in $opt{c}", $second);
 
 # Compare
