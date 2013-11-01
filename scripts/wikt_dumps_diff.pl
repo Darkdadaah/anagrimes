@@ -10,6 +10,7 @@ use wiktio::basic		qw(step stepl print_value);
 use wiktio::parser		qw(parseArticle);
 our %opt;
 
+# Special case of Wiktionaries that use full name or special codes for their langues
 my $languages = {
 	'en' => {
 		'de' => 'Deutsch',
@@ -41,7 +42,8 @@ sub usage
 	print STDERR "[ $_[0] ]\n" if $_[0];
 	print STDERR << "EOF";
 	
-	This script make a diff of the articles from one same language in 2 Wiktionaries
+	This script makes a diff of the articles from one same language in 2 Wiktionaries.
+	It outputs both a list of articles found only in the first, and a list found only in the second Wiktionary dump.
 	
 	usage: $0 [-h] -l lang -1 wikt1 -2 wikt2
 	
@@ -79,31 +81,42 @@ sub init()
 	usage( "First or second output file path needed (-o)" ) if not $opt{o} and not $opt{O};
 }
 
-sub recherche
+##################################
+# Subroutines
+
+# Prepare the language_section text that we want to find in an article about a given language
+sub prepare_language_section
 {
 	my ($wiktlang, $lang) = @_;
-	my $recherche = '';
+	my $lang_sec = '';
 	
+	# Language sections format specific to some Wiktionaries
+	# French
 	if ($wiktlang eq 'fr') {
-		$recherche = '\{\{langue\|'.$lang.'\}\}';
+		$lang_sec = '\{\{langue\|'.$lang.'\}\}';
+	# English
 	} elsif ($wiktlang eq 'en') {
-		$recherche = "^== *$languages->{$wiktlang}->{$lang} *==";
+		$lang_sec = "^== *$languages->{$wiktlang}->{$lang} *==";
+	# German
 	} elsif ($wiktlang eq 'de') {
-		$recherche = '\{\{Sprache\|' . $languages->{$wiktlang}->{$lang} . '\}\}';
+		$lang_sec = '\{\{Sprache\|' . $languages->{$wiktlang}->{$lang} . '\}\}';
+	# All other wiktionaries: supposed to use the old style "{{-xx-}}" where "xx" is a language code
 	} else {
+		# Special language codes? (e.g. "eng" instead of "en")
 		if ($languages->{$wiktlang}) {
 			my $code = $languages->{$wiktlang}->{$lang};
 			$code = $lang if not $code;
-			$recherche = '\{\{-'.$code.'-\}\}';
+			$lang_sec = '\{\{-'.$code.'-\}\}';
 		} else {
-			$recherche = '\{\{-'.$lang.'-\}\}';
+			$lang_sec = '\{\{-'.$lang.'-\}\}';
 		}
 	}
-	stepl "(cherche '$recherche') ";
-	return $recherche;
+	stepl "(search for '$lang_sec') ";	# Leave the line open to write the stats
+	return $lang_sec;
 }
 
-sub getWiktionaryList
+# Parse a dump
+sub get_articles_list
 {
 	my ($file, $recherche) = @_;
 	my $list = {};
@@ -116,15 +129,17 @@ sub getWiktionaryList
 	
 	my $title = '';
 	while(my $line = <DUMP>) {
+		# Get page title
 		if ($line =~ /<title>(.+?)<\/title>/) {
 			$title = $1;
-			# Exclut toutes les pages en dehors de l'espace principal
+			# Exclude pages outside of the main space
 			$title = '' if $title =~ /[:\/]/;
-			
+		
+		# Get page content
 		} elsif ($title and $line =~ /<text xml:space="preserve">(.*?)$/) {
 			my $head = $1;
+			# Search for the language section already
 			if ($head =~ /$recherche/) {
-# 				step "A = $title\t($line)";
 				$list->{$title} = 1;
 				$title = '';
 				next;
@@ -134,8 +149,8 @@ sub getWiktionaryList
 					next;
 				}
 				while (my $inline = <DUMP>) {
+					# Continue to search for the language section
 					if ($inline =~ /$recherche/) {
-# 						step "B = $title\t($inline)";
 						$list->{$title} = 1;
 						$title='';
 					}
@@ -149,11 +164,10 @@ sub getWiktionaryList
 	}
 	close(DUMP);
 	
-# 	map { step "$_"; } sort keys %$list;
-	
 	return $list;
 }
 
+# Compare both lists and outputs items that are specific to each and common to both
 sub diff_lists
 {
 	my ($first, $second) = @_;
@@ -180,6 +194,7 @@ sub diff_lists
 	return ($first_only, $second_only, $common);
 }
 
+# Output a list of articles in wiki code with a link to the other wiktionary
 sub write_list
 {
 	my ($list, $file, $lang) = @_;
@@ -197,14 +212,16 @@ sub write_list
 # MAIN
 init();
 
-# First Wiktionary
+# Get list from the first Wiktionary
 stepl "Parse $opt{l} Wiktionary: ";
-my $first = getWiktionaryList($opt{i}, recherche($opt{l}, $opt{c}));
+my $lang_section_1 = prepare_language_section(find_words($opt{l}, $opt{c});
+my $first = get_articles_list($opt{i}, $lang_section_1);
 print_value("%d articles in $opt{c}", $first);
 
-# Second Wiktionary
+# Get list from the second Wiktionary
 stepl "Parse $opt{L} Wiktionary: ";
-my $second = getWiktionaryList($opt{I}, recherche($opt{L}, $opt{c}));
+my $lang_section_2 = prepare_language_section(find_words($opt{L}, $opt{c});
+my $first = get_articles_list($opt{I}, $lang_section_2);
 print_value("%d articles in $opt{c}", $second);
 
 # Compare
@@ -216,11 +233,11 @@ print_value("%d articles in common", $common);
 
 # Write lists
 if ($opt{o}) {
-	step "Write the the articles found only in $opt{l} Wiktionary";
+	step "Write the articles found only in $opt{l} Wiktionary";
 	write_list($first_only, $opt{o}, $opt{l});
 }
 if ($opt{O}) {
-	step "Write the the articles found only in $opt{L} Wiktionary";
+	step "Write the articles found only in $opt{L} Wiktionary";
 	write_list($second_only, $opt{O}, $opt{L});
 }
 
