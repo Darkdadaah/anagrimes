@@ -26,6 +26,7 @@ use Exporter ;
 	$langues_transcrites
 	step
 	stepl
+	print_value
 ) ;
 
 use strict ;
@@ -38,6 +39,25 @@ our $log = 'log.txt' ;
 
 sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n" } ;
 sub stepl { print STDERR $_[0] ? "$_[0]" : "" } ;
+
+# Print a value for a given hash ref, array ref or text
+sub print_value
+{
+	my ($text, $ref) = @_;
+	
+	# Get the number if the ref is a hash or an array
+	my $val = '';
+	if 	(ref($ref) eq 'ARRAY') {
+		$val = $#{$ref} + 1;
+	} elsif (ref($ref) eq 'HASH') {
+		$val = keys %$ref;
+	} else {
+		$val = $ref;
+	}
+	
+	# Print the value
+	step(sprintf($text, $val));
+}
 
 # Log specific errors in separate files
 sub special_log
