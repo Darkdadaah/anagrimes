@@ -19,7 +19,7 @@ use wiktio::parser		qw(parseArticle parseLanguage parseType);
 
 # To filter the bots
 # Hard-coded list for fr.wikt
-our @bots_names = qw(Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ);
+our @bots_names = qw(Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ);
 
 our %opt;	# Getopt options
 
