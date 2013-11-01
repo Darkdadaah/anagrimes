@@ -2,21 +2,21 @@
 # Wiktionnaire bases
 # Author: Matthieu Barba
 # This module contains basic data and functions for Wiktionary fr
-package wiktio::basic ;
+package wiktio::basic;
 
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
-use Exporter ;
-@ISA=('Exporter') ;
+use Exporter;
+@ISA=('Exporter');
 
 @EXPORT = qw(
 	$log
 	special_log
 	dump_input
 	$true $false
-) ;
+);
 
 @EXPORT_OK = qw(
 	$word_type
@@ -27,18 +27,18 @@ use Exporter ;
 	step
 	stepl
 	print_value
-) ;
+);
 
-use strict ;
-use warnings ;
+use strict;
+use warnings;
 
-our $true = 1 ;
-our $false = 0 ;
+our $true = 1;
+our $false = 0;
 
-our $log = 'log.txt' ;
+our $log = 'log.txt';
 
-sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n" } ;
-sub stepl { print STDERR $_[0] ? "$_[0]" : "" } ;
+sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n" };
+sub stepl { print STDERR $_[0] ? "$_[0]" : "" };
 
 # Print a value for a given hash ref, array ref or text
 sub print_value
@@ -62,17 +62,17 @@ sub print_value
 # Log specific errors in separate files
 sub special_log
 {
-	my ($nom, $titre, $texte, $other) = @_ ;
+	my ($nom, $titre, $texte, $other) = @_;
 	return if not $log;
 	
-	my $logfile = $log.'_'.$nom ;
+	my $logfile = $log.'_'.$nom;
 	
-	open(LOG, ">>$logfile") or die("Couldn't write $logfile: $!") ;
-	my $raw_texte = $texte ? $texte : '' ;
-	$raw_texte =~ s/\[\[([^\]]+)\]\]/__((__$1__))__/g ;
-	$raw_texte .= "\t($other)" if $other ;
-	print LOG "* [[$titre]]\t$raw_texte\n" ;
-	close(LOG) ;
+	open(LOG, ">>$logfile") or die("Couldn't write $logfile: $!");
+	my $raw_texte = $texte ? $texte : '';
+	$raw_texte =~ s/\[\[([^\]]+)\]\]/__((__$1__))__/g;
+	$raw_texte .= "\t($other)" if $other;
+	print LOG "* [[$titre]]\t$raw_texte\n";
+	close(LOG);
 }
 
 # Change the input to automatically handle file compression
@@ -108,7 +108,7 @@ our $level3 = {
 	'références'  => 'references',
 		'réf'  => 'references',
 		'ref'  => 'references',
-} ;
+};
 
 our $word_type = {
 	
@@ -229,7 +229,7 @@ our $word_type = {
 	'erreur' => 2,
 	'var-typo' => 2,
 	#'drv' => 2,
-} ;
+};
 
 our $word_type_syn = {
 	'verbe' => 'verb',
@@ -240,7 +240,7 @@ our $word_type_syn = {
 	'adj' => 'adjectif',
 	'adverbe' => 'adv',
 	'prep' => 'prép',
-} ;
+};
 
 our $level4 = {
 	'ortho-alt' => 1,
@@ -286,14 +286,14 @@ our $level4 = {
 	'hist' => 1,	# sub étymologie
 	'faux-amis' => 1,
 	'faux-prov' => 1,
-} ;
+};
 
 our $langues_transcrites = {
 	'cyrillique' => {'ru'=>1, 'bg'=>1, 'uk'=>1},
 	'grec' => {'el'=>1, 'grc'=>1},
 	'arabe' => {'ar'=>1, 'fa'=>1},
-} ;
+};
 
-1 ;
+1;
 
 __END__

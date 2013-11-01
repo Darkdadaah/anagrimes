@@ -110,7 +110,7 @@ sub add_to_file_lang
 	my ($line) = @_;
 	open(LANG, "> $output_files{langues}{file}") or die "Can't write $output_files{langues}{file}: $!\n";
 	foreach my $l (sort keys(%lang_total)) {
-		my $filter = $lang_filter{$l} ? $lang_filter{$l} : 0 ;
+		my $filter = $lang_filter{$l} ? $lang_filter{$l} : 0;
 		my @lang_line = ($l, $lang_total{$l}, $filter);
 		print LANG '"' . join( '","' , @lang_line) . "\"\n";	# Print line in csv style: "A","B","C"\n
 	}
@@ -190,7 +190,7 @@ sub parse_dump
 			} else {
 				# Fully parse the article (the extracted data are directly written in )
 				parse_article($title, \@article);
-				$n++ ;
+				$n++;
 				printf STDERR "%7d articles\r", $n if $n % 1000 == 0;	# Simple counter
 			}
 			
@@ -331,7 +331,7 @@ sub parse_article
 # LANGUAGE SECTION
 sub parse_language_sections
 {
-	my ($title, $section, $lang) = @_ ;
+	my ($title, $section, $lang) = @_;
 	
 	# First extract all level 3 sections, even the etymology, pron, ref, etc.
 	my $lang_section = parseLanguage($section, $title, $lang);
@@ -488,9 +488,9 @@ sub random_counter
 
 ###################
 # MAIN
-init() ;
+init();
 
-my $past = time() ;	# Chronometer start
+my $past = time();	# Chronometer start
 
 parse_dump($opt{i});
 

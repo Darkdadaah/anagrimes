@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use strict ;
+use strict;
 use warnings;
 use Getopt::Std;
 
@@ -38,9 +38,9 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:', \%opt ) or usage() ;
-	usage() if $opt{h} ;
-	usage( "Dump path needed (-i)" ) if not $opt{i} ;
+	getopts( 'hi:', \%opt ) or usage();
+	usage() if $opt{h};
+	usage( "Dump path needed (-i)" ) if not $opt{i};
 }
 
 sub interwiki_analyze
@@ -93,40 +93,40 @@ sub interwiki_analyze
 
 ###################
 # MAIN
-init() ;
+init();
 
-open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n" ;
-my $title = '' ;
-my ($n, $redirect) = (0,0) ;
-my $complete_article = 0 ;
-my %already = () ;
-my @article = () ;
-my $count = {} ;
+open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n";
+my $title = '';
+my ($n, $redirect) = (0,0);
+my $complete_article = 0;
+my %already = ();
+my @article = ();
+my $count = {};
 
 $|=1;
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
-		$title = $1 ;
-		$title = '' if $title =~ /[:\/]/ ;
+		$title = $1;
+		$title = '' if $title =~ /[:\/]/;
 		
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
-		@article = () ;
-		push @article, "$1\n" ;
-		$complete_article = 1 ;
+		@article = ();
+		push @article, "$1\n";
+		$complete_article = 1;
 		
 		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
-		@article = () ;
-		push @article, "$1\n" ;
+		@article = ();
+		push @article, "$1\n";
 		while ( <DUMP> ) {
-			next if /^\s+$/ ;
+			next if /^\s+$/;
 			if ( /^(.*?)<\/text>/ ) {
-				push @article, "$1\n" ;
-				last ;
+				push @article, "$1\n";
+				last;
 			} else {
-				push @article, $_ ;
+				push @article, $_;
 			}
 		}
-		$complete_article = 1 ;
+		$complete_article = 1;
 	}
 	if ($complete_article) {
 		if ($article[0] =~ /#redirect/i) {
@@ -139,15 +139,15 @@ while(<DUMP>) {
 			$count->{articles}++;
 			print STDERR "[$count->{articles}] $title                                         \r" if $count->{articles}%1000==0;
 		}
-		$complete_article = 0 ;
+		$complete_article = 0;
 	}
 }
 $|=0;
 print STDERR "\n";
-close(DUMP) ;
+close(DUMP);
 
 foreach my $c (sort keys %$count) {
-	print STDERR "$c:\t$count->{$c}\n" ;
+	print STDERR "$c:\t$count->{$c}\n";
 }
 
 __END__

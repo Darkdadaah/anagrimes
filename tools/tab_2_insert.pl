@@ -15,7 +15,7 @@ my @tables_names = keys(%tables);
 # Message about this program and how to use it
 sub usage
 {
-        print STDERR "[ $_[0] ]\n" if $_[0] ;
+        print STDERR "[ $_[0] ]\n" if $_[0];
         print STDERR << "EOF";
 
         This script converts a tabulated anagrimes list into an sql insert command list.
@@ -28,7 +28,7 @@ sub usage
 
         tables available: @tables_names
 EOF
-        exit ;
+        exit;
 }
 
 ##################################

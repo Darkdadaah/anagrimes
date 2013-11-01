@@ -1,26 +1,26 @@
 #!/usr/bin/perl -w
 
 # Test the functions ascii etc.
-use strict ;
-use warnings ;
-use Getopt::Std ;
+use strict;
+use warnings;
+use Getopt::Std;
 
-use lib '..' ;
-use wiktio::basic ;
+use lib '..';
+use wiktio::basic;
 
-use utf8 ;
-use Encode qw(decode encode) ;
+use utf8;
+use Encode qw(decode encode);
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
-our %opt ;
+our %opt;
 
 #################################################
 # Message about this program and how to use it
 sub usage
 {
-	print STDERR "[ $_[0] ]\n" if $_[0] ;
+	print STDERR "[ $_[0] ]\n" if $_[0];
 	print STDERR << "EOF";
 	
 	This script parses a Wikimedia dump and extracts a list of words
@@ -38,20 +38,20 @@ sub usage
 	
 	example: $0 -i data/frwikt.xml
 EOF
-	exit ;
+	exit;
 }
 
 ##################################
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:n:L:C', \%opt ) or usage() ;
-	usage() if $opt{h} ;
-	usage( "Dump path needed (-i)" ) if not $opt{i} ;
+	getopts( 'hi:o:O:n:L:C', \%opt ) or usage();
+	usage() if $opt{h};
+	usage( "Dump path needed (-i)" ) if not $opt{i};
 	
 	if ($opt{o}) {
-		open(LIST, "> $opt{o}") or die "Couldn't write $opt{o}: $!\n" ;
-		close(LIST) ;
+		open(LIST, "> $opt{o}") or die "Couldn't write $opt{o}: $!\n";
+		close(LIST);
 	}
 }
 
@@ -82,7 +82,7 @@ sub get_list
 
 sub words
 {
-	my ($article, $nolist, $dico, $idico) = @_ ;
+	my ($article, $nolist, $dico, $idico) = @_;
 	my $count = 0;
 	
 	foreach my $line (@$article) {
@@ -128,13 +128,13 @@ sub words
 
 ###################
 # MAIN
-init() ;
+init();
 
-open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n" ;
-my $title = '' ;
-my ($n, $word_count, $redirect) = (0,0,0) ;
-my $complete_article = 0 ;
-my @article = () ;
+open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n";
+my $title = '';
+my ($n, $word_count, $redirect) = (0,0,0);
+my $complete_article = 0;
+my @article = ();
 my $dico = {};
 my $idico = {};
 
@@ -145,28 +145,28 @@ my $nolist = get_list($opt{n});
 $|=1;
 while(<DUMP>) {
 	if ( /<title>(.+?)<\/title>/ ) {
-		$title = $1 ;
+		$title = $1;
 		# Exclut toutes les pages en dehors de l'espace principal
-		$title = '' if $title =~ /[:\/]/ ;
+		$title = '' if $title =~ /[:\/]/;
 		
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
-		@article = () ;
-		push @article, "$1\n" ;
-		$complete_article = 1 ;
+		@article = ();
+		push @article, "$1\n";
+		$complete_article = 1;
 		
 		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
-		@article = () ;
-		push @article, "$1\n" ;
+		@article = ();
+		push @article, "$1\n";
 		while ( <DUMP> ) {
-			next if /^\s+$/ ;
+			next if /^\s+$/;
 			if ( /^(.*?)<\/text>/ ) {
-				push @article, "$1\n" ;
-				last ;
+				push @article, "$1\n";
+				last;
 			} else {
-				push @article, $_ ;
+				push @article, $_;
 			}
 		}
-		$complete_article = 1 ;
+		$complete_article = 1;
 	}
 	if ($complete_article) {
 		if ($article[0] =~ /#redirect/i) {
@@ -174,44 +174,44 @@ while(<DUMP>) {
 		} else {
 			######################################
 			# Traiter les articles ici
-			$word_count += words(\@article, $nolist, $dico, $idico) ;
+			$word_count += words(\@article, $nolist, $dico, $idico);
 			
 			######################################
-			$n++ ;
+			$n++;
 			if ($n % 10000 == 0) {
 				my $total_words = keys %$dico;
 				print STDERR sprintf("[%d] [%d]   %s                                                         \r", $n, $total_words, $title);
 			}
 			last if $opt{L} and $n >= $opt{L};
 		}
-		$complete_article = 0 ;
+		$complete_article = 0;
 	}
 }
 print STDERR "\n";
 $|=0;
-close(DUMP) ;
+close(DUMP);
 
-print STDERR "Total = $word_count words in $n articles\n" ;
-print STDERR "Total_redirects = $redirect\n" ;
+print STDERR "Total = $word_count words in $n articles\n";
+print STDERR "Total_redirects = $redirect\n";
 
 # Print the ordered list of words
 if ($opt{o}) {
-	open(LIST, "> $opt{o}") or die "Couldn't write $opt{o}: $!\n" ;
+	open(LIST, "> $opt{o}") or die "Couldn't write $opt{o}: $!\n";
 	foreach my $word (sort {$dico->{$b} <=> $dico->{$a}} keys %$dico) {
 		next if not $word;
 		print LIST "$word\t$dico->{$word}\n";
 	}
-	close(LIST) ;
+	close(LIST);
 }
 
 # Print the ordered list of words without case
 if ($opt{O}) {
-	open(LIST, "> $opt{O}") or die "Couldn't write $opt{O}: $!\n" ;
+	open(LIST, "> $opt{O}") or die "Couldn't write $opt{O}: $!\n";
 	foreach my $iword (sort {$idico->{$b} <=> $idico->{$a}} keys %$idico) {
 		next if not $iword;
 		print LIST "$iword\t$idico->{$iword}\n";
 	}
-	close(LIST) ;
+	close(LIST);
 }
 
 __END__
