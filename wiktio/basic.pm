@@ -35,7 +35,7 @@ use warnings;
 our $true = 1;
 our $false = 0;
 
-our $log = 'log.txt';
+our $log = '';
 
 sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n" };
 sub stepl { print STDERR $_[0] ? "$_[0]" : "" };
