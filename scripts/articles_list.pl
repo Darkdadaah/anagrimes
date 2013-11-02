@@ -14,8 +14,9 @@ use Encode qw(decode);	# Needed?
 # Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
+use wiktio::basic	qw(print_value);
 use wiktio::string_tools	qw(ascii ascii_strict anagramme);
-use wiktio::parser		qw(parseArticle parseLanguage parseType);
+use wiktio::parser		qw(parse_dump parseArticle parseLanguage parseType);
 
 # To filter the bots
 # Hard-coded list for fr.wikt
@@ -48,25 +49,13 @@ sub usage
 	FILTER
 	-p <str>  : regexp pattern to search
 	-n <str>  : regexp pattern to exclude
-	-F <path> : path to a list of patterns (see below)
 	
 	-S <str>  : use this namespace
 	
-	-A <str>  : only edited by (one or several separated by a comma): bot,IP,user
+	-A <str>  : only edited by (one or several separated by a comma): bot,IP,nouser,user
 	
 	-L <str>  : language to include only
 	-N <str>  : language to exclude
-	
-	-s        : special (see script)
-	
-	# The pattern file format -F consist of blocks of text ended with // like:
-	lang=xxx		# language of the sections to search
-	no_lang=xxx		# language of the sections to avoid
-	pattern=xxx		# Pattern to search
-	no_pattern=xxx	# Pattern to avoid
-	output=xxx		# path where the matched articles will be saved
-	no_output=xxx	# path where the unmatched articles will be saved
-	//
 	
 	example:
 	# Search the section language templates {{=xxx=}} but exclude {{=fr=}}
@@ -79,7 +68,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:p:n:S:A:L:N:F:s', \%opt ) or usage();
+	getopts( 'hi:o:O:p:n:S:A:L:N:', \%opt ) or usage();
 	usage() if $opt{h};
 	usage( "Dump path needed (-i)" ) if not $opt{i};
 	if (not $opt{F}) {
@@ -105,8 +94,22 @@ sub init()
 	}
 }
 
-###################################
-#----------------------------------
+##################################
+# SUBROUTINES
+
+# Prepare author list as a hash
+sub prepare_authors_list
+{
+	my $auth_text = shift;
+	my %auth = ();
+	if ($auth_text) {
+		for (split /,/, $auth_text) {
+			$auth{'nouser'} = 1 if /^nousers?$/;
+		}
+	}
+	return \%auth;
+}
+
 # Correct the pattern so that it can match the special characters < and > in the text of the xml file
 sub correct_pattern
 {
@@ -119,104 +122,135 @@ sub correct_pattern
 	return $p;
 }
 
+# Parse a dump
+sub get_articles_list
+{
+	my ($par) = @_;
+	my %p = %$par;
+	
+	my %counts = (
+		'total articles' => 0,
+		'matched articles' => 0,
+		'redirects' => 0,
+	);
+	
+	open(my $dump_fh, dump_input($p{'dump_path'})) or die "Couldn't open '$p{'dump_path'}': $!\n";
+	
+	$|=1;
+	ARTICLE : while(my $article = parse_dump($dump_fh)) {
+		$counts{'total articles'}++;
+		print STDERR "[$counts{'total articles'}] [$counts{'matched articles'}] $article->{'title'}                           \r" if $counts{'total articles'} %1000==0;
+		
+		# No article title?
+		next ARTICLE if (not defined($article->{'fulltitle'}));
+		
+		# Only for a given namespace? Default: main
+		if (defined($p{'namespace'}) and $article->{'namespace'} ne $p{'namespace'}
+		or not defined($p{'namespace'}) and $article->{'namespace'}) {
+			next ARTICLE;
+		}
+		
+		# TO IMPROVE
+		# Selected authors?
+		if ($p{'authors'}->{'nouser'}) {
+			my %auth = %{$p{'authors'}};
+			foreach my $author (keys %auth) {
+				# Check bots names
+				delete $auth{$author} if $author ~~ @bots_names;
+				# Check IPs
+				delete $auth{$author} if $author =~ /:/;
+			}
+			# Continue only if there are users left
+			if (keys %auth == 0) {
+				next ARTICLE;
+			}
+		}
+		
+		# Now look at the content
+		
+		# Redirect?
+		if (defined($article->{'redirect'})) {
+			redirect($article);
+			$counts{'redirects'}++;
+		
+		# or Article
+		} else {
+			$counts{'matched articles'} += article_count_and_print($article, $par);
+		}
+	}
+	$|=0;
+	print STDERR "\n";
+	close(DUMP);
+
+	# Print stats
+	print_counts(\%counts);
+}
+
 #----------------------------------
 # REDIRECTS in case there is something to do in a redirect page (by default: nothing)
 sub redirect
 {
+	my ($article) = @_;
+	
 }
 
 #----------------------------------
-# Parse the patterns file
-sub get_patterns
-{
-	my ($file) = @_;
-	
-	open FILE, "<$file" or die "Couldn't read $file: $!";
-	
-	my ($lang, $no_lang, $pattern, $no_pattern, $output, $no_output) = (0,0,0,0,0,0);
-	my @routines;
-	
-	while (<FILE>) {
-		if (/^BEGIN$/) {
-			while (<FILE>) {
-				last if /\/\//;
-				if (/^(.+)=(.+)$/) {
-					if ($1 eq 'lang') {
-						$lang = $2;
-					} elsif ($1 eq 'no_lang') {
-						$no_lang = $2;
-					} elsif ($1 eq 'pattern') {
-						$pattern = $2;
-					} elsif ($1 eq 'no_pattern') {
-						$pattern = $2;
-					} elsif ($1 eq 'output') {
-						$output = $2;
-					} elsif ($1 eq 'no_output') {
-						$no_output = $2;
-					}
-				}
-			}
-			if (/\/\//) {
-				my @routine = ($lang, $no_lang, $pattern, $no_pattern, $output, $no_output);
-				push @routines, \@routine;
-			}
-		}
-	}
-	
-	return @routines;
-}
-
-###################################
 # ARTICLE
-#----------------------------------
 # Search the given article with every provided pattern
-sub article
+sub article_count_and_print
 {
-	my ($article, $title) = @_;
-	my %count = ();
-	if ($opt{F}) {
-		foreach my $pattern (get_patterns($opt{F})) {
-			($opt{L}, $opt{N}, $opt{p}, $opt{n}, $opt{o}, $opt{O}) = @$pattern;
-# 			print "$opt{L}, $opt{N}, $opt{p}, $opt{n}, $opt{o}, $opt{O}\n";
-			$count{'Count'} = read_article($article, $title);
-		}
-	} else {
-		my $name = 'Count';
-		$count{$name} = read_article($article, $title);
-	}
-	return \%count;
+	my ($article, $par) = @_;
+	
+	my $count = 0;
+	$count += read_article($article, $par);
+	
+	return $count;
 }
 
 #----------------------------------
 sub read_article
 {
-	my ($article0, $title) = @_;
-	my $article = ();
-	if ($opt{L}) {
-		my $lang = parseArticle($article0, $title);
+	my ($article, $par) = @_;
+	my %p = %$par;
+	
+	# We want to first retrieve the text to search
+	my $art_text = ();
+	
+	# Search in a language section?
+	if ($p{'lang'}) {
+		my $lang_text = parseArticle($article->{'content'}, $article->{'title'});
 		
-		if ($lang->{'language'}->{$opt{L}}) {
-			$article = $lang->{'language'}->{$opt{L}};
+		# Found the language section?
+		if ($lang_text->{'language'}->{ $p{'lang'} }) {
+			$art_text = $lang_text->{'language'}->{ $p{'lang'} };
+		
+		# No: skip this article
 		} else {
 			return 0;
 		}
-	} elsif ($opt{N}) {
-		my $lang = parseArticle($article0, $title);
+	}
+	
+	# Exclude a language section?
+	elsif ($p{'nolang'}) {
+		my $lang_text = parseArticle($article->{'content'}, $article->{'title'});
 		
-		if ($lang->{'language'}->{$opt{N}}) {
-			delete $lang->{'language'}->{$opt{N}};
+		# Found the language section? If so: exclude it from the search
+		if ($lang_text->{'language'}->{ $p{'nolang'} }) {
+			delete $lang_text->{'language'}->{ $p{'nolang'} };
 		}
 		
-		foreach my $l (keys %{$lang->{'language'}}) {
-			if (not ref($lang->{'language'}->{$l}) eq 'ARRAY') {
-				print STDERR "[[$title]]\tSection de langue vide : $l\n";
-				next;
+		# Any language section left to search?
+		LANGSEC : foreach my $l (keys %{$lang_text->{'language'}}) {
+			if (not ref($lang_text->{'language'}->{$l}) eq 'ARRAY') {
+				print STDERR "[[$article->{'title'}]]\tSection de langue vide : $l\n";
+				next LANGSEC;
 			}
-			push @$article, @{$lang->{'language'}->{$l}};
+			# Concat all lines from other sections
+			push @$art_text, @{$lang_text->{'language'}->{$l}};
 		}
 		
 	} else {
-		$article = $article0;
+		$art_text = $article->{'content'};
 	}
 	
 	my ($count, $n) = (0,0);
@@ -224,38 +258,44 @@ sub read_article
 	my ($ok_pattern, $no_pattern) = ('','');
 	
 	# Search for those patterns in the article
-	if ($opt{p} or $opt{n}) {
-		foreach my $line (@$article) {
+	if ($p{'pat'} or $p{'nopat'}) {
+		foreach my $line (@$art_text) {
 			$n++;
+			# Skip article if found a forbidden pattern
 			if ($opt{n} and $line =~ /($opt{n})/) {
 				$no_pattern = "<< $1 >> ($n)";
 				$no = 1;
 			}
-			if ($opt{p} and $line =~ /($opt{p})/) {
+			# Found pattern?
+			if ($p{'pat'} and $line =~ /($p{'pat'})/) {
 				$count++ if not $no;
 				$ok_pattern = "<< $1 >> ($n)";
 				$ok = 1;
-				$line =~ s/$opt{p}//;
-			}
-			while ($opt{p} and $line =~ /($opt{p})/) {
-				$count++ if not $no;
-				$ok_pattern .= "\t<< $1 >> ($n)";
-				$line =~ s/$opt{p}//;
+				$line =~ s/$p{'pat'}//;
+				
+				# Continue to see how much of this pattern we can find
+				while ($p{'pat'} and $line =~ /($p{'pat'})/) {
+					$count++ if not $no;
+					$ok_pattern .= "\t<< $1 >> ($n)";
+					$line =~ s/$p{'pat'}//;
+				}
 			}
 		}
-		$ok_pattern =~ s/\n/\\n/g;
-		$ok_pattern =~ s/\r/\\r/g;
-		$no_pattern =~ s/\n/\\n/g;
-		$no_pattern =~ s/\r/\\r/g;
 		
-		if ($ok and not $no and $opt{o}) {
-			open(ARTICLES, ">> $opt{o}") or die "Couldn't write $opt{o}: $!\n";
-			print ARTICLES "$title\t$ok_pattern\n";
+		# Print articles where the pattern was found
+		if ($ok and not $no and $p{'output_path'}) {
+			$ok_pattern =~ s/\n/\\n/g;
+			$ok_pattern =~ s/\r/\\r/g;
+			open(ARTICLES, ">> $p{'output_path'}") or die "Couldn't write $p{'output_path'}: $!\n";
+			print ARTICLES "$article->{'fulltitle'}\t$ok_pattern\n";
 			close(ARTICLES);
 		}
-		if ($ok and $no and $opt{O}) {
-			open(ARTICLES, ">> $opt{O}") or die "Couldn't write $opt{O}: $!\n";
-			print ARTICLES "$title\t$ok_pattern\t$no_pattern\n";
+		# Print articles where the anti-pattern was found
+		if ($ok and $no and $p{'output_rejected_path'}) {
+			$no_pattern =~ s/\n/\\n/g;
+			$no_pattern =~ s/\r/\\r/g;
+			open(ARTICLES, ">> $p{'output_rejected_path'}") or die "Couldn't write $p{'output_rejected_path'}: $!\n";
+			print ARTICLES "$article->{'fulltitle'}\t$ok_pattern\t$no_pattern\n";
 			close(ARTICLES);
 		}
 	
@@ -264,9 +304,9 @@ sub read_article
 		$count++ if not $no;
 		
 		# Print the list?
-		if ($opt{o}) {
-			open(ARTICLES, ">> $opt{o}") or die "Couldn't write $opt{o}: $!\n";
-			print ARTICLES "$title\n";
+		if ($p{'output_path'}) {
+			open(ARTICLES, ">> $p{'output_path'}") or die "Couldn't write $p{'output_path'}: $!\n";
+			print ARTICLES "$article->{'fulltitle'}\n";
 			close(ARTICLES);
 		}
 	}
@@ -274,172 +314,33 @@ sub read_article
 	return $count;
 }
 
+# Print the stats
+sub print_counts
+{
+	my $counts = shift;
+	foreach my $c (sort keys %$counts) {
+		print_value("$c: %d", $counts->{$c});
+	}
+}
+
 ###################
 # MAIN
 init();
 
-open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n";
-my $title = '';
-my ($n, $redirect) = (0,0);
-my $complete_article = 0;
-my %already = ();
-my @article = ();
-my $count = {};
-my $keepauthor = 0;
+# Prepare lists
+my %par = ();
+$par{'namespace'} = $opt{S};
+$par{'dump_path'} = $opt{i};
+$par{'output_path'} = $opt{o};
+$par{'output_rejected_path'} = $opt{O};
+$par{'authors'} = prepare_authors_list($opt{A});
+$par{'lang'} = $opt{L};
+$par{'nolang'} = $opt{N};
+$par{'pat'} = $opt{p};
+$par{'nopat'} = $opt{n};
 
-# Get author type list
-my %auth = ();
-if ($opt{A}) {
-	for (split /,/, $opt{A}) {
-		$auth{'nouser'} = 1 if /^nousers?$/;
-	}
-}
-
-$|=1;
-while(<DUMP>) {
-	if ( /<title>(.+?)<\/title>/ ) {
-		$title = $1;
-		$keepauthor = 0;
-		# Exclut toutes les pages en dehors de l'espace principal
-		if ($opt{S}) {
-			$title = '' if not $title =~ /^$opt{S}:/;
-		} else {
-			$title = '' if $title =~ /[:\/]/;
-		}
-		
-		
-		# History: authors filter
-		if ($opt{A}) {
-			next if not $title;
-			my %authors = ();
-			my $mark = tell(DUMP);
-			HISTORY : while(<DUMP>) {
-				# User?
-				if (/<username>(.+?)<\/username>/) {
-					$authors{$1}++;
-				}
-				if ( /<revision>/ ) {
-					$mark = tell(DUMP);
-				}
-				# Woops, on est arrivé à la fin
-				elsif (/<\/page>/) {
-					last HISTORY;
-				}
-			}
-			# Retour au début de la dernière version
-			seek(DUMP, $mark, 0);
-			
-			# Check authors
-			if ($auth{nouser}) {
-				for (keys %authors) {
-					# Check bots names
-					delete $authors{$_} if $_ ~~ @bots_names;
-					# Check IPs
-					#delete if $_ =~ /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/;
-					delete $authors{$_} if $_ =~ /:/;
-				}
-				# Usernames left?
-				if (keys %authors == 0) {
-					$keepauthor = 1;
-				}
-			}
-		}
-		
-	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
-		@article = ();
-		push @article, "$1\n";
-		$complete_article = 1;
-		
-		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
-		@article = ();
-		push @article, "$1\n";
-		while ( <DUMP> ) {
-			next if /^\s+$/;
-			if ( /^(.*?)<\/text>/ ) {
-				push @article, "$1\n";
-				last;
-			} else {
-				push @article, $_;
-			}
-		}
-		$complete_article = 1;
-	}
-	if ($complete_article) {
-		if ($article[0] =~ /#redirect/i) {
-			print "*$title\n" if $keepauthor;
-			if ($opt{s}) {
-				my $target = $article[0];
-				$target =~ s/^.*\[\[(.+)\]\].*$/$1/;
-				chomp($target);
-				push @{$already{ lc($title) }}, "$title|]][[:$target|<sup>(<small>redirect</small>)</sup>";
-				$n++;
-				print STDERR "[$n] $title\n" if $n%500==0;
-				$title = '';
-				$redirect++;
-			} else {
-				######################################
-				# Traiter les redirects ici
-				redirect(\@article, $title);
-				######################################
-				$redirect++;
-			}
-		} else {
-			print "$title\n" if $keepauthor;
-			if ($opt{s}) {
-				push @{$already{ lc($title) }}, "$title|";
-				$n++;
-				print STDERR "[$n] $title\n" if $n%500==0;
-				$title = '';
-			} else {
-				######################################
-				# Traiter les articles ici
-				my $article_count = article(\@article, $title);
-				foreach my $num (keys %$article_count) {
-					$count->{$num} += $article_count->{$num};
-				}
-			}
-			######################################
-			$n++;
-			print STDERR "[$n] [$count->{Count}] $title                           \r" if $n%1000==0;
-		}
-		$complete_article = 0;
-	}
-}
-$|=0;
-print STDERR "\n";
+# Get data from dump
+my $art_count = get_articles_list(\%par);
 close(DUMP);
-
-print STDERR "Total = $n\n";
-print STDERR "Total_redirects = $redirect\n";
-
-if ($opt{s}) {
-	print STDERR "Recherche des doublons: ";
-	# Filter special
-	open(SPECIAL, ">> $opt{o}") or die("Couldn't write $opt{o}: $!\n");
-	my $space = '';
-	foreach my $t (sort keys %already) {
-		my $num = $#{ $already{$t} }+1;
-		if ($num == 1) {
-			delete $already{$t};
-		} else {
-			(my $new_space) = split(':', $t);
-			if ($space ne $new_space) {
-				$space = $new_space;
-				print SPECIAL "\n== ". (ucfirst($space)) ." ==\n";
-			}
-			my $prefix = '';
-			if ($space eq 'catégorie') {
-				$prefix = ':';
-			}
-			print SPECIAL "* [[$prefix". join("]], [[$prefix", sort { $a cmp $b } @{ $already{$t} }) . "]]\n";
-		}
-	}
-	close(SPECIAL);
-	print_value("%d", \%already);
-} else {
-	foreach my $c (keys %$count) {
-		print STDERR "$c:\t$count->{$c}\n";
-	}
-}
 
 __END__
