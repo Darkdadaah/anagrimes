@@ -45,6 +45,7 @@ sub parse_dump
 		# several lines
 		elsif ($line =~ /<title>(.*?)$/) {
 			$article{'fulltitle'} = $1;
+			$article{'fulltitle'} =~ s/[\r\n]+/ /;
 			while (my $inline = <$dump_fh>) {
 				if (not $inline =~ /<\/title>/) {
 					$article{'title'} .= $inline;
