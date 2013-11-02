@@ -1,3 +1,5 @@
+#!/usr/bin/perl -w
+
 # Wiktionnaire parser
 # Author: Matthieu Barba
 #
@@ -6,20 +8,129 @@
 
 package wiktio::parser;
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use Exporter;		# So that we can export functions and vars
 @ISA=('Exporter');	# This module is a subclass of Exporter
 
 # What can be exported
-@EXPORT_OK = qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
+@EXPORT_OK = qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
 
 use strict;
 use warnings;
 use wiktio::basic;
 use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step );
+
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
+sub parse_dump
+{
+	my ($dump_fh) = @_;
+	
+	my %article = ();
+	$article{'fulltitle'} = undef;
+	$article{'namespace'} = undef;
+	$article{'title'} = undef;
+	$article{'content'} = undef;
+	$article{'redirect'} = undef;
+	$article{'namespace'} = undef;
+	$article{'contributors'} = {};
+	
+	LINE : while (my $line = <$dump_fh>) {
+		# Get page title
+		# one line
+		if ($line =~ /<title>(.+?)<\/title>/) {
+			$article{'fulltitle'} = $1;
+		}
+		# several lines
+		elsif ($line =~ /<title>(.*?)$/) {
+			$article{'fulltitle'} = $1;
+			while (my $inline = <$dump_fh>) {
+				if (not $inline =~ /<\/title>/) {
+					$article{'title'} .= $inline;
+				}
+				elsif ($inline =~ /^(.*)<\/text>/) {
+					$article{'title'} .= $1 if defined($1);
+					next LINE;
+				}
+			}
+		}
+		
+		# Get content
+		# one line
+		elsif ($line =~ /<text.*>(.*?)<\/text>/) {
+			@{ $article{'content'} } = $1;
+		}
+		# several lines
+		elsif ($line =~ /<text.*>(.*?)$/) {
+			@{ $article{'content'} } = $1;
+			
+			while (my $inline = <$dump_fh>) {
+				if (not $inline =~ /<\/text>/) {
+					push @{ $article{'content'} }, $inline;
+				}
+				elsif ($inline =~ /^(.*)<\/text>/) {
+					push @{ $article{'content'} }, $1 if defined($1);
+					next LINE;
+				}
+			}
+		}
+		# Get page authors
+		elsif ($line =~ /<username>(.+?)<\/username>/) {
+			$article{'contributors'}{$1}++;
+		}
+		# Get namespace
+		elsif ($line =~ /<ns>([0-9]+?)<\/ns>/) {
+			$article{'ns'} = $1;
+		}
+		# End of page
+		elsif ($line =~ /<\/page>/) {
+			# No use returning an incomplete article
+			if (not defined($article{'fulltitle'})) {
+				return {};
+			}
+			last LINE;
+		}
+		elsif ($line =~ /<\/mediawiki>/ or eof($dump_fh)) {
+			return undef;
+		}
+	}
+	
+	# Is it a redirect?
+	$article{'redirect'} = _is_redirect(\%article);
+	# What is the namespace?
+	($article{'namespace'}, $article{'title'}) = _extract_namespace(\%article);
+	
+	return \%article;
+}
+
+sub _is_redirect
+{
+	my ($article) = @_;
+	
+	# Only look at the first line
+	my $first_line = $article->{'content'}->[0];
+	
+	if ($first_line and $first_line =~ /#redirect *\[\[(.+?)\]\]/i) {
+		return $1;
+	}
+	return;
+}
+
+sub _extract_namespace
+{
+	my ($article) = @_;
+	return (undef, undef) unless defined($article->{'fulltitle'});
+	
+	my $ns = '';
+	my $title = "$article->{'fulltitle'}";
+	if ($title =~ /^([^:]+?):(.+?)$/) {
+		$ns = $1;
+		$title = $2;
+	}
+	
+	return $ns, $title;
+}
 
 sub parseArticle
 {
