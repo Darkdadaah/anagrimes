@@ -14,12 +14,12 @@ binmode STDERR, ":encoding(utf8)";
 use lib '..';
 use wiktio::basic;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
-use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
+use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
 my %output_files = (
-'redirects' => {'file' => '', 'fields' => [ qw(titre cible) ] },
+'redirects' => {'file' => '', 'fields' => [ qw(title target) ] },
 'articles' => {'file' => '', 'fields' => [ qw(titre r_titre titre_plat r_titre_plat transcrit_plat r_transcrit_plat anagramme_id) ] },
 'transcrits' => {'file' => '', 'fields' => [ qw(titre transcrit transcrit_plat r_transcrit_plat) ] },
 'mots' => {'file' => '', 'fields' => [ qw(titre langue type pron pron_simple r_pron_simple rime_pauvre rime_suffisante rime_riche rime_voyelle syllabes num flex loc gent rand) ] },
@@ -150,21 +150,18 @@ sub chronometer_end
 ###################################
 # PARSERS
 
-sub parse_dump
+sub parse_articles
 {
-	my ($input) = @_;
-	
-	# Temporary variables for each article
-	my $title = '';
-	my $complete_article = 0;
-	my @article = ();
+	my ($dump_path) = @_;
 
 	# Counting variables
 	my ($n, $redirect) = (0,0);
-
+	
 	# Scan every line of the dump
-	open(DUMP, dump_input($input)) or die("Couldn't open '$input': $!\n");
+	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
+	
 	$| = 1;	 # This allows the counter to rewrite itself on a single line
+<<<<<<< HEAD
 	while(<DUMP>) {
 		# Get the title of the article, starts a new article
 		if ( /<title>(.+?)<\/title>/ ) {
@@ -175,115 +172,80 @@ sub parse_dump
 			# Reinit temporary variables
 			$complete_article = 0;
 			@article = ();
+=======
+	ARTICLE : while(my $article = parse_dump($dump_fh)) {
+		$n++;
+		#printf STDERR "[%7d] $article->{'fulltitle'}\r", $n if $n % 1000 == 0;	# Simple counter
+		print STDERR "[$n] $article->{'fulltitle'}                                   \r" if $n % 100 == 0;	# Simple counter
+>>>>>>> ccda66c... Rewrite to use the new iterator.
 		
-		# Get text on only one line
-		} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
-			@article = ();
-			push @article, "$1\n";
-			$complete_article = 1;
-			
-		# Get text with several lines
-		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
-			@article = ();
-			push @article, "$1\n";
-			while ( <DUMP> ) {
-				next if /^\s+$/;
-				if ( /^(.*?)<\/text>/ ) {
-					push @article, "$1\n";
-					last;
-				} else {
-					push @article, $_;
-				}
-			}
-			$complete_article = 1;
-		}
+		next ARTICLE if $article->{'ns'} != 0;
 		
-		# The text of this article is fully read, we can now parse its content from the lines in @article
-		if ($complete_article) {
+		if ($article->{'redirect'}) {
+			# Only parse redirects if there is no specific target language (because redirects have no language)
+			parse_redirect($article);
+			$redirect++;
+		} else {
+			# Fully parse the article
+			parse_article($article);
 			
-			# REDIRECT?
-			if ($article[0] =~ /#redirect/i) {
-				# Only parse redirects if there is no specific target language (because redirects have no language)
-				parse_redirect($title, \@article) unless $opt{L};
-				$redirect++;
-				
-			# FULL ARTICLE?
-			} else {
-				# Fully parse the article (the extracted data are directly written in )
-				parse_article($title, \@article);
-				$n++;
-				printf STDERR "%7d articles\r", $n if $n % 1000 == 0;	# Simple counter
-			}
-			
-			# Now that the article was parsed, reinit these temporary variables to be used with the next article
-			$complete_article = 0;
-			$title = '';
-			@article = ();
 		}
 	}
 	print STDERR "\n";
 	$| = 0;
-	close(DUMP);
-
+	close($dump_fh);
+	
 	# Print the language list
 	add_to_file_lang();
-
+	
 	# Lastly, some stats
-	print "Total = $n\n";
-	print "Total_redirects = $redirect\n";
+	print_value("%d total articles", $n);
+	print_value("%d total redirects", $redirect);
 }
 
 ###################################
 # REDIRECTS PARSER
 sub parse_redirect
 {
-	my ($title, $article) = @_;
+	my ($article) = @_;
 	
 	my $target = '';
 	
-	# If we find a redirection, store the pair
-	if ($article->[0] =~ /\# *REDIRECT[^\[]*\[\[(.+?)\]\]/i) {
-		$target = $1;
-		my %redirect_values = (
-			'titre' => $title,
-			'cible' => $target,
-		);
-		add_to_file('redirects', \%redirect_values);
-	
-	# Wait, no redirection? But the parser said... well let's log this
-	} else {
-		special_log('noredirect', $title);
-	}
+	my %redirect_values = (
+		'title' => $article->{'fulltitle'},
+		'target' => $article->{'redirect'},
+	);
+	add_to_file('redirects', \%redirect_values);
 }
 
 ###################################
 # ARTICLES PARSER
 sub parse_article
 {
-	my ($title, $article) = @_;
+	my ($article) = @_;
 	
 	# This will stock the important values that will be put in the table
 	my %mot = ();
 	
 	# Discard any *ffixes
-	return if $title =~ /^-/ or $title =~ /-$/;
-	$mot{'titre'} = $title;
+	return if $article->{'title'} =~ /^-/ or $article->{'title'} =~ /-$/;
+	$mot{'titre'} = $article->{'title'};
 	
 	###########################
 	# From the title only we can get (-> table articles)
-	$mot{'r_titre'} = reverse($title);					# Reverse title (for sql search)
-	$mot{'titre_plat'} = lc(ascii_strict($title));		# titre_plat (no hyphenation)
-	$mot{'r_titre_plat'} = reverse($mot{'titre_plat'});	# Same, reversed
-	$mot{'anagramme_id'} = anagramme($title);			# anagramme_id (alphagram, key for anagrams)
+	$mot{'r_titre'} = reverse($mot{'titre'});					# Reverse title (for sql search)
+	$mot{'titre_plat'} = lc(ascii_strict($mot{'titre'}));		# titre_plat (no hyphenation)
+	$mot{'r_titre_plat'} = reverse($mot{'titre_plat'});			# Same, reversed
+	$mot{'anagramme_id'} = anagramme($mot{'titre_plat'});		# anagramme_id (alphagram, key for anagrams)
 	
 	# Can't get a correct unhyphenated word (should only be symbols and such)
 	if (not $mot{'titre_plat'}) {
-		special_log('titre_plat', $title);	# Log just to be sure
+		special_log('titre_plat', $mot{'titre'});	# Log just to be sure
 		
 	# Everything is ok thus far
 	} else {
 		# Let's parse the whole article and divide it into languages sections
-		my $article_section = parseArticle($article, $title);
+		my $article_section = parseArticle($article->{'content'}, $article->{'title'});
 		
 		# If we are only interested in one language, only parse this one further
 		my $lang_ok = $false;
@@ -294,7 +256,7 @@ sub parse_article
 			
 			# Yes there is: let's parse it further (-> table mots)
 			if ($#{$lang_section}+1 > 0) {
-				parse_language_sections($title, $lang_section, $lang);
+				parse_language_sections($mot{'titre'}, $lang_section, $lang);
 				$lang_ok = $true;
 				
 			# No: then no need to stay here
@@ -309,11 +271,11 @@ sub parse_article
 				
 				# No content? Something's not right
 				if (not $lang_section) {
-					special_log('empty_lang', $title, $lang);	# Log just to be sure
+					special_log('empty_lang', $mot{'titre'}, $lang);	# Log just to be sure
 					
 				# Everything is here, let's part this section (-> table mots)
 				} else {
-					parse_language_sections($title, $lang_section, $lang);
+					parse_language_sections($mot{'titre'}, $lang_section, $lang);
 				}
 			}
 			$lang_ok = $true;
@@ -336,7 +298,7 @@ sub parse_article
 			
 			# Uncomplete transcription (should be supported! -> log)
 			} elsif (not unicode_NFKD($mot{'transcrit_plat'}) =~ /^[a-z0-9â ]+$/) {
-				special_log('incomplete_transcription', $title, $mot{'transcrit_plat'});
+				special_log('incomplete_transcription', $mot{'titre'}, $mot{'transcrit_plat'});
 				$mot{'transcrit_plat'}='';
 				
 			# We have a correct transcript!
@@ -531,7 +493,7 @@ init();
 
 my $past = time();	# Chronometer start
 
-parse_dump($opt{i});
+parse_articles($opt{i});
 
 chronometer_end($past);
 
