@@ -26,6 +26,7 @@ my %output_files = (
 'langues' => {'file' => '', 'fields' => [ qw( langue num num_min ) ] },
 );
 
+my $max_col = 0;
 my %lang_total = ();
 my %lang_filter = ();
 
@@ -47,8 +48,10 @@ sub usage
 	-i <path> : input dump path (compressed or not)
 	-o <path> : output path (this needs to be a path + prefix of the file names that will be created: path/filename)
 	
-	-L <code> : language code to extract alone (2 or 3 letters) [optional]
+	Optional:
 	-l <path> : special log_files (like -o path + prefix). Those files log specific errors defined in the parser.
+	-L <code> : language code to extract alone (2 or 3 letters) [optional]
+	-c <num>  : length of crossword searchable columns
 EOF
 	exit;
 }
@@ -57,7 +60,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'i:o:L:l:', \%opt ) or usage();
+	getopts( 'i:o:L:l:c:', \%opt ) or usage();
 	usage() if $opt{h};
 	
 	$log = $opt{l} ? $opt{l} : '';
@@ -80,9 +83,26 @@ sub init()
 		close(TYPE);
 	}
 	
+	if ($opt{c}) {
+		usage("Wrong number for the crossword columns (-c): $opt{c}") if not "$opt{c}" =~ /^[1-9][0-9]*$/;
+		$max_col = $opt{c};
+		init_columns();
+	}
+	
 	# Print columns order so that the user know what is written where
 	foreach my $outs (sort keys %output_files) {
 		print STDERR "$outs: ", join(', ', @{ $output_files{$outs}{fields} }), "\n";
+	}
+}
+
+sub init_columns
+{
+	return if not $max_col;
+	
+	# Add a column for the first $maxcol letters
+	for (my $i=0; $i < $max_col; $i++) {
+		my $col = 'p' . ($i+1);
+		push @{ $output_files{'articles'}{'fields'} }, $col;
 	}
 }
 
@@ -150,6 +170,7 @@ sub parse_dump
 		if ( /<title>(.+?)<\/title>/ ) {
 			$title = $1;
 			$title = '' if $title =~ /[:\/]/; # Exclude all articles outside of the main namespace
+			$title =~ s/"/\"/g;
 			
 			# Reinit temporary variables
 			$complete_article = 0;
@@ -200,6 +221,7 @@ sub parse_dump
 			@article = ();
 		}
 	}
+	print STDERR "\n";
 	$| = 0;
 	close(DUMP);
 
@@ -320,6 +342,23 @@ sub parse_article
 			# We have a correct transcript!
 			} else {
 				$mot{'r_transcrit_plat'} = reverse($mot{'transcrit_plat'});
+			}
+		}
+		
+		# Prepare letters fields
+		if ($max_col) {
+			my $mot_plat = $mot{'titre_plat'};
+			$mot_plat =~ s/[ _,;-]//g;
+			my @mot_letters = split(//, $mot_plat);
+			
+			# Add individual letters (if the "word" is shorter than the max allowed
+			for (my $i=0; $i < $max_col; $i++) {
+				if (@mot_letters <= $max_col and $mot_letters[$i]) {
+					$mot{'p'.($i+1)} = $mot_letters[$i];
+				}
+				else {
+					$mot{'p'.($i+1)} = '';
+				}
 			}
 		}
 		
