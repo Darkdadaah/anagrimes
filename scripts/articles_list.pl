@@ -263,20 +263,20 @@ sub read_article
 			$n++;
 			# Skip article if found a forbidden pattern
 			if ($opt{n} and $line =~ /($opt{n})/) {
-				$no_pattern = "<< $1 >> ($n)";
+				$no_pattern = "<tt><nowiki>$1</nowiki></tt> ($n)";
 				$no = 1;
 			}
 			# Found pattern?
 			if ($p{'pat'} and $line =~ /($p{'pat'})/) {
 				$count++ if not $no;
-				$ok_pattern = "<< $1 >> ($n)";
+				$ok_pattern = "<tt><nowiki>$1</nowiki></tt> ($n)";
 				$ok = 1;
 				$line =~ s/$p{'pat'}//;
 				
 				# Continue to see how much of this pattern we can find
 				while ($p{'pat'} and $line =~ /($p{'pat'})/) {
 					$count++ if not $no;
-					$ok_pattern .= "\t<< $1 >> ($n)";
+					$ok_pattern .= " ; <tt><nowiki>$1</nowiki></tt> ($n)";
 					$line =~ s/$p{'pat'}//;
 				}
 			}
@@ -287,7 +287,9 @@ sub read_article
 			$ok_pattern =~ s/\n/\\n/g;
 			$ok_pattern =~ s/\r/\\r/g;
 			open(ARTICLES, ">> $p{'output_path'}") or die "Couldn't write $p{'output_path'}: $!\n";
-			print ARTICLES "$article->{'fulltitle'}\t$ok_pattern\n";
+			my @line = ("[[$article->{'fulltitle'}]]");
+			push @line, $ok_pattern;
+			print ARTICLES join("\t", @line) . "\n";
 			close(ARTICLES);
 		}
 		# Print articles where the anti-pattern was found
@@ -295,7 +297,11 @@ sub read_article
 			$no_pattern =~ s/\n/\\n/g;
 			$no_pattern =~ s/\r/\\r/g;
 			open(ARTICLES, ">> $p{'output_rejected_path'}") or die "Couldn't write $p{'output_rejected_path'}: $!\n";
-			print ARTICLES "$article->{'fulltitle'}\t$ok_pattern\t$no_pattern\n";
+			
+			my @line = ("[[$article->{'fulltitle'}]]");
+			push @line, $ok_pattern;
+			push @line, $no_pattern;
+			print ARTICLES join("\t", @line) . "\n";
 			close(ARTICLES);
 		}
 	
@@ -306,7 +312,9 @@ sub read_article
 		# Print the list?
 		if ($p{'output_path'}) {
 			open(ARTICLES, ">> $p{'output_path'}") or die "Couldn't write $p{'output_path'}: $!\n";
-			print ARTICLES "$article->{'fulltitle'}\n";
+			
+			my @line = ("[[$article->{'fulltitle'}]]");
+			print ARTICLES join("\t", @line) . "\n";
 			close(ARTICLES);
 		}
 	}
