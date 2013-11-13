@@ -6,6 +6,7 @@ use warnings;
 use Getopt::Std;
 
 use lib '..';
+use wiktio::basic;
 use wiktio::basic		qw(step stepl print_value dump_input);
 use wiktio::parser		qw(parse_dump parseArticle);
 our %opt;
@@ -147,6 +148,7 @@ sub get_articles_list
 			}
 		}
 	}
+	close($dump_fh);
 	return $list, $redirect;
 }
 

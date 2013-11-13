@@ -14,7 +14,6 @@ use Encode qw(decode);	# Needed?
 # Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
-use wiktio::basic	qw(print_value);
 use wiktio::string_tools	qw(ascii ascii_strict anagramme);
 use wiktio::parser		qw(parse_dump parseArticle parseLanguage parseType);
 
@@ -180,7 +179,7 @@ sub get_articles_list
 	}
 	$|=0;
 	print STDERR "\n";
-	close(DUMP);
+	close($dump_fh);
 
 	# Print stats
 	print_counts(\%counts);

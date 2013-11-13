@@ -16,6 +16,7 @@ use Exporter;
 	special_log
 	dump_input
 	$true $false
+	print_value
 );
 
 @EXPORT_OK = qw(
@@ -26,7 +27,6 @@ use Exporter;
 	$langues_transcrites
 	step
 	stepl
-	print_value
 );
 
 use strict;
