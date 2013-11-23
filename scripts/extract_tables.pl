@@ -161,23 +161,10 @@ sub parse_articles
 	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
 	
 	$| = 1;	 # This allows the counter to rewrite itself on a single line
-<<<<<<< HEAD
-	while(<DUMP>) {
-		# Get the title of the article, starts a new article
-		if ( /<title>(.+?)<\/title>/ ) {
-			$title = $1;
-			$title = '' if $title =~ /[:\/]/; # Exclude all articles outside of the main namespace
-			$title =~ s/"/\"/g;
-			
-			# Reinit temporary variables
-			$complete_article = 0;
-			@article = ();
-=======
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {
 		$n++;
 		#printf STDERR "[%7d] $article->{'fulltitle'}\r", $n if $n % 1000 == 0;	# Simple counter
 		print STDERR "[$n] $article->{'fulltitle'}                                   \r" if $n % 100 == 0;	# Simple counter
->>>>>>> ccda66c... Rewrite to use the new iterator.
 		
 		next ARTICLE if $article->{'ns'} != 0;
 		
