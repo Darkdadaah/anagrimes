@@ -138,6 +138,7 @@ sub cherche_prononciation
 	
 	# Prononciation sur la ligne de forme ?
 	foreach my $ligne (@$lignes) {
+		
 		# Avec {{pron|}}
 		if ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}\}/) {
 			my $p = $1;
@@ -149,7 +150,7 @@ sub cherche_prononciation
 			} elsif ($p =~ /^lang=[^\|\}]+\|(.*)$/ or $p =~ /^(.*)\|lang=[^\|\}]+$/ or $p =~ /^(\s?)lang=[^\|\}]+$/) {
 				$pron{$1} = 1 if $1;
 			# Vide ou non, avec code langue
-			} elsif ($p =~ /^([^\|\}])*\|([^\|\}]+)$/) {
+			} elsif ($p =~ /^([^\|\}]*)\|([^\|\}]+)$/) {
 				$pron{$1} = 1 if $1;
 			# Une erreur ?
 			} else {
