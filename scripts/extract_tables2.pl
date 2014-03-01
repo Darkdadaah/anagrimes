@@ -273,24 +273,25 @@ sub parse_article
 {
 	my ($article) = @_;
 	
-	# This will stock the important values that will be put in the table
-	my %wstring = ();
-	
 	# Discard any *ffixes
 	return if $article->{'title'} =~ /^-/ or $article->{'title'} =~ /-$/;
-	$wstring{'a_title'} = $article->{'title'};
-	$wstring{'a_artid'} = $article->{'id'};
+	
+	# Retrieve the values for the title of this article
+	my %title_val = ();	# MOVE ALL WSTRING VALUES BELOW INTO A SEPARATE PROCEDURE!
+	
+	$title_val{'a_title'} = $article->{'title'};
+	$title_val{'a_artid'} = $article->{'id'};
 	
 	###########################
 	# From the title only we can get (-> table articles)
-	$wstring{'a_title_r'} = reverse($wstring{'a_title'});					# Reverse title (for sql search)
-	$wstring{'a_title_flat'} = lc(ascii_strict($wstring{'a_title'}));		# titre_plat (no hyphenation)
-	$wstring{'a_title_flat_r'} = reverse($wstring{'a_title_flat'});			# Same, reversed
-	$wstring{'a_alphagram'} = anagramme($wstring{'a_title_flat'});		# anagramme_id (alphagram, key for anagrams)
+	$title_val{'a_title_r'} = reverse($title_val{'a_title'});					# Reverse title (for sql search)
+	$title_val{'a_title_flat'} = lc(ascii_strict($title_val{'a_title'}));		# titre_plat (no hyphenation)
+	$title_val{'a_title_flat_r'} = reverse($title_val{'a_title_flat'});			# Same, reversed
+	$title_val{'a_alphagram'} = anagramme($title_val{'a_title_flat'});		# anagramme_id (alphagram, key for anagrams)
 	
 	# Can't get a correct unhyphenated word (should only be symbols and such)
-	if (not $wstring{'a_title_flat'}) {
-		special_log('a_title_flat', $wstring{'a_title'});	# Log just to be sure
+	if (not $title_val{'a_title_flat'}) {
+		special_log('a_title_flat', $title_val{'a_title'});	# Log just to be sure
 		
 	# Everything is ok thus far
 	} else {
@@ -321,7 +322,7 @@ sub parse_article
 				
 				# No content? Something's not right
 				if (not $lang_section) {
-					special_log('empty_lang', $wstring{'a_title'}, $lang);	# Log just to be sure
+					special_log('empty_lang', $title_val{'a_title'}, $lang);	# Log just to be sure
 					
 				# Everything is here, let's part this section (-> table mots)
 				} else {
@@ -334,47 +335,47 @@ sub parse_article
 		
 		# If the script is not latin, let's try transcriptions (language-specific)
 		# We will only keep unhyphenated transcripts here
-		$wstring{'a_trans_flat'} = '';	# unhyphenated transcript (non-latin words)
-		$wstring{'a_trans_flat_r'} = '';	# same, reversed for sql
+		$title_val{'a_trans_flat'} = '';	# unhyphenated transcript (non-latin words)
+		$title_val{'a_trans_flat_r'} = '';	# same, reversed for sql
 		
 		# Not latin script? Let's try to compute a transcript!
-		if (not unicode_NFKD($wstring{'a_title_flat'}) =~ /[a-z]/) {
+		if (not unicode_NFKD($title_val{'a_title_flat'}) =~ /[a-z]/) {
 			my @langs = keys %{$article_section->{language}};
-			$wstring{'a_trans_flat'} = transcription($wstring{'a_title_flat'}, \@langs);
+			$title_val{'a_trans_flat'} = transcription($title_val{'a_title_flat'}, \@langs);
 			
 			# No transcription could be done (unsupported script)
-			if (not $wstring{'a_trans_flat'}) {
-				$wstring{'trans_flat'}='';
+			if (not $title_val{'a_trans_flat'}) {
+				$title_val{'trans_flat'}='';
 			
 			# Uncomplete transcription (should be supported! -> log)
-			} elsif (not unicode_NFKD($wstring{'a_trans_flat'}) =~ /^[a-z0-9â ]+$/) {
-				special_log('incomplete_transcription', $wstring{'a_title'}, $wstring{'a_trans_flat'});
-				$wstring{'a_trans_flat'} = '';
+			} elsif (not unicode_NFKD($title_val{'a_trans_flat'}) =~ /^[a-z0-9â ]+$/) {
+				special_log('incomplete_transcription', $title_val{'a_title'}, $title_val{'a_trans_flat'});
+				$title_val{'a_trans_flat'} = '';
 				
 			# We have a correct transcript!
 			} else {
-				$wstring{'a_trans_flat_r'} = reverse($wstring{'a_trans_flat'});
+				$title_val{'a_trans_flat_r'} = reverse($title_val{'a_trans_flat'});
 			}
 		}
 		
 		# Prepare letters fields for crossword
 		if ($max_col) {
-			my $wstring_plat = $wstring{'a_title_flat'};
-			$wstring_plat =~ s/[ _,;-]//g;
-			my @word_letters = split(//, $wstring_plat);
+			my $title_val_plat = $title_val{'a_title_flat'};
+			$title_val_plat =~ s/[ _,;-]//g;
+			my @word_letters = split(//, $title_val_plat);
 			
 			# Add individual letters (if the "word" is shorter than the max allowed
 			for (my $i=0; $i < $max_col; $i++) {
 				if (@word_letters <= $max_col and $word_letters[$i]) {
-					$wstring{'p'.($i+1)} = $word_letters[$i];
+					$title_val{'p'.($i+1)} = $word_letters[$i];
 				}
 				else {
-					$wstring{'p'.($i+1)} = '';
+					$title_val{'p'.($i+1)} = '';
 				}
 			}
 		}
 		
-		add_to_file('articles', \%wstring);
+		add_to_file('articles', \%title_val);
 	}
 }
 
