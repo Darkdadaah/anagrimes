@@ -267,6 +267,56 @@ sub parse_redirect
 	add_to_file('redirects', \%redirect_values);
 }
 
+sub title_format
+{
+	my ($article) = @_;
+	my %title = ();
+	
+	$title{'a_title'} = $article->{'title'};
+	$title{'a_artid'} = $article->{'id'};
+	
+	###########################
+	# From the title only we can get (-> table articles)
+	$title{'a_title_r'} = reverse($title{'a_title'});					# Reverse title (for sql search)
+	$title{'a_title_flat'} = lc(ascii_strict($title{'a_title'}));		# titre_plat (no hyphenation)
+	$title{'a_title_flat_r'} = reverse($title{'a_title_flat'});			# Same, reversed
+	$title{'a_alphagram'} = anagramme($title{'a_title_flat'});		# anagramme_id (alphagram, key for anagrams)
+	
+	return \%title;
+}
+
+sub transc_format
+{
+	my ($title, $article, $article_section) = @_;
+	my %transc = ();
+	
+	# If the script is not latin, let's try transcriptions (language-specific)
+	# We will only keep unhyphenated transcripts here
+	$transc{'a_trans_flat'} = '';	# unhyphenated transcript (non-latin words)
+	$transc{'a_trans_flat_r'} = '';	# same, reversed for sql
+	
+	# Not latin script? Let's try to compute a transcript!
+	if (not unicode_NFKD($title->{'a_title_flat'}) =~ /[a-z]/) {
+		my @langs = keys %{$article_section->{language}};
+		$transc{'a_trans_flat'} = transcription($title->{'a_title_flat'}, \@langs);
+		
+		# No transcription could be done (unsupported script)
+		if (not $transc{'a_trans_flat'}) {
+			$transc{'trans_flat'}='';
+		
+		# Uncomplete transcription (should be supported! -> log)
+		} elsif (not unicode_NFKD($transc{'a_trans_flat'}) =~ /^[a-z0-9â ]+$/) {
+			special_log('incomplete_transcription', $title->{'a_title'}, $transc{'a_trans_flat'});
+			$transc{'a_trans_flat'} = '';
+			
+		# We have a correct transcript!
+		} else {
+			$transc{'a_trans_flat_r'} = reverse($transc{'a_trans_flat'});
+		}
+	}
+	return \%transc;
+}
+
 ###################################
 # ARTICLES PARSER
 sub parse_article
@@ -277,17 +327,7 @@ sub parse_article
 	return if $article->{'title'} =~ /^-/ or $article->{'title'} =~ /-$/;
 	
 	# Retrieve the values for the title of this article
-	my %title_val = ();	# MOVE ALL WSTRING VALUES BELOW INTO A SEPARATE PROCEDURE!
-	
-	$title_val{'a_title'} = $article->{'title'};
-	$title_val{'a_artid'} = $article->{'id'};
-	
-	###########################
-	# From the title only we can get (-> table articles)
-	$title_val{'a_title_r'} = reverse($title_val{'a_title'});					# Reverse title (for sql search)
-	$title_val{'a_title_flat'} = lc(ascii_strict($title_val{'a_title'}));		# titre_plat (no hyphenation)
-	$title_val{'a_title_flat_r'} = reverse($title_val{'a_title_flat'});			# Same, reversed
-	$title_val{'a_alphagram'} = anagramme($title_val{'a_title_flat'});		# anagramme_id (alphagram, key for anagrams)
+	my %title_val = %{ title_format($article) };
 	
 	# Can't get a correct unhyphenated word (should only be symbols and such)
 	if (not $title_val{'a_title_flat'}) {
@@ -333,30 +373,7 @@ sub parse_article
 		}
 		return if not $lang_ok;
 		
-		# If the script is not latin, let's try transcriptions (language-specific)
-		# We will only keep unhyphenated transcripts here
-		$title_val{'a_trans_flat'} = '';	# unhyphenated transcript (non-latin words)
-		$title_val{'a_trans_flat_r'} = '';	# same, reversed for sql
-		
-		# Not latin script? Let's try to compute a transcript!
-		if (not unicode_NFKD($title_val{'a_title_flat'}) =~ /[a-z]/) {
-			my @langs = keys %{$article_section->{language}};
-			$title_val{'a_trans_flat'} = transcription($title_val{'a_title_flat'}, \@langs);
-			
-			# No transcription could be done (unsupported script)
-			if (not $title_val{'a_trans_flat'}) {
-				$title_val{'trans_flat'}='';
-			
-			# Uncomplete transcription (should be supported! -> log)
-			} elsif (not unicode_NFKD($title_val{'a_trans_flat'}) =~ /^[a-z0-9â ]+$/) {
-				special_log('incomplete_transcription', $title_val{'a_title'}, $title_val{'a_trans_flat'});
-				$title_val{'a_trans_flat'} = '';
-				
-			# We have a correct transcript!
-			} else {
-				$title_val{'a_trans_flat_r'} = reverse($title_val{'a_trans_flat'});
-			}
-		}
+		my %transc_val = %{ transc_format(\%title_val, $article, $article_section) };
 		
 		# Prepare letters fields for crossword
 		if ($max_col) {
@@ -375,6 +392,7 @@ sub parse_article
 			}
 		}
 		
+		my %article_vals = (%title_val, %transc_val);
 		add_to_file('articles', \%title_val);
 	}
 }
