@@ -3,8 +3,9 @@ This tool is called "Anagrimes" (from French anagrammes + rimes) and is used to 
 This was developped mainly for the French Wiktionary version (Wiktionnaire).
 
 Some basic Anagrimes tools:
-* dico-diffs.pl = diff between 2 Wiktionary in different languages
-* dico-genie.pl = create an XML file from a Wiktionary dump (INCOMPLETE)
-* dico-liste.pl = create a list of wiki articles from a Wiktionary dump that match certain conditions
-* dico-phile.pl = create a list of words from an Wikimedia dump that can't be found in a given list
-* dico-table.pl = create tables for all articles, words and languages from a Wiktionary dump
+* wikt_dump_diff.pl = diff between 2 Wiktionary in different languages
+* create_xml_dico.pl = create an XML file from a Wiktionary dump (INCOMPLETE)
+* articles_list.pl = create a list of wiki articles from a Wiktionary dump that match certain conditions
+* list_vs_dump.pl = create a list of words from an Wikimedia dump that can't be found in a given list
+* extract_tables.pl = create tables for all articles, words and languages from a Wiktionary dump
+
