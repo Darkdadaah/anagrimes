@@ -317,6 +317,32 @@ sub transc_format
 	return \%transc;
 }
 
+sub prepare_crossword
+{
+	my ($title) = @_;
+	my %cross = ();
+
+	# Prepare letters fields for crossword
+	if ($max_col) {
+		my $title_val_plat = $title_val->{'a_title_flat'};
+		$title_val_plat =~ s/[ _,;-]//g;
+		my @word_letters = split(//, $title_val_plat);
+		
+		# Add individual letters (if the "word" is shorter than the max allowed
+		for (my $i=0; $i < $max_col; $i++) {
+			if (@word_letters <= $max_col and $word_letters[$i]) {
+				$title_val->{'p'.($i+1)} = $word_letters[$i];
+			}
+			else {
+				$title_val->{'p'.($i+1)} = '';
+			}
+		}
+	}
+		
+	
+	return \%cross;
+}
+
 ###################################
 # ARTICLES PARSER
 sub parse_article
@@ -327,11 +353,12 @@ sub parse_article
 	return if $article->{'title'} =~ /^-/ or $article->{'title'} =~ /-$/;
 	
 	# Retrieve the values for the title of this article
-	my %title_val = %{ title_format($article) };
+	my $title_val = title_format($article);
+	my $crosswords = prepare_crossword($title_val);
 	
 	# Can't get a correct unhyphenated word (should only be symbols and such)
-	if (not $title_val{'a_title_flat'}) {
-		special_log('a_title_flat', $title_val{'a_title'});	# Log just to be sure
+	if (not $title_val->{'a_title_flat'}) {
+		special_log('a_title_flat', $title_val->{'a_title'});	# Log just to be sure
 		
 	# Everything is ok thus far
 	} else {
@@ -362,7 +389,7 @@ sub parse_article
 				
 				# No content? Something's not right
 				if (not $lang_section) {
-					special_log('empty_lang', $title_val{'a_title'}, $lang);	# Log just to be sure
+					special_log('empty_lang', $title_val->{'a_title'}, $lang);	# Log just to be sure
 					
 				# Everything is here, let's part this section (-> table mots)
 				} else {
@@ -373,26 +400,11 @@ sub parse_article
 		}
 		return if not $lang_ok;
 		
-		my %transc_val = %{ transc_format(\%title_val, $article, $article_section) };
+		# Prepare transcriptions
+		my $transc_val = transc_format($title_val, $article, $article_section);
 		
-		# Prepare letters fields for crossword
-		if ($max_col) {
-			my $title_val_plat = $title_val{'a_title_flat'};
-			$title_val_plat =~ s/[ _,;-]//g;
-			my @word_letters = split(//, $title_val_plat);
-			
-			# Add individual letters (if the "word" is shorter than the max allowed
-			for (my $i=0; $i < $max_col; $i++) {
-				if (@word_letters <= $max_col and $word_letters[$i]) {
-					$title_val{'p'.($i+1)} = $word_letters[$i];
-				}
-				else {
-					$title_val{'p'.($i+1)} = '';
-				}
-			}
-		}
-		
-		my %article_vals = (%title_val, %transc_val);
+		# Merge all article data
+		my %article_vals = (%$title_val, %$crosswords, %$transc_val);
 		add_to_file('articles', \%title_val);
 	}
 }
