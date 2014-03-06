@@ -218,54 +218,29 @@ sub add_to_file_lang
 	close(LANG);
 }
 
-sub chronometer_end
-{
-	my ($past) = @_;
-	my $diff = time() - $past;
-	my $mDiff = int($diff / 60);
-	my $sDiff = sprintf("%02d", $diff - 60 * $mDiff);
-	
-	print STDERR "diff = $diff -> $mDiff\:$sDiff\n";
-}
-
 ###################################
 # PARSERS
 
 sub parse_articles
 {
 	my ($dump_path) = @_;
-
-	# Counting variables
-	my ($n, $redirect) = (0,0);
 	
 	# Scan every line of the dump
 	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
 	
-	$| = 1;	 # This allows the counter to rewrite itself on a single line
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {
-		$n++;
 		next ARTICLE if $article->{'ns'} != 0;	# Only main namespace
 		
 		if ($article->{'redirect'}) {
 			# Only parse redirects if there is no specific target language (because redirects have no language)
 			parse_redirect($article);
-			$redirect++;
 		} else {
 			# Fully parse the article
 			parse_article($article);
 			
 		}
 	}
-	print STDERR "\n";
-	$| = 0;
 	close($dump_fh);
-	
-	# Print the language list
-	add_to_file_lang();
-	
-	# Lastly, some stats
-	print_value("%d total articles", $n);
-	print_value("%d total redirects", $redirect);
 }
 
 ###################################
@@ -590,12 +565,14 @@ sub counter
 # MAIN
 init();
 
-my $past = time();	# Chronometer start
-
+# Print the SQL schema
 print_sql_tables($opt{S});
-parse_articles($opt{i});
 
-chronometer_end($past);
+# Actual parsing of the dumps
+parse_articles($opt{i});
+	
+# Lastly, print the language table
+add_to_file_lang();
 
 
 __END__
