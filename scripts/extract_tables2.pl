@@ -18,73 +18,72 @@ use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage prin
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
-my %output_files_old = (
-'redirects' => {'file' => '', 'fields' => [ qw(title target) ] },
-'articles' => {'file' => '', 'fields' => [ qw(titre r_titre titre_plat r_titre_plat transcrit_plat r_transcrit_plat anagramme_id) ] },
-'transcrits' => {'file' => '', 'fields' => [ qw(titre transcrit transcrit_plat r_transcrit_plat) ] },
-'mots' => {'file' => '', 'fields' => [ qw(titre langue type pron pron_simple r_pron_simple rime_pauvre rime_suffisante rime_riche rime_voyelle syllabes num flex loc gent rand) ] },
-'langues' => {'file' => '', 'fields' => [ qw( langue num num_min ) ] },
-);
-
 our %output_files = (
-'langs' => {'file' => '', 'fields' => [ qw(
-	lg_lang
-	lg_num
-	lg_num_min
-) ] },
+'langs' => {'file' => '', 'fields' => {
+	'lg_lang' => 'text',
+	'lg_num' => 'int',
+	'lg_num_min' => 'int',
+	}
+},
 
 # Articles are "strings"
-'articles' => {'file' => '', 'fields' => [ qw(
-	a_artid
-	a_title
-	a_title_flat
-	a_title_r
-	a_title_flat_r
-	a_trans
-	a_trans_flat
-	a_trans_flat_r
-	a_alphagram
-) ] },
+'articles' => {'file' => '', 'fields' => {
+	'a_artid' => 'int',
+	'a_title' => 'text',
+	'a_title_flat' => 'text',
+	'a_title_r' => 'text',
+	'a_title_flat_r' => 'text',
+	'a_trans' => 'text',
+	'a_trans_flat' => 'text',
+	'a_trans_flat_r' => 'text',
+	'a_alphagram' => 'text',
+	}
+},
 
 # Lexemes are "words"
-'lexemes' => {'file' => '', 'fields' => [ qw(
-	l_artid
-	l_lexid
-	l_lang
-	l_type
-	l_num
-	l_is_flexion
-	l_is_locution
-	l_is_gentile
-	l_rand
-) ] },
+'lexemes' => {'file' => '', 'fields' => {
+	'l_artid' => 'int',
+	'l_lexid' => 'int',
+	'l_lang' => 'text',
+	'l_type' => 'text',
+	'l_num' => 'int',
+	'l_is_flexion' => 'int',
+	'l_is_locution' => 'int',
+	'l_is_gentile' => 'int',
+	'l_rand' => 'int',
+	}
+},
 
 # 1 lexeme can have several pronunciations,
 # one pronunciation only match one lexeme
 # pron is in IPA
-'prons' => {'file' => '', 'fields' => [ qw(
-	p_pronid
-	p_lexid
-	p_pron
-	p_pron_flat
-	p_pron_flat_r
-	p_num
-) ] },
-# Rhymes to add
+'prons' => {'file' => '', 'fields' => {
+	'p_pronid' => 'int',
+	'p_lexid' => 'int',
+	'p_pron' => 'text',
+	'p_pron_flat' => 'text',
+	'p_pron_flat_r' => 'text',
+	'p_num' => 'int',
+	}
+},
+
+# Rhymes to add?
 
 # Keep?
-'transc' => {'file' => '', 'fields' => [ qw(
-	tr_aid
-	tr_transc
-	tr_transc_flat
-	tr_transc_flat_r
-) ] },
+'transc' => {'file' => '', 'fields' => {
+	'tr_artid' => 'int',
+	'tr_transc' => 'text',
+	'tr_transc_flat' => 'text',
+	'tr_transc_flat_r' => 'text',
+	}
+},
 
 # Redirects are not connected to the other tables
-'redirects' => {'file' => '', 'fields' => [ qw(
-	r_title
-	r_target
-) ] },
+'redirects' => {'file' => '', 'fields' => {
+	'r_title' => 'text',
+	'r_target' => 'text',
+	}
+},
 );
 
 my $max_col = 0;
@@ -114,6 +113,7 @@ sub usage
 	-l <path> : special log_files (like -o path + prefix). Those files log specific errors defined in the parser.
 	-L <code> : language code to extract alone (2 or 3 letters) [optional]
 	-c <num>  : length of crossword searchable columns
+	-S <path> : print SQL commands to create the corresponding tables of every file created
 EOF
 	exit;
 }
@@ -122,7 +122,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'i:o:L:l:c:', \%opt ) or usage();
+	getopts( 'i:o:L:l:c:S:', \%opt ) or usage();
 	usage() if $opt{h};
 	
 	$log = $opt{l} ? $opt{l} : '';
@@ -132,7 +132,6 @@ sub init()
 	
 	# Prepare output file path
 	$opt{o} .= '.txt' if not $opt{o} =~ /\.[a-z0-9]+$/;
-	print STDERR "Files in $opt{o}\n";
 	
 	# Prepare output files
 	foreach my $type (keys %output_files) {
@@ -150,11 +149,6 @@ sub init()
 		$max_col = $opt{c};
 		init_crossword_columns();
 	}
-	
-	# Print columns order so that the user know what is written where
-	foreach my $outs (sort keys %output_files) {
-		print STDERR "$outs: ", join(', ', @{ $output_files{$outs}{fields} }), "\n";
-	}
 }
 
 sub init_crossword_columns
@@ -164,8 +158,33 @@ sub init_crossword_columns
 	# Add a column for the first $maxcol letters
 	for (my $i=0; $i < $max_col; $i++) {
 		my $col = 'p' . ($i+1);
-		push @{ $output_files{'articles'}{'fields'} }, $col;
+		$output_files{'articles'}{'fields'}->{$col} = 'CHAR(1)';
 	}
+}
+
+sub print_sql_tables
+{
+	my ($sql_path) = @_;
+	return if not $sql_path;
+	
+	open(my $SQL, ">$sql_path") or die("Couldn't write $sql_path");
+	
+	foreach my $table (keys %output_files) {
+		print_sql_table($SQL, $table, $output_files{$table}{fields});
+	}
+}
+
+sub print_sql_table
+{
+	my ($SQL, $table, $fields) = @_;
+	
+	my $start = "CREATE TABLE $table (\n";
+	my @line = ();
+	foreach my $f (sort keys %$fields) {
+		my $type = $fields->{$f};
+		push @line, "\t$f $type";
+	}
+	print $SQL $start . join(",\n", @line) . "\n);\n\n";
 }
 
 # Write to the various output files
@@ -176,7 +195,7 @@ sub add_to_file
 	open(TYPE, ">> $output_files{$type}{file}") or die "Can't write $output_files{$type}{file} (type $type): $!\n";
 	
 	my @line = ();
-	foreach my $f (@{ $output_files{$type}{fields} }) {
+	foreach my $f (sort keys %{ $output_files{$type}{fields} }) {
 		if (defined($values->{$f})) {
 			push @line, $values->{$f};
 		} else {
@@ -573,6 +592,7 @@ init();
 
 my $past = time();	# Chronometer start
 
+print_sql_tables($opt{S});
 parse_articles($opt{i});
 
 chronometer_end($past);
