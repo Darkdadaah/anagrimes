@@ -131,7 +131,7 @@ sub init()
 	usage( "Output file path needed (-o)" ) if not $opt{o};
 	
 	# Prepare output file path
-	$opt{o} .= '.csv' if not $opt{o} =~ /\.[a-z0-9]+$/;
+	$opt{o} .= '.txt' if not $opt{o} =~ /\.[a-z0-9]+$/;
 	print STDERR "Files in $opt{o}\n";
 	
 	# Prepare output files
