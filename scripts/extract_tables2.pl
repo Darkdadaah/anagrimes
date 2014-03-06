@@ -225,10 +225,7 @@ sub parse_articles
 	$| = 1;	 # This allows the counter to rewrite itself on a single line
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {
 		$n++;
-		#printf STDERR "[%7d] $article->{'fulltitle'}\r", $n if $n % 1000 == 0;	# Simple counter
-		print STDERR "[$n] $article->{'fulltitle'}                                   \r" if $n % 100 == 0;	# Simple counter
-		
-		next ARTICLE if $article->{'ns'} != 0;
+		next ARTICLE if $article->{'ns'} != 0;	# Only main namespace
 		
 		if ($article->{'redirect'}) {
 			# Only parse redirects if there is no specific target language (because redirects have no language)
