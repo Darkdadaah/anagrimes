@@ -197,7 +197,7 @@ sub add_to_file
 	my @line = ();
 	foreach my $f (sort keys %{ $output_files{$type}{fields} }) {
 		if (defined($values->{$f})) {
-			$val = $values->{$f};
+			my $val = $values->{$f};
 			$val =~ s/"/\"/g;	# Obligatory escape
 			$val =~ s/\t//g;	# No \t allowed!
 			push @line, $val;
