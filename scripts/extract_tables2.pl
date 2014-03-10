@@ -19,71 +19,115 @@ use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_pr
 
 # Output files:
 our %output_files = (
-'langs' => {'file' => '', 'fields' => {
-	'lg_lang' => 'text',
-	'lg_num' => 'int',
-	'lg_num_min' => 'int',
-	}
-},
+	'langs' => {'file' => '', 'fields' => {
+		'lg_lang' => 'text',
+		'lg_num' => 'int',
+		'lg_num_min' => 'int',
+		}
+	},
 
-# Articles are "strings"
-'articles' => {'file' => '', 'fields' => {
-	'a_artid' => 'int',
-	'a_title' => 'text',
-	'a_title_flat' => 'text',
-	'a_title_r' => 'text',
-	'a_title_flat_r' => 'text',
-	'a_trans' => 'text',
-	'a_trans_flat' => 'text',
-	'a_trans_flat_r' => 'text',
-	'a_alphagram' => 'text',
-	}
-},
+	# Articles are "strings"
+	'articles' => {'file' => '', 'fields' => {
+		'a_artid' => 'int',
+		'a_title' => 'text',
+		'a_title_flat' => 'text',
+		'a_title_r' => 'text',
+		'a_title_flat_r' => 'text',
+		'a_trans' => 'text',
+		'a_trans_flat' => 'text',
+		'a_trans_flat_r' => 'text',
+		'a_alphagram' => 'text',
+		}
+	},
 
-# Lexemes are "words"
-'lexemes' => {'file' => '', 'fields' => {
-	'l_artid' => 'int',
-	'l_lexid' => 'int',
-	'l_lang' => 'text',
-	'l_type' => 'text',
-	'l_num' => 'int',
-	'l_is_flexion' => 'int',
-	'l_is_locution' => 'int',
-	'l_is_gentile' => 'int',
-	'l_rand' => 'int',
-	}
-},
+	# Lexemes are "words"
+	'lexemes' => {'file' => '', 'fields' => {
+		'l_artid' => 'int',
+		'l_lexid' => 'int',
+		'l_lang' => 'text',
+		'l_type' => 'text',
+		'l_num' => 'int',
+		'l_is_flexion' => 'int',
+		'l_is_locution' => 'int',
+		'l_is_gentile' => 'int',
+		'l_rand' => 'int',
+		}
+	},
 
-# 1 lexeme can have several pronunciations,
-# one pronunciation only match one lexeme
-# pron is in IPA
-'prons' => {'file' => '', 'fields' => {
-	'p_pronid' => 'int',
-	'p_lexid' => 'int',
-	'p_pron' => 'text',
-	'p_pron_flat' => 'text',
-	'p_pron_flat_r' => 'text',
-	'p_num' => 'int',
-	}
-},
+	# 1 lexeme can have several pronunciations,
+	# one pronunciation only match one lexeme
+	# pron is in IPA
+	'prons' => {'file' => '', 'fields' => {
+		'p_pronid' => 'int',
+		'p_lexid' => 'int',
+		'p_pron' => 'text',
+		'p_pron_flat' => 'text',
+		'p_pron_flat_r' => 'text',
+		'p_num' => 'int',
+		}
+	},
 
-# Rhymes to add?
+	# Rhymes to add?
 
-# Keep?
-'transc' => {'file' => '', 'fields' => {
-	'tr_artid' => 'int',
-	'tr_transc' => 'text',
-	'tr_transc_flat' => 'text',
-	'tr_transc_flat_r' => 'text',
-	}
-},
+	# Keep?
+	'transc' => {'file' => '', 'fields' => {
+		'tr_artid' => 'int',
+		'tr_transc' => 'text',
+		'tr_transc_flat' => 'text',
+		'tr_transc_flat_r' => 'text',
+		}
+	},
 
-# Redirects are not connected to the other tables
-'redirects' => {'file' => '', 'fields' => {
-	'r_title' => 'text',
-	'r_target' => 'text',
-	}
-},
+	# Redirects are not connected to the other tables
+	'redirects' => {'file' => '', 'fields' => {
+		'r_title' => 'text',
+		'r_target' => 'text',
+		}
+	},
+);
+
+our %indexes = (
+	'langs' => {
+		'lg_lang' => 'lg_lang(3)',
+	},
+	'articles' => {
+		'a_artid' => 'a_artid',
+		'a_title' => 'a_title(15)',
+		'a_title_flat' => 'a_title_flat(15)',
+		'a_title_r' => 'a_title_r(15)',
+		'a_title_flat_r' => 'a_title_flat_r(15)',
+		#'a_trans' => 'a_trans(10)',
+		#'a_trans_flat' => 'a_trans_flat(10)',
+		#'a_trans_flat_r' => 'a_trans_flat_r(10)',
+		'a_alphagram' => 'a_alphagram(15)',
+	},
+	'lexemes' => {
+		'l_artid' => 'l_artid',
+		'l_lexid' => 'l_lexid',
+		'l_lang' => 'l_lang(3)',
+		'l_type' => 'l_type(4)',
+		'l_is_flexion' => 'l_is_flexion',
+		'l_is_locution' => 'l_is_locution',
+		'l_is_gentile' => 'l_is_gentile',
+		'l_rand' => 'l_rand',
+	},
+	'prons' => {
+		'p_pronid' => 'p_pronid',
+		'p_lexid' => 'p_lexid',
+		'p_pron' => 'p_pron(15)',
+		'p_pron_flat' => 'p_pron_flat(15)',
+		'p_pron_flat_r' => 'p_pron_flat_r(15)',
+	},
+	'transc' => {
+		'tr_artid' => 'tr_artid',
+		'tr_transc' => 'tr_transc(15)',
+		'tr_transc_flat' => 'tr_transc_flat(15)',
+		'tr_transc_flat_r' => 'tr_transc_flat_r(15)',
+	},
+	'redirects' => {
+		'r_title' => 'r_title(15)',
+		'r_target' => 'r_target(15)',
+	},
 );
 
 my $max_col = 0;
@@ -114,6 +158,7 @@ sub usage
 	-L <code> : language code to extract alone (2 or 3 letters) [optional]
 	-c <num>  : length of crossword searchable columns
 	-S <path> : print SQL commands to create the corresponding tables of every file created
+	-s        : sqlite compatible version -S
 EOF
 	exit;
 }
@@ -122,7 +167,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'i:o:L:l:c:S:', \%opt ) or usage();
+	getopts( 'i:o:L:l:c:S:s', \%opt ) or usage();
 	usage() if $opt{h};
 	
 	$log = $opt{l} ? $opt{l} : '';
@@ -162,9 +207,9 @@ sub init_crossword_columns
 	}
 }
 
-sub print_sql_tables
+sub print_sql_schema
 {
-	my ($sql_path) = @_;
+	my ($sql_path, $sqlite) = @_;
 	return if not $sql_path;
 	
 	open(my $SQL, ">$sql_path") or die("Couldn't write $sql_path");
@@ -172,6 +217,27 @@ sub print_sql_tables
 	foreach my $table (keys %output_files) {
 		print_sql_table($SQL, $table, $output_files{$table}{fields});
 	}
+	foreach my $table (keys %indexes) {
+		print_sql_index($SQL, $table, $indexes{$table}, $sqlite);
+	}
+	
+	print $SQL "/*\n";
+	if ($sqlite) {
+		print $SQL ".mode tabs\n" if $sqlite;
+		foreach my $table (keys %output_files) {
+			my $file = $output_files{$table}{file};
+			$file =~ s/^.+\///g;
+			if ($sqlite) {
+				print $SQL ".import $file $table\n";
+			} else {
+				print $SQL "LOAD DATA LOCAL INFILE '$file' INTO TABLE $table CHARACTER SET 'utf8';\n";
+			}
+		}
+	} else {
+	}
+	print $SQL "*/\n";
+	
+	close($SQL);
 }
 
 sub print_sql_table
@@ -187,6 +253,18 @@ sub print_sql_table
 	print $SQL $start . join(",\n", @line) . "\n);\n\n";
 }
 
+sub print_sql_index
+{
+	my ($SQL, $table, $fields, $sqlite) = @_;
+	
+	foreach my $f (sort keys %$fields) {
+		my $type = $fields->{$f};
+		$type =~ s/\(.+\)// if $sqlite;
+		my $creation = "CREATE INDEX " . $f . "_idx ON $table($type);";
+		print $SQL "$creation\n";
+	}
+}
+
 # Write to the various output files
 sub add_to_file
 {
@@ -198,7 +276,7 @@ sub add_to_file
 	foreach my $f (sort keys %{ $output_files{$type}{fields} }) {
 		if (defined($values->{$f})) {
 			my $val = $values->{$f};
-			$val =~ s/"/\"/g;	# Obligatory escape
+			$val =~ s/["＂]/""/g;	# Obligatory escape
 			$val =~ s/\t//g;	# No \t allowed!
 			push @line, $val;
 		} else {
@@ -332,7 +410,6 @@ sub prepare_crossword
 			}
 		}
 	}
-		
 	
 	return \%cross;
 }
@@ -569,7 +646,7 @@ sub counter
 init();
 
 # Print the SQL schema
-print_sql_tables($opt{S});
+print_sql_schema($opt{S}, $opt{s});
 
 # Actual parsing of the dumps
 parse_articles($opt{i});
