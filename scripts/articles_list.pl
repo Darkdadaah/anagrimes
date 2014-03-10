@@ -348,6 +348,5 @@ $par{'nopat'} = $opt{n};
 
 # Get data from dump
 my $art_count = get_articles_list(\%par);
-close(DUMP);
 
 __END__
