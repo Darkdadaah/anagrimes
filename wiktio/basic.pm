@@ -4,10 +4,6 @@
 # This module contains basic data and functions for Wiktionary fr
 package wiktio::basic;
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use Exporter;
 @ISA=('Exporter');
 
@@ -27,10 +23,17 @@ use Exporter;
 	$langues_transcrites
 	step
 	stepl
+	to_utf8
 );
 
 use strict;
 use warnings;
+
+use utf8;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+use Encode qw(decode);
 
 our $true = 1;
 our $false = 0;
@@ -95,6 +98,24 @@ sub dump_input
 	
 	return $input;
 }
+
+
+sub to_utf8
+{
+	my $opts = shift;
+	
+	if (ref($opts) eq 'HASH') {
+		foreach my $v (keys %$opts) {
+			$opts->{$v} = Encode::decode('UTF-8', $opts->{$v});
+		}
+	} elsif (ref($opts) eq 'HASH') {
+		map { Encode::decode('UTF-8', $_); } @$opts;
+	} elsif (ref($opts) eq '') {
+		$opts= Encode::decode('UTF-8', $opts);
+	}
+	return $opts;
+}
+1;
 
 our $level3 = {
 	'étymologie' => 'etymologie',

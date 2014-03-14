@@ -16,12 +16,14 @@ use Exporter;		# So that we can export functions and vars
 
 use strict;
 use warnings;
-use wiktio::basic;
-use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step );
 
+use utf8;
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
+
+use wiktio::basic;
+use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step );
 
 sub parse_dump
 {

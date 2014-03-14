@@ -1,18 +1,19 @@
 #!/usr/bin/perl -w
 
-# Test the functions ascii etc.
 use strict;
 use warnings;
 use Getopt::Std;
 
+# Need utf8 compatibility for input/outputs
+use utf8;
+use open ':encoding(utf8)';
+binmode STDOUT, ":encoding(utf8)";
+binmode STDERR, ":encoding(utf8)";
+
+# Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
-
-use utf8;
-use Encode qw(decode encode);
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+use wiktio::basic		qw(to_utf8);
 
 our %opt;
 
@@ -46,6 +47,7 @@ EOF
 sub init()
 {
 	getopts( 'hi:o:O:n:L:C', \%opt ) or usage();
+	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	usage( "Dump path needed (-i)" ) if not $opt{i};
 	

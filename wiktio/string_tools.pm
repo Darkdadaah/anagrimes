@@ -7,10 +7,6 @@
 
 package wiktio::string_tools;
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use Exporter;
 @ISA=('Exporter');
 @EXPORT_OK = qw(
@@ -25,12 +21,18 @@ use Exporter;
 
 use strict;
 use warnings;
+
+use utf8;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use Encode;
 use Unicode::Normalize;
 use wiktio::basic;
 use wiktio::basic 	qw( $langues_transcrites );
 
-sub unicode_NFKD($)
+sub unicode_NFKD
 {
 	my ($mot0) = @_;
 	
@@ -438,7 +440,7 @@ sub SAMPAtoAPI
 	return $pron;
 }
 
-sub SAMPAtoSortKey($)
+sub SAMPAtoSortKey
 {
 	my $pron0 = shift;
 	my $p = $pron0;

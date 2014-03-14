@@ -7,10 +7,6 @@
 
 package wiktio::pron_tools;
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use Exporter;
 @ISA=('Exporter');
 @EXPORT_OK = qw(
@@ -24,6 +20,12 @@ use Exporter;
 
 use strict;
 use warnings;
+
+use utf8;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use wiktio::basic;
 
 my @voyelles = qw( a ɑ ɒ æ e ɛ ɜ ɝ ə i ɪ o œ ɔ u y ɯ ʊ ʌ );

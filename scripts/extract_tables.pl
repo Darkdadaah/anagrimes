@@ -13,6 +13,7 @@ binmode STDERR, ":encoding(utf8)";
 # Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
+use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
 use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
@@ -61,6 +62,7 @@ EOF
 sub init()
 {
 	getopts( 'i:o:L:l:c:', \%opt ) or usage();
+	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	
 	$log = $opt{l} ? $opt{l} : '';
