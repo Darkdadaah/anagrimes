@@ -7,13 +7,13 @@ use Getopt::Std;
 # Need utf8 compatibility for input/outputs
 use utf8;
 use open ':encoding(utf8)';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-use Encode qw(decode);	# Needed?
+binmode STDOUT, ":encoding(utf8)";
+binmode STDERR, ":encoding(utf8)";
 
 # Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
+use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii ascii_strict anagramme);
 use wiktio::parser		qw(parse_dump parseArticle parseLanguage parseType);
 
@@ -68,6 +68,7 @@ EOF
 sub init()
 {
 	getopts( 'hi:o:O:p:n:S:A:L:N:', \%opt ) or usage();
+	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	usage( "Dump path needed (-i)" ) if not $opt{i};
 	if (not $opt{F}) {
@@ -113,7 +114,6 @@ sub prepare_authors_list
 sub correct_pattern
 {
 	my $p = shift;
-	$p = decode('utf8', $p);
 	if ($p) {
 		$p =~ s/</&lt;/;
 		$p =~ s/>/&gt;/;
@@ -348,6 +348,5 @@ $par{'nopat'} = $opt{n};
 
 # Get data from dump
 my $art_count = get_articles_list(\%par);
-close(DUMP);
 
 __END__

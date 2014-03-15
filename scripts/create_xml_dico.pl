@@ -1,15 +1,19 @@
 #!/usr/bin/perl -w
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use strict;
 use warnings;
 use Getopt::Std;
 
+# Need utf8 compatibility for input/outputs
+use utf8;
+use open ':encoding(utf8)';
+binmode STDOUT, ":encoding(utf8)";
+binmode STDERR, ":encoding(utf8)";
+
+# Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
+use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
 use wiktio::parser			qw( parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation);
@@ -48,6 +52,7 @@ EOF
 sub init()
 {
 	getopts( 'hi:o:L:', \%opt ) or usage();
+	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	
 	usage( "Dump path needed (-i)" ) if not $opt{i};

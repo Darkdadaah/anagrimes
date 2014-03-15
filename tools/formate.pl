@@ -21,6 +21,7 @@ sub usage
 	-L        : wiki list
 	-N        : wiki numbered list
 	-T        : wiki table
+	-t        : extract_table.pl db table (change from tabs to true csv)
 	
 	-l        : linkify list element (or the first element in a table)
 EOF
@@ -31,9 +32,9 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hLNTl', \%opt ) or usage();
+	getopts( 'hLNTlt', \%opt ) or usage();
 	usage() if $opt{h};
-	usage("Format needed (-L|N|T)") unless $opt{L} xor $opt{N} xor $opt{T};
+	usage("Format needed (-L|N|T|t)") unless $opt{L} xor $opt{N} xor $opt{T} xor $opt{t};
 }
 
 ##################################
@@ -62,6 +63,21 @@ sub wiki_table
 	}
 }
 
+sub db_table_csv
+{
+	while(my $line = <STDIN>) {
+		chomp($line);
+		my @elts = split(/\t/, $line);
+		for (my $i = 0; $i < @elts; $i++) {
+			# Number? No need for apostrophe
+			if (not $elts[$i] =~ /^[0-9]+$/) {
+				$elts[$i] = '"' . $elts[$i] . '"';
+			}
+		}
+		print STDOUT join(',', @elts) . "\n";
+	}
+}
+
 ##################################
 # MAIN
 init();
@@ -72,6 +88,8 @@ if ($opt{L}) {
 	wiki_list('#', $opt{l});
 } elsif ($opt{T}) {
 	wiki_table($opt{l});
+} elsif ($opt{t}) {
+	db_table_csv($opt{l});
 } else {
 	print STDERR "No format given\n";
 }

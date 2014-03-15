@@ -16,17 +16,20 @@ use Exporter;		# So that we can export functions and vars
 
 use strict;
 use warnings;
-use wiktio::basic;
-use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step );
 
+use utf8;
 use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
+
+use wiktio::basic;
+use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step );
 
 sub parse_dump
 {
 	my ($dump_fh) = @_;
 	
+	my $in_revision = 0;
 	my %article = ();
 	$article{'fulltitle'} = undef;
 	$article{'namespace'} = undef;
@@ -35,6 +38,7 @@ sub parse_dump
 	$article{'redirect'} = undef;
 	$article{'namespace'} = undef;
 	$article{'contributors'} = {};
+	$article{'id'} = undef;
 	
 	LINE : while (my $line = <$dump_fh>) {
 		# Get page title
@@ -83,6 +87,16 @@ sub parse_dump
 		# Get namespace
 		elsif ($line =~ /<ns>([0-9]+?)<\/ns>/) {
 			$article{'ns'} = $1;
+		}
+		# Revision? (we don't want revision id)
+		elsif ($line =~ /<revision>/) {
+			$in_revision = 1;
+		}
+		# Get article id
+		elsif ($line =~ /<id>([0-9]+?)<\/id>/) {
+			if (not $in_revision) {
+				$article{'id'} = $1;
+			}
 		}
 		# End of page
 		elsif ($line =~ /<\/page>/) {

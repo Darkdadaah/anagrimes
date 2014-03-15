@@ -7,10 +7,6 @@
 
 package wiktio::pron_tools;
 
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
-
 use Exporter;
 @ISA=('Exporter');
 @EXPORT_OK = qw(
@@ -24,6 +20,12 @@ use Exporter;
 
 use strict;
 use warnings;
+
+use utf8;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
+
 use wiktio::basic;
 
 my @voyelles = qw( a ɑ ɒ æ e ɛ ɜ ɝ ə i ɪ o œ ɔ u y ɯ ʊ ʌ );
@@ -138,6 +140,7 @@ sub cherche_prononciation
 	
 	# Prononciation sur la ligne de forme ?
 	foreach my $ligne (@$lignes) {
+		
 		# Avec {{pron|}}
 		if ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}\}/) {
 			my $p = $1;
@@ -149,7 +152,7 @@ sub cherche_prononciation
 			} elsif ($p =~ /^lang=[^\|\}]+\|(.*)$/ or $p =~ /^(.*)\|lang=[^\|\}]+$/ or $p =~ /^(\s?)lang=[^\|\}]+$/) {
 				$pron{$1} = 1 if $1;
 			# Vide ou non, avec code langue
-			} elsif ($p =~ /^([^\|\}])*\|([^\|\}]+)$/) {
+			} elsif ($p =~ /^([^\|\}]*)\|([^\|\}]+)$/) {
 				$pron{$1} = 1 if $1;
 			# Une erreur ?
 			} else {
