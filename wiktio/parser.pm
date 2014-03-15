@@ -290,6 +290,8 @@ sub parseLanguage
 		}
 		
 		if ($templevel) {
+			$templevel = lcfirst($templevel);
+			
 			# Any level3 header? (except type)
 			if ( exists $level3->{$templevel} ) {
 				$level = $templevel;
@@ -319,7 +321,7 @@ sub parseLanguage
 					if ( $line =~ /\|flexion[\|\}]/ ) {
 						$flex = $true;
 					}
-					if ( $line =~ /\|locution=(.+)[\|\}]/ ) {
+					if ( $line =~ /\|locution=([^\|\}]+)[\|\}]/ ) {
 						my $locpar = $1;
 						if ($locpar eq 'oui') {
 							$loc = $true;
