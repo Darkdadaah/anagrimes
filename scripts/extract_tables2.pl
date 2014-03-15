@@ -464,7 +464,7 @@ sub parse_article
 				if (not $lang_section) {
 					special_log('empty_lang', $title_val->{'a_title'}, $lang);	# Log just to be sure
 					
-				# Everything is here, let's part this section (-> table mots)
+				# Everything is here, let's part this section (-> table lexemes)
 				} else {
 					parse_language_sections($article, $lang_section, $lang);
 				}
