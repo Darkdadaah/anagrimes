@@ -264,35 +264,39 @@ sub parseLanguage
 	$sections->{'references'}  = ();
 	$sections->{'types'}  = {};	# Array
 	
-	my $line;
-	
 	# Get the HEAD if any
-	while ( $line = shift @$article ) {
-		unless ( $line =~ /\{\{-.+?-[\|\}]/ ) {
+	foreach my $line (@$article) {
+		unless ( $line =~ /\{\{-.+?-[\|\}]|=+\s*\{\{S\|/ ) {
 			push @{$sections->{'head'}}, $line;
 		} else {
 			last;
 		}
 	}
 	
-	# Put back the line
-	unshift(@$article, $line);
-	
 	# Continue to retrieve the sections
 	my $level = '';
 	my $key = '';
 	
-	while ( $line = shift @$article ) {
-		# Is it a new section?
-		if ( $line and $line =~ /\{\{-(.+?)-[\|\}]/ ) {
-			my $templevel = $1;
-			
+	foreach my $line (@$article) {
+		my $templevel = '';
+		
+		# Is it a section, but an old one?
+		if ($line =~ /\{\{-(.+?)-[\|\}]/) {
+			$templevel = $1;
+		} elsif ($line =~ /^\s*(=+)\s*\{\{S\|([^\|\}]+?)[\|\}].*\s*(=+)\s*$/) {
+			my $eqstart = $1;
+			my $eqend = $3;
+			$templevel = $2;
+		}
+		
+		if ($templevel) {
 			# Any level3 header? (except type)
 			if ( exists $level3->{$templevel} ) {
 				$level = $templevel;
 				$key = '';
 				# Save
 				$sections->{$level3->{$level}}->{lines} = [];
+				$templevel = '';
 				next;
 			}
 			
@@ -300,9 +304,9 @@ sub parseLanguage
 			else {
 				my $type = $templevel;
 				my ($flex, $loc) = ($false, $false);
-				# Detect "flexion"
+				# Detect old "flexion"
 				if ($type =~ s/^flex-//) { $flex = $true; } else { $flex = $false; }
-				# Detect "locution"
+				# Detect old "locution"
 				if ($type =~ s/^loc-// or $type eq 'prov') { $loc = $true; } else { $loc = $false; }
 				
 				# Is it a registered type3 header?
@@ -312,12 +316,31 @@ sub parseLanguage
 					if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
 						$num = $1;
 					}
-					# Solve synonyms
-					$type = $word_type_syn->{$type} ? $word_type_syn->{$type} : $type;
+					if ( $line =~ /\|flexion[\|\}]/ ) {
+						$flex = $true;
+					}
+					if ( $line =~ /\|locution=(.+)[\|\}]/ ) {
+						my $locpar = $1;
+						if ($locpar eq 'oui') {
+							$loc = $true;
+						} elsif ($locpar eq 'non') {
+							$loc = $false;
+						} else {
+							special_log('bad_loc_par', $title, "$lang\t$templevel\t$locpar");
+						}
+					# Guess!
+					} else {
+						if ($title =~ / /) {
+							$loc = $true;
+						}
+					}
+					
+					# Alias?
+					$type = $word_type->{$type};
 					# Save
 					$key = $type . $num . $flex . $loc;
 					$level = '';
-					special_log('level3error', $title, "$lang\t$templevel\t$key") if exists($sections->{type}->{$key});
+					special_log('level3_duplicates', $title, "$lang\t$templevel\t$key") if exists($sections->{type}->{$key});
 					$sections->{type}->{$key}->{lines} = [];
 					$sections->{type}->{$key}->{flex} = $flex;
 					$sections->{type}->{$key}->{loc} = $loc;
@@ -329,6 +352,7 @@ sub parseLanguage
 					#########################
 				# Unknown level3: log
 				} else {
+					#die("$title\t$templevel");
 					$key = '';
 					$level = '';
 					special_log('level3', $title, "$templevel\t$type");
@@ -338,11 +362,11 @@ sub parseLanguage
 		
 		# Retrieve text
 		# Level3 section text
-		if ( $level ) {
+		if ($level) {
 			push @{ $sections->{ $level3->{$level} }->{lines} }, $line;
 		}
 		# Type section text
-		elsif ( $key ) {
+		elsif ($key) {
 			push @{ $sections->{type}->{$key}->{lines} }, $line;
 		}
 	}
