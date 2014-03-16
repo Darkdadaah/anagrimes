@@ -168,7 +168,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'i:o:L:l:c:S:s', \%opt ) or usage();
+	getopts( 'hi:o:L:l:c:S:s', \%opt ) or usage();
 	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	
@@ -224,18 +224,15 @@ sub print_sql_schema
 	}
 	
 	print $SQL "/*\n";
-	if ($sqlite) {
-		print $SQL ".mode tabs\n" if $sqlite;
-		foreach my $table (keys %output_files) {
-			my $file = $output_files{$table}{file};
-			$file =~ s/^.+\///g;
-			if ($sqlite) {
-				print $SQL ".import $file $table\n";
-			} else {
-				print $SQL "LOAD DATA LOCAL INFILE '$file' INTO TABLE $table CHARACTER SET 'utf8';\n";
-			}
+	print $SQL ".mode tabs\n" if $sqlite;
+	foreach my $table (keys %output_files) {
+		my $file = $output_files{$table}{file};
+		$file =~ s/^.+\///g;
+		if ($sqlite) {
+			print $SQL ".import $file $table\n";
+		} else {
+			print $SQL "LOAD DATA LOCAL INFILE '$file' INTO TABLE $table CHARACTER SET 'utf8';\n";
 		}
-	} else {
 	}
 	print $SQL "*/\n";
 	
