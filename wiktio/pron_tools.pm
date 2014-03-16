@@ -212,9 +212,14 @@ sub cherche_prononciation
 		
 		# TABLES EN FRANÇAIS - FRENCH
 		if ($lang eq 'fr') {
-			for (my $i=0; $i < @$tables; $i++) {
+			TABLE : for (my $i=0; $i < @$tables; $i++) {
 				my $nom = $tables->[$i]->{'nom'};
 				my $arg = $tables->[$i]->{'arg'};
+				
+				# Table in flexions? Detect with s=
+				if (defined($arg->{s})) {
+					next TABLE;
+				}
 			
 				# Pour toutes les tables connues
 				if ($nom eq 'inv') {
@@ -231,6 +236,13 @@ sub cherche_prononciation
 					$pron{$arg->{pm}} = 1 if ($arg->{pm});
 				}
 				elsif ($nom eq 'rég' or $nom eq 'reg' or $nom eq 'accord-rég' or $nom eq 'accord-reg') {
+					$pron{$arg->{1}} = 1 if ($arg->{1});
+					$pron{$arg->{pron2}} = 1 if ($arg->{pron2});
+					$pron{$arg->{pron3}} = 1 if ($arg->{pron3});
+					$pron{$arg->{p2}} = 1 if ($arg->{p2});
+					$pron{$arg->{p3}} = 1 if ($arg->{p3});
+				}
+				elsif ($nom eq 'rég-x') {
 					$pron{$arg->{1}} = 1 if ($arg->{1});
 					$pron{$arg->{pron2}} = 1 if ($arg->{pron2});
 					$pron{$arg->{pron3}} = 1 if ($arg->{pron3});
@@ -268,7 +280,7 @@ sub cherche_prononciation
 					$pron{$arg->{pron2}.$suff} = 1 if ($arg->{pron2});
 					$pron{$arg->{pron3}.$suff} = 1 if ($arg->{pron3});
 					#print STDERR "[[$titre]]\tmodèle 'fr-$nom' est inapproprié\n";
-					special_log('remplissage', $titre, '', "fr-nom");
+					special_log('flextable_accord-mixte-rég', $titre, '', "fr-nom");
 				}
 				elsif ($nom eq 'accord-comp-mf' or $nom eq 'accord-comp') {
 					my $mot_1 = $arg->{3};
@@ -359,7 +371,7 @@ sub cherche_prononciation
 					}
 					$texte .= join(' | ', @arg_texte);
 					$texte .= ' }}';
-					special_log('bad_table', $titre, $texte, $nom);
+					special_log('flextable_inconnue', $titre, $texte, $nom);
 				}
 			}
 		}
