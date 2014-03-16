@@ -285,7 +285,7 @@ sub parseLanguage
 		# Is it a section, but an old one?
 		if ($line =~ /\{\{-(.+?)-[\|\}]/) {
 			$templevel = $1;
-		} elsif ($line =~ /^\s*(=+)\s*\{\{S\|([^\|\}]+?)[\|\}].*\s*(=+)\s*$/) {
+		} elsif ($line =~ /^\s*(=+)\s*\{\{S\|([^\|\}]+?)[\|\}].*\}\s*(=+)\s*$/) {
 			$eqstart = $1;
 			$eqend = $3;
 			$templevel = $2;
@@ -305,7 +305,11 @@ sub parseLanguage
 				
 				# Check level
 				if ($eqstart ne '===' or $eqend ne '===') {
-					special_log('section_3_number_of_equal', $title, "$lang\t$eqstart $level $eqend");
+					if ($eqstart eq '' and $eqend eq '') {
+						special_log('section_3_no_equal', $title, "$lang\t$eqstart $level $eqend");
+					} else {
+						special_log('section_3_number_of_equal', $title, "$lang\t$eqstart $level $eqend");
+					}
 				}
 				next;
 			}
@@ -336,7 +340,7 @@ sub parseLanguage
 						} elsif ($locpar eq 'non') {
 							$loc = $false;
 						} else {
-							special_log('bad_loc_par', $title, "$lang\t$templevel\t$locpar");
+							special_log('bad_loc_par', $title, "$lang\t$type\t$locpar");
 						}
 					# Guess!
 					} else {
@@ -350,7 +354,7 @@ sub parseLanguage
 					# Save
 					$key = $type . $num . $flex . $loc;
 					$level = '';
-					special_log('level3_duplicates', $title, "$lang\t$templevel\t$key") if exists($sections->{type}->{$key});
+					special_log('level3_duplicates', $title, "$lang\t$type\t$key") if exists($sections->{type}->{$key});
 					$sections->{type}->{$key}->{lines} = [];
 					$sections->{type}->{$key}->{flex} = $flex;
 					$sections->{type}->{$key}->{loc} = $loc;
@@ -359,7 +363,11 @@ sub parseLanguage
 										
 					# Check level
 					if ($eqstart ne '===' or $eqend ne '===') {
-						special_log('section_3_number_of_equal', $title, "$lang\t$eqstart $level $eqend");
+						if ($eqstart eq '' and $eqend eq '') {
+							special_log('section_type_no_equal', $title, "$lang\t$eqstart $type $eqend");
+						} else {
+							special_log('section_type_number_of_equal', $title, "$lang\t$eqstart $type $eqend");
+						}
 					}
 					
 					next;
@@ -369,7 +377,6 @@ sub parseLanguage
 					# Need to at least check their level
 				# Unknown level3 or 4: log
 				} else {
-					#die("$title\t$templevel");
 					$key = '';
 					$level = '';
 					special_log('section_unknown', $title, "$templevel\t$type");
