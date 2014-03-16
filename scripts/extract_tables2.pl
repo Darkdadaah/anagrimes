@@ -376,7 +376,7 @@ sub transc_format
 		
 		# No transcription could be done (unsupported script)
 		if (not $transc{'a_trans_flat'}) {
-			$transc{'trans_flat'}='';
+			$transc{'trans_flat'} = '';
 		
 		# Uncomplete transcription (should be supported! -> log)
 		} elsif (not unicode_NFKD($transc{'a_trans_flat'}) =~ /^[a-z0-9â ]+$/) {
@@ -571,11 +571,12 @@ sub parse_language_sections
 	# Afterwork: Save all transcriptions found in the text of this article!
 	foreach my $t (sort keys %transc) {
 		my $t_plat = lc(ascii_strict($t));
+		my $t_plat_r = reverse($t_plat);
 		my %transcript_values = (
-			'tr_aid' => $article->{id},
+			'tr_artid' => $article->{id},
 			'tr_transc' => $t,
 			'tr_transc_flat' => $t_plat,				# Unhyphenated transcript
-			'tr_transc_flat_r' => reverse($t_plat),		# Same, reversed for sql
+			'tr_transc_flat_r' => $t_plat_r,		# Same, reversed for sql
 		);
 		add_to_file('transc', \%transcript_values);
 	}
