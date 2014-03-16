@@ -379,7 +379,7 @@ sub transc_format
 			$transc{'trans_flat'} = '';
 		
 		# Uncomplete transcription (should be supported! -> log)
-		} elsif (not unicode_NFKD($transc{'a_trans_flat'}) =~ /^[a-z0-9â ]+$/) {
+		} elsif (not unicode_NFKD($transc{'a_trans_flat'}) =~ /^[a-z0-9' ]+$/) {
 			special_log('incomplete_transcription', $title->{'a_title'}, $transc{'a_trans_flat'});
 			$transc{'a_trans_flat'} = '';
 			
