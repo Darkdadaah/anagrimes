@@ -279,13 +279,15 @@ sub parseLanguage
 	
 	foreach my $line (@$article) {
 		my $templevel = '';
+		my $eqstart = '';
+		my $eqend = '';
 		
 		# Is it a section, but an old one?
 		if ($line =~ /\{\{-(.+?)-[\|\}]/) {
 			$templevel = $1;
 		} elsif ($line =~ /^\s*(=+)\s*\{\{S\|([^\|\}]+?)[\|\}].*\s*(=+)\s*$/) {
-			my $eqstart = $1;
-			my $eqend = $3;
+			$eqstart = $1;
+			$eqend = $3;
 			$templevel = $2;
 		}
 		
@@ -296,9 +298,15 @@ sub parseLanguage
 			if ( exists $level3->{$templevel} ) {
 				$level = $templevel;
 				$key = '';
+				
 				# Save
 				$sections->{$level3->{$level}}->{lines} = [];
 				$templevel = '';
+				
+				# Check level
+				if ($eqstart ne '===' or $eqend ne '===') {
+					special_log('section_3_number_of_equal', $title, "$lang\t$eqstart $level $eqend");
+				}
 				next;
 			}
 			
@@ -348,16 +356,23 @@ sub parseLanguage
 					$sections->{type}->{$key}->{loc} = $loc;
 					$sections->{type}->{$key}->{num} = $num;
 					$sections->{type}->{$key}->{type} = $type;
+										
+					# Check level
+					if ($eqstart ne '===' or $eqend ne '===') {
+						special_log('section_3_number_of_equal', $title, "$lang\t$eqstart $level $eqend");
+					}
+					
 					next;
-				# Level4: don't care, continue
+				# Level4: don't care for now, continue
 				} elsif (exists $level4->{$type}) {
 					#########################
-				# Unknown level3: log
+					# Need to at least check their level
+				# Unknown level3 or 4: log
 				} else {
 					#die("$title\t$templevel");
 					$key = '';
 					$level = '';
-					special_log('level3', $title, "$templevel\t$type");
+					special_log('section_unknown', $title, "$templevel\t$type");
 				}
 			}
 		}
