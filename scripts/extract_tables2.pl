@@ -549,10 +549,13 @@ sub parse_language_sections
 		add_to_file('lexemes', \%word_values);
 		
 		# Then add each pron
+		my $pnum = 1;
 		foreach my $pronunciation (@pron) {
 			#die " @pron : $article->{title}\n";
 			my %values = %word_values;	# clone
+			$values{'p_num'} = $pnum;
 			add_pron(\%values, $pronunciation);
+			$pnum++;
 		}
 		
 		# Additional work: try to get language specific transcription in this section
@@ -594,6 +597,7 @@ sub add_pron
 		'p_pron' => $p,
 		'p_pron_flat' => $p_flat,
 		'p_pron_flat_r' => $p_flat_r,
+		'p_num' => $word_values->{'p_num'},
 		#'rime_pauvre' => $rime->{pauvre},
 		#'rime_suffisante' => $rime->{suffisante},
 		#'rime_riche' => $rime->{riche},
