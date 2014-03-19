@@ -46,9 +46,9 @@ sub wiki_list
 	
 	while(my $line = <STDIN>) {
 		chomp($line);
-		my $text = $link ? "[[$line]]" : $line;
-			
-		print STDOUT "$start_char $text\n";
+		my @elts = split(/\t/, $line);
+		$elts[0] = "[[$elts[0]]]" if $elts[0] and $link;
+		print STDOUT "$start_char " . join("\t", @elts) . "\n";
 	}
 }
 
@@ -58,7 +58,7 @@ sub wiki_table
 	while(my $line = <STDIN>) {
 		chomp($line);
 		my @elts = split(/\t/, $line);
-		$elts[0] = ($elts[0] and $link) ? "[[$elts[0]]]" : $elts[0];
+		$elts[0] = "[[$elts[0]]]" if $elts[0] and $link;
 		print STDOUT "|-\n| " . join(' || ', @elts) . "\n";
 	}
 }

@@ -74,7 +74,7 @@ sub special_log
 	my $raw_texte = $texte ? $texte : '';
 	$raw_texte =~ s/\[\[([^\]]+)\]\]/__((__$1__))__/g;
 	$raw_texte .= "\t($other)" if $other;
-	print LOG "* [[$titre]]\t$raw_texte\n";
+	print LOG "$titre\t$raw_texte\n";
 	close(LOG);
 }
 
