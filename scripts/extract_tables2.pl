@@ -15,7 +15,7 @@ use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
-use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
+use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile section_meanings);
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
@@ -85,6 +85,15 @@ our %output_files = (
 		'r_target' => 'text',
 		}
 	},
+	
+	# Definitions
+	'defs' => {'file' => '', 'fields' => {
+		'd_defid' => 'int',
+		'd_lexid' => 'int',
+		'd_def' => 'text',
+		'd_num' => 'int',
+		}
+	},
 );
 
 our %indexes = (
@@ -97,9 +106,9 @@ our %indexes = (
 		'a_title_flat' => 'a_title_flat(15)',
 		'a_title_r' => 'a_title_r(15)',
 		'a_title_flat_r' => 'a_title_flat_r(15)',
-		#'a_trans' => 'a_trans(10)',
-		#'a_trans_flat' => 'a_trans_flat(10)',
-		#'a_trans_flat_r' => 'a_trans_flat_r(10)',
+		'a_trans' => 'a_trans(10)',
+		'a_trans_flat' => 'a_trans_flat(10)',
+		'a_trans_flat_r' => 'a_trans_flat_r(10)',
 		'a_alphagram' => 'a_alphagram(15)',
 	},
 	'lexemes' => {
@@ -129,6 +138,9 @@ our %indexes = (
 		'r_title' => 'r_title(15)',
 		'r_target' => 'r_target(15)',
 	},
+	'defs' => {
+		'def' => 'd_lexid, d_def(15)',
+	}
 );
 
 my $max_col = 0;
@@ -222,8 +234,11 @@ sub print_sql_schema
 	foreach my $table (keys %indexes) {
 		print_sql_index($SQL, $table, $indexes{$table}, $sqlite);
 	}
+	# Entries view
+	print $SQL "CREATE VIEW entries AS SELECT * FROM articles LEFT JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid;\n";
+	print $SQL "CREATE VIEW defentries AS SELECT * FROM articles LEFT JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid LEFT JOIN defs ON l_lexid=d_lexid;\n";
 	
-	print $SQL "/*\n";
+#	print $SQL "/*\n";
 	print $SQL ".mode tabs\n" if $sqlite;
 	foreach my $table (keys %output_files) {
 		my $file = $output_files{$table}{file};
@@ -234,7 +249,7 @@ sub print_sql_schema
 			print $SQL "LOAD DATA LOCAL INFILE '$file' INTO TABLE $table CHARACTER SET 'utf8';\n";
 		}
 	}
-	print $SQL "*/\n";
+#	print $SQL "*/\n";
 	
 	close($SQL);
 }
@@ -566,6 +581,12 @@ sub parse_language_sections
 				$transc{$t}++;
 			}
 		}
+		
+		# Also search for meanings (defs)
+		my @noneed = ('nom-pr', 'nom-fam', 'prenom');
+		if (not $type_nom ~~ @noneed and not $flex and not $gent) {
+			parse_type_section($lang_section->{'type'}->{$type}->{lines}, $title, $lang, $word_values{'l_lexid'});
+		}
 	}
 	
 	# Afterwork: Save all transcriptions found in the text of this article!
@@ -580,6 +601,27 @@ sub parse_language_sections
 		);
 		add_to_file('transc', \%transcript_values);
 	}
+}
+
+# Get defs
+sub parse_type_section
+{
+	
+	my ($lines, $title, $lang, $lexid) = @_;
+	
+	# Get defs
+	my $defs = section_meanings($lines, $title, $lang);
+	
+	for (my $i=0; $i < @$defs; $i++) {
+		my %definition = (
+			'd_defid' => counter('def'),
+			'd_lexid' => $lexid,
+			'd_def' => $defs->[$i],
+			'd_num' => $i,
+		);
+		add_to_file('defs', \%definition);
+	}
+	
 }
 
 sub add_pron

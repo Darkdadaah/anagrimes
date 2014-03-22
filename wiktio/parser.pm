@@ -12,7 +12,7 @@ use Exporter;		# So that we can export functions and vars
 @ISA=('Exporter');	# This module is a subclass of Exporter
 
 # What can be exported
-@EXPORT_OK = qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile);
+@EXPORT_OK = qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile section_meanings);
 
 use strict;
 use warnings;
@@ -555,6 +555,32 @@ sub is_gentile
 	
 	return $gent;
 }
+
+sub section_meanings
+{
+	my ($lines) = @_;
+	my @defs = ();
+	
+	foreach my $line (@$lines) {
+		# End if next section
+		if ($line =~ /^=+|^\{\{-/) {
+			last;
+		} elsif ($line =~ /^#+ *([^\*]+) *$/) {
+			my $def = $1;
+			chomp($def);
+			if ($def =~ /\{\{variante/) {
+				next;
+			}
+			$def =~ s/\{\{([^\\}\|]+)\|[^\}]+\}\} */($1) /g;
+			$def =~ s/\{\{([^\\}\|]+)\}\} */($1) /g;
+			$def =~ s/\[\[[^\|\]]+\|([^\|\]]+)\]\]/$1/g;
+			$def =~ s/\[\[([^\|\]]+)\]\]/$1/g;
+			push @defs, $def;
+		}
+	}
+	return \@defs;
+}
+
 
 1;
 
