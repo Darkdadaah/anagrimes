@@ -40,6 +40,8 @@ sub usage
 	-m        : Utiliser les pages de l'espace principal (en combinaison avec -P or -p)
 	
 	-r <str>  : Ne garder que les pages ayant ce motif regex dans leur texte
+	-q [01234]: Qualité des Pages, e.g. "1" ou "34"
+	-Q 0-100  : Qualité des articles via le modèle textQuality, e.g. "75%", "75%|100%", "Textes validés"
 	
 EOF
 	exit;
@@ -49,7 +51,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:I:o:PHp:mr:', \%opt ) or usage();
+	getopts( 'hi:I:o:PHp:mr:q:Q:', \%opt ) or usage();
 	usage() if $opt{h};
 	
 	usage( "Chemin du dump (-i)" ) if not $opt{i};
@@ -111,34 +113,30 @@ sub article
 {
 	my ($titre, $article, $dico, $sql) = @_;
 	
-	# Précorrection
-	my $regexok = 0;
-	foreach my $line (@$article) {
-		if (not $regexok and $opt{r} and $line =~ /$opt{r}/) {
-			$regexok=1;
-		}
-		# Ligne de traduction ou prononciation
-		$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g;
+	# Wikisource quality
+	# Pages
+	if (defined($opt{q}) and not $article->[0] =~ /pagequality level=&quot;[($opt{q})]&quot;/) {
+ 		return 0;
 	}
-	
-	# Pas trouvé le motif indispensable
-	if ($opt{r} and not $regexok) {
-		return 0;
+	# Normal articles
+	if (defined($opt{Q}) and not $article->[0] =~ /\{\{TextQuality\|($opt{Q})\}\}/) {
+ 		return 0;
 	}
-	
-	# Wikisource qualité
-# 	my $quality = 0;
-# 	if ($article->[0] =~ /<pagequality level="([012345])"/) {
-# 		$quality = $1;
-# 	}
 	
 	my $line = join(' ', @$article);
 	my $mots_article = {};
 	my $num_mots = 0;
 	
-	# Nettoyage
-	# Balises HTML
+	# Pas trouvé le motif indispensable
+	if (defined($opt{r}) and not $line =~ /$opt{r}/) {
+		return 0;
+	}
 	
+	# Nettoyage
+	
+	# Ligne de traduction ou prononciation
+	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g;
+	# Balises HTML
 	$line =~ s/<[^<]+?>/ /g;
 	# Lien wiki
 	$line =~ s/\[\[[^\[]+?\]\]\p{Ll}*/ /g;
