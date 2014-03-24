@@ -191,8 +191,23 @@ sub article
 	}
 	
 	# Save mots_article in the sqlfile
+	my $livre = '';
+	my $page = '';
+	my $default_titre = '';
+	if ($titre =~ /^Page:(.+?\.djvu)(\/[0-9]+)$/) {
+		$livre = $1;
+		$page = $2;
+	} elsif ($titre =~ /^Page:(.+?)(-[0-9]+\.jpg)/) {
+		$livre = $1;
+		$page = $2;
+	} elsif ($titre =~ /^Page:(.+?)( [0-9]+\.png)/) {
+		$livre = $1;
+		$page = $2;
+	} else {
+		$default_titre = $titre;
+	}
 	foreach my $m (keys %$mots_article) {
-		my @cols = ($m, $titre, $mots_article->{$m});
+		my @cols = ($m, $livre, $page, $default_titre, $mots_article->{$m});
 # 		push @cols, $quality;
 		my $cols = join("\t", @cols);
 		print $sql "$cols\n";
