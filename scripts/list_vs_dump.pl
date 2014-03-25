@@ -133,6 +133,8 @@ sub article
 	}
 	
 	# Nettoyage
+	# Corrections de coquilles
+	$line =~ s/\{\{[Cc]orr\|[^\|\}]+\|([^\|\}]+)\}\}/$1/g;
 	
 	# Ligne de traduction ou prononciation
 	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g;
@@ -178,7 +180,7 @@ sub article
 		# Une lettre unique
 		next if $mot =~ /^\p{Letter}$/;
 		# Terminaisons avec tiret en français
-		next if $mot =~ /-(je|tu|il|elle|on|nous|vous|ils|elles|moi|toi|lui|leur|là|ci|ce|le|la|les|y)?$/;
+		next if $mot =~ /-(je|tu|il|elle|on|nous|vous|ils|elles|moi|toi|lui|leur|là|ci|ce|le|la|les|y|m|t|en)?$/;
 		
 		# Keep only if unknown
 		if (not $dico->{$mot}) {
