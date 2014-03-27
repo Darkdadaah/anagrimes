@@ -139,6 +139,7 @@ sub article
 	# Ligne de traduction ou prononciation
 	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g;
 	# Balises HTML
+	$line =~ s/<(math).*>.+?<\/\g1>//g;
 	$line =~ s/<[^<]+?>/ /g;
 	# Lien wiki
 	$line =~ s/\[\[[^\[]+?\]\]\p{Ll}*/ /g;
@@ -167,10 +168,10 @@ sub article
 		# Pas de nombre ni de signe de ponctuation ni de symbole ou d'autre truc bizarre
 		next if $mot =~ /[\p{Number}\p{Other_Punctuation}\p{Symbol}\p{Other}]/;
 		# Nettoyage
-		$mot =~ s/[«»]//g;
+		$mot =~ s/[«»„‟\[\]]//g;
 		$mot =~ s/\((.+?)\)/$1/g;
-		$mot =~ s/^[\.,;:!\?\)\(\{\}\[\]'“]+//g;
-		$mot =~  s/[\.,;:!\?\)\(\{\}\[\]'”]+$//g;
+		$mot =~ s/^[\.,;:!\?\)\(\{\}'“]+//g;
+		$mot =~  s/[\.,;:!\?\)\(\{\}'”]+$//g;
 		# Espace souligné = probable paramètre
 		next if $mot =~ /_/;
 		# Pas de suffixes/préfixes
