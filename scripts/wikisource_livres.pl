@@ -94,6 +94,7 @@ sub parse_book
 {
 	my ($article, $par) = @_;
 	my %book = ();
+	my $annee = '';
 	
 	# Get date
 	foreach my $line (@{ $article->{'content'} }) {
@@ -103,20 +104,38 @@ sub parse_book
 			$book{$field} = $val;
 		}
 	}
-	if ($book{'Annee'}) {
-		if ($book{'Annee'} =~ /(1[0-9]{3})/) {
-			$book{'Annee'} = $1;
-		} elsif ($book{'Annee'} =~ /(-?[0-9]{1,4})/) {
-			print STDERR "Annee: $book{'Annee'}\n";
+	if ($book{'Publication'}) {
+		$annee = $book{'Publication'};
+	}
+	elsif ($book{'Annee'}) {
+		$annee = $book{'Annee'};
+	}
+	
+	if ($annee ne '') {
+		# Latest date
+		if ($annee =~ /[12][0-9]{3} * - *([12][0-9]{3})/) {
+			$annee = $1;
+		}
+		
+		elsif ($annee =~ /([12][0-9]{3})/) {
+			$annee = $1;
+		}
+		# Incomplete date?
+		# around 100 years...
+		elsif ($annee =~ /([12][0-9])\.\./) {
+			$annee = $1 . '00';
+		}
+		# around 10 years
+		elsif ($annee =~ /([12][0-9]{2})\./) {
+			$annee = $1 . '0';
 		}
 	} else {
-		print STDERR "No Annee: $article->{'title'}\n";
-		$book{'Annee'} = '';
+		#print STDERR "No Annee: $article->{'title'}\n";
 	}
 	
 	my $opath = $par->{'output_path'};
 	open(BOOKS, ">>$opath") or die("Couldn't write $opath: $!");
-	my @line = ($article->{'title'}, $book{'Annee'});
+	my @line = ($article->{'title'}, $annee);
 	print BOOKS join("\t", @line) . "\n";
 	close(BOOKS);
 }

@@ -135,11 +135,12 @@ sub article
 	# Nettoyage
 	# Corrections de coquilles
 	$line =~ s/\{\{[Cc]orr\|[^\|\}]+\|([^\|\}]+)\}\}/$1/g;
+	$line =~ s/\{\{tiret\|([^\|\}]+)\|([^\|\}]+)\}\}/$1$2/g;
 	
 	# Ligne de traduction ou prononciation
 	$line =~ s/\*\*? ?\{\{[^\}\{]+?\}\} ?:.+$/ /g;
 	# Balises HTML
-	$line =~ s/<(math).*>.+?<\/\g1>//g;
+	$line =~ s/&lt;(math|ref).*&gt;.+?&lt;\/\g1&gt;//g;
 	$line =~ s/<[^<]+?>/ /g;
 	# Lien wiki
 	$line =~ s/\[\[[^\[]+?\]\]\p{Ll}*/ /g;
@@ -154,15 +155,16 @@ sub article
 	$line =~ s/\{\|.+?\|\}/ /g;
 	$line =~ s/\{\|.+?\|\}/ /g;
 	# Apostrophe, tirets quadratins
-	$line =~ s/[\x{2018}\x{2019}\x{2013}\x{2014}]/ /g;
+	#$line =~ s/[\x{2018}\x{2019}\x{2013}\x{2014}]/ /g;
+	$line =~ s/[\x{2013}\x{2014}]/ /g;
 	
 	# Separation
 	my @mots_ligne = split(/\s+/, $line);
 	
 	# Evaluation
 	foreach my $mot (@mots_ligne) {
-		# Pas de signe égal
-		next if $mot =~ /=/;
+		# Pas de signe égal ou d'apostrophe
+		next if $mot =~ /[\x{2013}\x{2014}=]/;
 		# Pas de majuscule
 		next if $mot =~ /\p{Uppercase_letter}/;
 		# Pas de nombre ni de signe de ponctuation ni de symbole ou d'autre truc bizarre
