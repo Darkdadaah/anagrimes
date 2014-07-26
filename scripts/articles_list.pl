@@ -52,6 +52,7 @@ sub usage
 	-S <str>  : use this namespace
 	
 	-A <str>  : only edited by (one or several separated by a comma): bot,IP,nouser,user
+	-H        : search the whole history of the articles
 	
 	-L <str>  : language to include only
 	-N <str>  : language to exclude
@@ -67,7 +68,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:p:n:S:A:L:N:', \%opt ) or usage();
+	getopts( 'hi:o:O:p:n:S:A:HL:N:', \%opt ) or usage();
 	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	usage( "Dump path needed (-i)" ) if not $opt{i};
@@ -136,7 +137,7 @@ sub get_articles_list
 	open(my $dump_fh, dump_input($p{'dump_path'})) or die "Couldn't open '$p{'dump_path'}': $!\n";
 	
 	$|=1;
-	ARTICLE : while(my $article = parse_dump($dump_fh)) {
+	ARTICLE : while(my $article = parse_dump($dump_fh, $par)) {
 		$counts{'total articles'}++;
 		print STDERR "[$counts{'total articles'}] [$counts{'matched articles'}] $article->{'title'}                           \r" if $counts{'total articles'} %1000==0;
 		
@@ -345,6 +346,7 @@ $par{'lang'} = $opt{L};
 $par{'nolang'} = $opt{N};
 $par{'pat'} = $opt{p};
 $par{'nopat'} = $opt{n};
+$par{'whole_history'} = $opt{H};
 
 # Get data from dump
 my $art_count = get_articles_list(\%par);

@@ -27,7 +27,8 @@ use wiktio::basic 	qw( $level3 $word_type $word_type_syn $level4 step );
 
 sub parse_dump
 {
-	my ($dump_fh) = @_;
+	my ($dump_fh, $param) = @_;
+	my %par = $param ? %$param : ();
 	
 	my $in_revision = 0;
 	my %article = ();
@@ -64,11 +65,23 @@ sub parse_dump
 		# Get content
 		# one line
 		elsif ($line =~ /<text.*>(.*?)<\/text>/) {
-			@{ $article{'content'} } = $1;
+			# Latest version or whole history?
+			if ($par{whole_history} and $article{'content'}) {
+				push @{ $article{'content'} }, $1;
+			}
+			else {
+				@{ $article{'content'} } = $1;
+			}
 		}
 		# several lines
 		elsif ($line =~ /<text.*>(.*?)$/) {
-			@{ $article{'content'} } = $1;
+			# Latest version or whole history?
+			if ($par{whole_history} and $article{'content'}) {
+				push @{ $article{'content'} }, $1;
+			}
+			else {
+				@{ $article{'content'} } = $1;
+			}
 			
 			while (my $inline = <$dump_fh>) {
 				if (not $inline =~ /<\/text>/) {
