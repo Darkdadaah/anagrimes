@@ -89,6 +89,8 @@ sub dump_input
 		$input = "bzcat $infile |";
 	} elsif ($infile =~ /\.gz$/) {
 		$input = "gunzip -c $infile |";
+	} elsif ($infile =~ /\.7z$/) {
+		$input = "7z x -so $infile 2> /dev/null |";
 	} elsif ($infile =~ /\.xml$/) {
 		$input = $infile;
 	} else {
