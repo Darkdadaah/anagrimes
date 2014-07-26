@@ -663,9 +663,9 @@ sub random_counter
 	else { $lang_total{$lang} = 1; }
 	
 	# Ok to be a random word?
-	if (not $values->{'l_is_gentile'} 					# No inhabitant names/adjectives
-		and not $values->{'l_is_flex'}					# No flexion
-		and $values->{'l_type'} ne 'nom-pr'			# No proper nouns
+	if (not $values->{'l_is_gentile'} 			# No inhabitant names/adjectives
+		and not $values->{'l_is_flexion'}		# No flexion
+		and $values->{'l_type'} ne 'nom-pr'		# No proper nouns
 		and not $values->{'l_title'} =~ /[0-9]/)	# No number
 		{
 		# Increase the filtered language counter
