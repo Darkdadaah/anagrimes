@@ -628,16 +628,16 @@ sub parse_type_section
 	# Get defs
 	my $defs = section_meanings($lines, $title, $lang);
 	
-	for (my $i=0; $i < @$defs; $i++) {
+	for (my $i = 0; $i < @$defs; $i++) {
 		my %definition = (
 			'd_defid' => counter('def'),
 			'd_lexid' => $lexid,
 			'd_def' => $defs->[$i],
-			'd_num' => $i,
+			'd_num' => ($i+1),
 		);
 		# No def in here?
 		if (not defined($definition{'d_def'}) or $definition{'d_def'} eq '') {
-			special_log('empty_def', "$title->{'a_title'}\t(" . ($transc{'l_is_flexion'} ? 'loc-' : '') . $transc{'l_type'});
+			special_log('empty_def', $entry->{'l_title'}, join(', ', ($entry->{'l_lang'}, ($entry->{'l_is_flexion'} ? 'loc-' : '') . $entry->{'l_type'}, "'$definition{'d_num'}'")));
 		}
 		 else {
 			# Keep this definition!
