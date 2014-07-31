@@ -20,16 +20,16 @@ use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_pr
 
 # Output files:
 our %output_files = (
-	'langs' => {'file' => '', 'fields' => {
-		'lg_lang' => 'text',
+	'langs' => {'file' => '', 'order'=>1, 'fields' => {
+		'lg_lang' => 'text PRIMARY KEY',
 		'lg_num' => 'int',
 		'lg_num_min' => 'int',
 		}
 	},
-
+	
 	# Articles are "strings"
-	'articles' => {'file' => '', 'fields' => {
-		'a_artid' => 'int',
+	'articles' => {'file' => '', 'order'=>2, 'fields' => {
+		'a_artid' => 'int PRIMARY KEY',
 		'a_title' => 'text',
 		'a_title_flat' => 'text',
 		'a_title_r' => 'text',
@@ -40,58 +40,59 @@ our %output_files = (
 		'a_alphagram' => 'text',
 		}
 	},
-
+	
 	# Lexemes are "words"
-	'lexemes' => {'file' => '', 'fields' => {
-		'l_artid' => 'int',
-		'l_lexid' => 'int',
-		'l_lang' => 'text',
+	'lexemes' => {'file' => '', 'order'=>3, 'fields' => {
+		'l_lexid' => 'int PRIMARY KEY',
+		'l_artid' => 'int REFERENCES articles(a_artid)',
+		'l_lang' => 'text REFERENCES langs(lg_lang)',
 		'l_type' => 'text',
 		'l_num' => 'int',
 		'l_is_flexion' => 'int',
 		'l_is_locution' => 'int',
 		'l_is_gentile' => 'int',
 		'l_rand' => 'int',
+		},
+		'constraints' => []
+	},
+	
+	# Definitions
+	'defs' => {'file' => '', 'order'=>4, 'fields' => {
+		'd_defid' => 'int PRIMARY KEY',
+		'd_lexid' => 'int REFERENCES lexemes(l_lexid)',
+		'd_def' => 'text',
+		'd_num' => 'int',
 		}
 	},
-
+	
 	# 1 lexeme can have several pronunciations,
 	# one pronunciation only match one lexeme
 	# pron is in IPA
-	'prons' => {'file' => '', 'fields' => {
+	'prons' => {'file' => '', 'order'=>5, 'fields' => {
 		'p_pronid' => 'int',
-		'p_lexid' => 'int',
+		'p_lexid' => 'int REFERENCES lexemes(l_lexid)',
 		'p_pron' => 'text',
 		'p_pron_flat' => 'text',
 		'p_pron_flat_r' => 'text',
 		'p_num' => 'int',
 		}
 	},
-
-	# Rhymes to add?
-
-	# Keep?
-	'transc' => {'file' => '', 'fields' => {
-		'tr_artid' => 'int',
-		'tr_transc' => 'text',
-		'tr_transc_flat' => 'text',
-		'tr_transc_flat_r' => 'text',
-		}
-	},
-
+	
 	# Redirects are not connected to the other tables
-	'redirects' => {'file' => '', 'fields' => {
-		'r_title' => 'text',
+	'redirects' => {'file' => '', 'order'=>6, 'fields' => {
+		'r_title' => 'text PRIMARY KEY',
 		'r_target' => 'text',
 		}
 	},
 	
-	# Definitions
-	'defs' => {'file' => '', 'fields' => {
-		'd_defid' => 'int',
-		'd_lexid' => 'int',
-		'd_def' => 'text',
-		'd_num' => 'int',
+	# Rhymes to add?
+	
+	# Keep?
+	'transc' => {'file' => '', 'order'=>7, 'fields' => {
+		'tr_artid' => 'int REFERENCES articles(a_artid)',
+		'tr_transc' => 'text',
+		'tr_transc_flat' => 'text',
+		'tr_transc_flat_r' => 'text',
 		}
 	},
 );
@@ -228,10 +229,10 @@ sub print_sql_schema
 	
 	open(my $SQL, ">$sql_path") or die("Couldn't write $sql_path");
 	
-	foreach my $table (keys %output_files) {
-		print_sql_table($SQL, $table, $output_files{$table}{fields});
+	foreach my $table (sort keys %output_files) {
+		print_sql_table($SQL, $table, $output_files{$table}{fields}, $output_files{$table}{constraints});
 	}
-	foreach my $table (keys %indexes) {
+	foreach my $table (sort keys %indexes) {
 		print_sql_index($SQL, $table, $indexes{$table}, $sqlite);
 	}
 	# Entries view
@@ -240,7 +241,9 @@ sub print_sql_schema
 	
 #	print $SQL "/*\n";
 	print $SQL ".mode tabs\n" if $sqlite;
-	foreach my $table (keys %output_files) {
+	
+	# Import tables in order
+	foreach my $table (sort { $output_files{$a}{'order'} <=> $output_files{$b}{'order'} } keys %output_files) {
 		my $file = $output_files{$table}{file};
 		$file =~ s/^.+\///g;
 		if ($sqlite) {
@@ -256,15 +259,16 @@ sub print_sql_schema
 
 sub print_sql_table
 {
-	my ($SQL, $table, $fields) = @_;
+	my ($SQL, $table, $fields, $constraints) = @_;
 	
 	my $start = "CREATE TABLE $table (\n";
 	my @line = ();
 	foreach my $f (sort keys %$fields) {
 		my $type = $fields->{$f};
-		push @line, "\t$f $type";
+		push @line, "$f $type";
 	}
-	print $SQL $start . join(",\n", @line) . "\n);\n\n";
+	push @line, @$constraints if $constraints;
+	print $SQL $start . "\t" . join(",\n\t", @line) . "\n);\n\n";
 }
 
 sub print_sql_index
@@ -287,6 +291,7 @@ sub add_to_file
 	open(TYPE, ">> $output_files{$type}{file}") or die "Can't write $output_files{$type}{file} (type $type): $!\n";
 	
 	my @line = ();
+	# Print in the same order as the sql print
 	foreach my $f (sort keys %{ $output_files{$type}{fields} }) {
 		if (defined($values->{$f})) {
 			my $val = $values->{$f};
@@ -301,14 +306,24 @@ sub add_to_file
 	close(TYPE);
 }
 
+# Special case for langs: written at the end in one go
 sub add_to_file_lang
 {
 	my ($line) = @_;
 	open(LANG, "> $output_files{langs}{file}") or die "Can't write $output_files{langs}{file}: $!\n";
 	foreach my $l (sort keys(%lang_total)) {
-		my $filter = $lang_filter{$l} ? $lang_filter{$l} : 0;
-		my @lang_line = ($l, $lang_total{$l}, $filter);
-		print LANG join( "\t" , @lang_line) . "\n";
+		my $l_rand = $lang_filter{$l}{'l_rand'} ? $lang_filter{$l}{'l_rand'} : 0;
+		my %values = (
+			'lg_lang' => $l,
+			'lg_num' => $lang_total{$l},
+			'lg_rand_num' => $l_rand,
+		);
+		my @line = ();
+		# Print in the same order as the sql print
+		foreach my $f (sort keys %values) {
+			push @line, $values{$f};
+		}
+		print LANG join( "\t" , @line) . "\n";
 	}
 	close(LANG);
 }
@@ -559,7 +574,7 @@ sub parse_language_sections
 		
 		# Add a random number so that the entry may be chosen randomly
 		$word_values{'l_rand'} = random_counter(\%word_values);
-			
+		
 		# Add this entry
 		add_to_file('lexemes', \%word_values);
 		
@@ -585,7 +600,7 @@ sub parse_language_sections
 		# Also search for meanings (defs)
 		my @noneed = ('nom-pr', 'nom-fam', 'prenom');
 		if (not $type_nom ~~ @noneed and not $flex and not $gent) {
-			parse_type_section($lang_section->{'type'}->{$type}->{lines}, $title, $lang, $word_values{'l_lexid'});
+			parse_type_section($lang_section->{'type'}->{$type}->{lines}, $title, $lang, \%word_values);
 		}
 	}
 	
@@ -607,7 +622,8 @@ sub parse_language_sections
 sub parse_type_section
 {
 	
-	my ($lines, $title, $lang, $lexid) = @_;
+	my ($lines, $title, $lang, $entry) = @_;
+	my $lexid = $entry->{'l_lexid'};
 	
 	# Get defs
 	my $defs = section_meanings($lines, $title, $lang);
@@ -619,9 +635,15 @@ sub parse_type_section
 			'd_def' => $defs->[$i],
 			'd_num' => $i,
 		);
-		add_to_file('defs', \%definition);
+		# No def in here?
+		if (not defined($definition{'d_def'}) or $definition{'d_def'} eq '') {
+			special_log('empty_def', "$title->{'a_title'}\t(" . ($transc{'l_is_flexion'} ? 'loc-' : '') . $transc{'l_type'});
+		}
+		 else {
+			# Keep this definition!
+			add_to_file('defs', \%definition);
+		}
 	}
-	
 }
 
 sub add_pron
@@ -658,9 +680,9 @@ sub random_counter
 	
 	my $lang = $values->{'l_lang'};
 	
-	# Increase the random language counter
-	if ($lang_total{$lang}) { $lang_total{$lang}++; }
-	else { $lang_total{$lang} = 1; }
+	# Increase the total language counter
+	if ($lang_total{$lang}{'l_rand'}) { $lang_total{$lang}{'l_rand'}++; }
+	else { $lang_total{$lang}{'l_rand'} = 1; }
 	
 	# Ok to be a random word?
 	if (not $values->{'l_is_gentile'} 			# No inhabitant names/adjectives
@@ -668,12 +690,12 @@ sub random_counter
 		and $values->{'l_type'} ne 'nom-pr'		# No proper nouns
 		and not $values->{'l_title'} =~ /[0-9]/)	# No number
 		{
-		# Increase the filtered language counter
-		if ($lang_filter{$lang}) {$lang_filter{$lang}++; }
-		else { $lang_filter{$lang} = 1; }
+		# Increase the filtered language counter (for random)
+		if ($lang_filter{$lang}{'l_rand'}) {$lang_filter{$lang}{'l_rand'}++; }
+		else { $lang_filter{$lang}{'l_rand'} = 1; }
 		
 		# Save the number for the random search
-		return $lang_filter{$lang};
+		return $lang_filter{$lang}{'l_rand'};
 	}
 	
 	# Default: random number=0
