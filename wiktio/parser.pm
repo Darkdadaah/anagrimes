@@ -584,10 +584,24 @@ sub section_meanings
 			if ($def =~ /\{\{variante/) {
 				next;
 			}
+			
+			$def =~ s/('{3})(.+?)\1/$2/g;
+			$def =~ s/('{2})(.+?)\1/$2/g;
+			
+			# Recognize some templates
+			$def =~ s/\{\{term\|([^\|\}]+?)\}\} */($1) /g;
+			$def =~ s/\{\{w\|([^\|\}]+?)\}\}/$1/g;
+			$def =~ s/<\/?ref>//g;
+			
+			# Change templates like {{foo}} into the form (foo)
 			$def =~ s/\{\{([^\\}\|]+)\|[^\}]+\}\} */($1) /g;
 			$def =~ s/\{\{([^\\}\|]+)\}\} */($1) /g;
 			$def =~ s/\[\[[^\|\]]+\|([^\|\]]+)\]\]/$1/g;
 			$def =~ s/\[\[([^\|\]]+)\]\]/$1/g;
+			
+			# First letter in a parenthesis = uppercase
+			$def =~ s/\((.)/(\u$1/g;
+			
 			push @defs, $def;
 		}
 	}

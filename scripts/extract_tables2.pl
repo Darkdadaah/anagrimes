@@ -640,6 +640,11 @@ sub parse_type_section
 			special_log('empty_def', $entry->{'l_title'}, join(', ', ($entry->{'l_lang'}, ($entry->{'l_is_flexion'} ? 'loc-' : '') . $entry->{'l_type'}, "'$definition{'d_num'}'")));
 		}
 		 else {
+			# Check
+			if ($definition{'d_def'} =~ /'{2,3}/) {
+				special_log('def_apostrophes', $entry->{'l_title'}, join(', ', ($entry->{'l_lang'}, ($entry->{'l_is_flexion'} ? 'loc-' : '') . $entry->{'l_type'}, "'$definition{'d_num'}'"), $definition{'d_def'}));
+			}
+			
 			# Keep this definition!
 			add_to_file('defs', \%definition);
 		}
