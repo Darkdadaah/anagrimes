@@ -571,26 +571,42 @@ sub is_gentile
 
 sub section_meanings
 {
-	my ($lines) = @_;
+	my ($lines, $title, $lang) = @_;
 	my @defs = ();
 	
 	foreach my $line (@$lines) {
 		# End if next section
 		if ($line =~ /^=+|^\{\{-/) {
 			last;
-		} elsif ($line =~ /^#+ *([^\*]+) *$/) {
+		} elsif ($line =~ /^#+\s*([^\*]+)\s*$/) {
+			next if $line =~ /^[:*]/;
 			my $def = $1;
 			chomp($def);
-			if ($def =~ /\{\{variante/) {
+			
+			# Remove html comments
+			if ($def =~ s/<!--(.+?)-->//g) {
+				special_log('def_html_comments', $title, "$lang : $1");
+			}
+			
+			# No variants, stubs and such
+			if ($def =~ /\{\{(variante|ébauche)/ or $def =~ /Variante orthographique/) {
 				next;
 			}
 			
+			# Remove wiki italic/bold
 			$def =~ s/('{3})(.+?)\1/$2/g;
 			$def =~ s/('{2})(.+?)\1/$2/g;
 			
 			# Recognize some templates
 			$def =~ s/\{\{term\|([^\|\}]+?)\}\} */($1) /g;
 			$def =~ s/\{\{w\|([^\|\}]+?)\}\}/$1/g;
+			$def =~ s/\{\{cf\|([^\}]+?)\}\}/cf $1/g;
+			$def =~ s/\{\{formatnum:([^\}]+?)\}\}/$1/g;
+			$def =~ s/\{\{ex\|(.+)\}\}/<sup>$1<\/sup>/g;
+			$def =~ s/\{\{x10\|(.+)\}\}/×10<sup>$1<\/sup>/g;
+			# Fchim : enlève les séparateurs, met les numéros en indice
+			$def =~ s/(\{\{fchim\|.*)\|([\|\}])/$1$2/g;
+			$def =~ s/\{\{fchim\|(.*)([0-9]+)(.*)\}\}/$1<sub>$2<\/sub>$3/g;
 			$def =~ s/<\/?ref>//g;
 			
 			# Change templates like {{foo}} into the form (foo)
