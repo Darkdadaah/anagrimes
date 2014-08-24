@@ -373,7 +373,7 @@ sub parseLanguage
 					$sections->{type}->{$key}->{loc} = $loc;
 					$sections->{type}->{$key}->{num} = $num;
 					$sections->{type}->{$key}->{type} = $type;
-										
+					
 					# Check level
 					if ($eqstart ne '===' or $eqend ne '===') {
 						if ($eqstart eq '' and $eqend eq '') {
@@ -599,6 +599,7 @@ sub section_meanings
 			
 			# Recognize some templates
 			$def =~ s/\{\{term\|([^\|\}]+?)\}\} */($1) /g;
+			$def =~ s/\{\{lien\|([^\|\}]+?)(\|.+)?\}\}/$1/g;
 			$def =~ s/\{\{w\|([^\|\}]+?)\}\}/$1/g;
 			$def =~ s/\{\{cf\|([^\}]+?)\}\}/cf $1/g;
 			$def =~ s/\{\{formatnum:([^\}]+?)\}\}/$1/g;
