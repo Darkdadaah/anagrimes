@@ -572,8 +572,17 @@ sub parse_language_sections
 			'l_lexid' => counter('lexemes'),
 		);
 		
+		# Also search for meanings (defs)
+		my @need = ('nom', 'verb', 'adj', 'adv', 'interj', 'onoma');
+		my $def = 0;
+		if ($type_nom ~~ @need and not $flex and not $gent) {
+			$def = parse_type_section($lang_section->{'type'}->{$type}->{lines}, $title, $lang, \%word_values);
+		}
+		
 		# Add a random number so that the entry may be chosen randomly
-		$word_values{'l_rand'} = random_counter(\%word_values);
+		if ($def) {
+			$word_values{'l_rand'} = random_counter(\%word_values);
+		}
 		
 		# Add this entry
 		add_to_file('lexemes', \%word_values);
@@ -595,12 +604,6 @@ sub parse_language_sections
 			foreach my $t (@$transc_type) {
 				$transc{$t}++;
 			}
-		}
-		
-		# Also search for meanings (defs)
-		my @noneed = ('nom-pr', 'nom-fam', 'prenom');
-		if (not $type_nom ~~ @noneed and not $flex and not $gent) {
-			parse_type_section($lang_section->{'type'}->{$type}->{lines}, $title, $lang, \%word_values);
 		}
 	}
 	
@@ -628,6 +631,7 @@ sub parse_type_section
 	# Get defs
 	my $defs = section_meanings($lines, $title, $lang);
 	
+	my $defok = 1;
 	for (my $i = 0; $i < @$defs; $i++) {
 		my %definition = (
 			'd_defid' => counter('def'),
@@ -635,12 +639,14 @@ sub parse_type_section
 			'd_def' => $defs->[$i],
 			'd_num' => ($i+1),
 		);
+		
 		# No def in here?
 		if (not defined($definition{'d_def'}) or $definition{'d_def'} eq '') {
-			special_log('empty_def', $entry->{'l_title'}, join(', ', ($entry->{'l_lang'}, ($entry->{'l_is_flexion'} ? 'loc-' : '') . $entry->{'l_type'}, "'$definition{'d_num'}'")));
+			special_log('def_empty', $entry->{'l_title'}, join(', ', ($entry->{'l_lang'}, ($entry->{'l_is_flexion'} ? 'loc-' : '') . $entry->{'l_type'}, "'$definition{'d_num'}'")));
+			$defok = 0;
 		}
 		 else {
-			# Check
+			# Check apostrophe
 			if ($definition{'d_def'} =~ /'{2,3}/) {
 				special_log('def_apostrophes', $entry->{'l_title'}, join(', ', ($entry->{'l_lang'}, ($entry->{'l_is_flexion'} ? 'loc-' : '') . $entry->{'l_type'}, "'$definition{'d_num'}'"), $definition{'d_def'}));
 			}
@@ -649,6 +655,7 @@ sub parse_type_section
 			add_to_file('defs', \%definition);
 		}
 	}
+	return $defok;
 }
 
 sub add_pron
