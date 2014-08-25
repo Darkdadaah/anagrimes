@@ -598,7 +598,7 @@ sub section_meanings
 			$def =~ s/('{2})(.+?)\1/$2/g;
 			
 			# Recognize some templates
-			$def =~ s/\{\{term\|([^\|\}]+?)\}\} */($1) /g;
+			$def =~ s/\{\{terme?\|([^\|\}]+?)\}\} */($1) /g;
 			$def =~ s/\{\{lien\|([^\|\}]+?)(\|.+)?\}\}/$1/g;
 			$def =~ s/\{\{w\|([^\|\}]+?)\}\}/$1/g;
 			$def =~ s/\{\{cf\|([^\}]+?)\}\}/cf $1/g;
