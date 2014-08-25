@@ -236,8 +236,8 @@ sub print_sql_schema
 		print_sql_index($SQL, $table, $indexes{$table}, $sqlite);
 	}
 	# Entries view
-	print $SQL "CREATE VIEW entries AS SELECT * FROM articles LEFT JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid;\n";
-	print $SQL "CREATE VIEW defentries AS SELECT * FROM articles LEFT JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid LEFT JOIN defs ON l_lexid=d_lexid;\n";
+	print $SQL "CREATE VIEW entries AS SELECT * FROM articles INNER JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid;\n";
+	print $SQL "CREATE VIEW defentries AS SELECT * FROM articles INNER JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid INNER JOIN defs ON l_lexid=d_lexid;\n";
 	
 #	print $SQL "/*\n";
 	print $SQL ".mode tabs\n" if $sqlite;
