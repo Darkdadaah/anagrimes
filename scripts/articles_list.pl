@@ -145,8 +145,22 @@ sub get_articles_list
 		next ARTICLE if (not defined($article->{'fulltitle'}));
 		
 		# Only for a given namespace? Default: main
-		if (defined($p{'namespace'}) and $article->{'namespace'} ne $p{'namespace'}
-		or not defined($p{'namespace'}) and $article->{'namespace'}) {
+		if (defined($p{'namespace'})) {
+			my $ns = $p{'namespace'};
+			
+			# Number? Number of namespace
+			if ($p{'namespace'} =~ /^[0-9]+$/) {
+				if ($article->{'namespace'} != $p{'namespace'}) {
+					next ARTICLE;
+				}
+			# String: name of a namespace
+			} else {
+				if ($article->{'namespace'} ne $p{'namespace'}) {
+					next ARTICLE;
+				}
+			}
+		# No namespace given: skip if not in the main
+		} elsif ($article->{'namespace'}) {
 			next ARTICLE;
 		}
 		
