@@ -357,13 +357,70 @@ sub transcription
 				$left =~ s/[a-zâ'0-9 ]//g;
 				my $len = length($left);
 				#print STDERR "[[$titre]]\tTranscription de l'arabe ratée : '$transcrit' (reste $len lettres : '$left')\n";
-				special_log('bad_arabe', $titre, "reste $len lettres : '$left", $transcrit);
+				special_log('bad_arabe', $titre, "reste $len lettres : '$left'", $transcrit);
 			} else {
 				#print "[[$titre]]\tTranscription de l'arabe réussie : '$transcrit' !!\n";
 			}
 			return $transcrit;
 		}
 		
+		if ($langues_transcrites->{'ja'}->{$l}) {
+			$transcrit =~ tr/あいうえおん/aiueon/;
+			# KA
+			$transcrit =~ s/か/ka/;
+			$transcrit =~ s/き/ki/;
+			$transcrit =~ s/く/ku/;
+			$transcrit =~ s/け/ke/;
+			$transcrit =~ s/こ/ko/;
+			#SA
+			$transcrit =~ s/さ/sa/;
+			$transcrit =~ s/し/shi/;
+			$transcrit =~ s/す/su/;
+			$transcrit =~ s/せ/se/;
+			$transcrit =~ s/そ/so/;
+			# TA
+			$transcrit =~ s/た/ta/;
+			$transcrit =~ s/ち/chi/;
+			$transcrit =~ s/つ/tsu/;
+			$transcrit =~ s/て/te/;
+			$transcrit =~ s/と/to/;
+			#NA
+			$transcrit =~ s/な/na/;
+			$transcrit =~ s/に/ni/;
+			$transcrit =~ s/ぬ/ne/;
+			$transcrit =~ s/ね/nu/;
+			$transcrit =~ s/の/no/;
+			# HA
+			$transcrit =~ s/は/ha/;
+			$transcrit =~ s/ひ/hi/;
+			$transcrit =~ s/ふ/fu/;
+			$transcrit =~ s/へ/he/;
+			$transcrit =~ s/ほ/ho/;
+			# MA
+			$transcrit =~ s/ま/ma/;
+			$transcrit =~ s/み/mi/;
+			$transcrit =~ s/む/mu/;
+			$transcrit =~ s/め/me/;
+			$transcrit =~ s/も/mo/;
+			# RA
+			$transcrit =~ s/ら/ra/;
+			$transcrit =~ s/り/ri/;
+			$transcrit =~ s/る/ru/;
+			$transcrit =~ s/れ/re/;
+			$transcrit =~ s/ろ/ro/;
+			
+			$transcrit =~ s/っ([kstnmr])/$1$1/;
+			
+			if (not unicode_NFKD($transcrit) =~ /^[a-zâ'0-9 ]+$/) {
+				my $left = $transcrit;
+				$left =~ s/[a-zâ'0-9 ]//g;
+				my $len = length($left);
+				special_log('bad_ja', $titre, "reste $len lettres : '$left'", $transcrit);
+			} else {
+				special_log('good_ja', $titre, $transcrit);
+			}
+			return $transcrit;
+		}
 	}
 }
 

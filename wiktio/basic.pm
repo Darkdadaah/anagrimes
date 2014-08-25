@@ -409,6 +409,7 @@ our $langues_transcrites = {
 	'cyrillique' => {'ru'=>1, 'bg'=>1, 'uk'=>1},
 	'grec' => {'el'=>1, 'grc'=>1},
 	'arabe' => {'ar'=>1, 'fa'=>1},
+	#'ja' => {'ja' => 1},
 };
 
 1;
