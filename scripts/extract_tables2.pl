@@ -579,6 +579,10 @@ sub parse_language_sections
 			$def = parse_type_section($lang_section->{'type'}->{$type}->{lines}, $title, $lang, \%word_values);
 		}
 		
+		# Increase the total language counter
+		if ($lang_total{$lang}) { $lang_total{$lang}++; }
+		else { $lang_total{$lang} = 1; }
+		
 		# Add a random number so that the entry may be chosen randomly
 		if ($def) {
 			$word_values{'l_rand'} = random_counter(\%word_values);
@@ -691,10 +695,6 @@ sub random_counter
 	my ($values) = @_;
 	
 	my $lang = $values->{'l_lang'};
-	
-	# Increase the total language counter
-	if ($lang_total{$lang}{'l_rand'}) { $lang_total{$lang}{'l_rand'}++; }
-	else { $lang_total{$lang}{'l_rand'} = 1; }
 	
 	# Ok to be a random word?
 	if (not $values->{'l_is_gentile'} 			# No inhabitant names/adjectives
