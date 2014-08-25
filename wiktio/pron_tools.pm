@@ -38,7 +38,6 @@ sub cherche_tables
 	my @tables = ();
 	
 	#if ($lang eq 'fr') {
-		print STDERR "[[$titre]]\t'$lang'\n" if ref($lignes) eq '';
 		for (my $i=0; $i < @$lignes; $i++) {
 			my $ligne = $lignes->[$i];
 			
@@ -220,7 +219,7 @@ sub cherche_prononciation
 				if (defined($arg->{s})) {
 					next TABLE;
 				}
-			
+				
 				# Pour toutes les tables connues
 				if ($nom eq 'inv') {
 					$pron{$arg->{1}} = 1 if ($arg->{1});
