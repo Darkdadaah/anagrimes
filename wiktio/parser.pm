@@ -201,7 +201,7 @@ sub parseArticle
 	
 	# continue to retrieve the languages
 	while ($line = shift @$article) {
-		special_log('oldlevel2', $title) if $line =~ /\{\{=.+=\}\}/;
+		special_log('oldlevel2', $title) if $line =~ /\{\{=[^\}]+=\}\}/;
 		
 		# TAIL ?
 		if (
