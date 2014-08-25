@@ -150,7 +150,7 @@ sub get_articles_list
 			
 			# Number? Number of namespace
 			if ($p{'namespace'} =~ /^[0-9]+$/) {
-				if ($article->{'namespace'} != $p{'namespace'}) {
+				if ($article->{'ns'} != $p{'namespace'}) {
 					next ARTICLE;
 				}
 			# String: name of a namespace
@@ -288,10 +288,17 @@ sub read_article
 				$line =~ s/$p{'pat'}//;
 				
 				# Continue to see how much of this pattern we can find
+				my $len = length($line);
 				while ($p{'pat'} and $line =~ /($p{'pat'})/) {
 					$count++ if not $no;
 					$ok_pattern .= " ; <tt><nowiki>$1</nowiki></tt> ($n)";
 					$line =~ s/$p{'pat'}//;
+					
+					# Break if there is no replacement
+					my $len2 = length($line);
+					if ($len == $len2) {
+						last;
+					}
 				}
 			}
 		}
