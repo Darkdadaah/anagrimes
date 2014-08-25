@@ -171,8 +171,10 @@ sub usage
 	-l <path> : special log_files (like -o path + prefix). Those files log specific errors defined in the parser.
 	-L <code> : language code to extract alone (2 or 3 letters) [optional]
 	-c <num>  : length of crossword searchable columns
-	-S <path> : print SQL commands to create the corresponding tables of every file created
-	-s        : sqlite compatible version -S
+	
+	DB schema (at least -o is needed, and -c if defined):
+	-S <path> : print mysql SQL commands to create the corresponding tables of every file created
+	-s <path> : Same as -S but for sqlite3
 EOF
 	exit;
 }
@@ -181,13 +183,15 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:L:l:c:S:s', \%opt ) or usage();
+	getopts( 'hi:o:L:l:c:S:s:', \%opt ) or usage();
 	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	
 	$log = $opt{l} ? $opt{l} : '';
 	
-	usage( "Dump path needed (-i)" ) if not $opt{i};
+	if (not $opt{S} and not $opt{s}) {
+		usage( "Dump path needed (-i)" ) if not $opt{i};
+	}
 	usage( "Output file path needed (-o)" ) if not $opt{o};
 	
 	# Prepare output file path
@@ -199,9 +203,11 @@ sub init()
 		$output_files{$type}{file} = $opt{o};
 		$output_files{$type}{file} =~ s/^(.+?)(\.[a-z0-9]+)$/$1_$type$2/;
 		
-		# Init the file
-		open(TYPE, "> $output_files{$type}{file}") or die "Can't init file $output_files{$type}{file}: $!\n";
-		close(TYPE);
+		# Init the file (if we really write it)
+		if ($opt{i}) {
+			open(TYPE, "> $output_files{$type}{file}") or die "Can't init file $output_files{$type}{file}: $!\n";
+			close(TYPE);
+		}
 	}
 	
 	if ($opt{c}) {
@@ -224,7 +230,7 @@ sub init_crossword_columns
 
 sub print_sql_schema
 {
-	my ($sql_path, $sqlite) = @_;
+	my ($sql_path, $dbtype) = @_;
 	return if not $sql_path;
 	
 	open(my $SQL, ">$sql_path") or die("Couldn't write $sql_path");
@@ -233,26 +239,28 @@ sub print_sql_schema
 		print_sql_table($SQL, $table, $output_files{$table}{fields}, $output_files{$table}{constraints});
 	}
 	foreach my $table (sort keys %indexes) {
-		print_sql_index($SQL, $table, $indexes{$table}, $sqlite);
+		print_sql_index($SQL, $table, $indexes{$table}, $dbtype);
 	}
 	# Entries view
 	print $SQL "CREATE VIEW entries AS SELECT * FROM articles INNER JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid;\n";
 	print $SQL "CREATE VIEW defentries AS SELECT * FROM articles INNER JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid INNER JOIN defs ON l_lexid=d_lexid;\n";
 	
-#	print $SQL "/*\n";
-	print $SQL ".mode tabs\n" if $sqlite;
+	if ($dbtype eq 'sqlite') {
+		print $SQL ".mode tabs\n";
+	}
 	
 	# Import tables in order
 	foreach my $table (sort { $output_files{$a}{'order'} <=> $output_files{$b}{'order'} } keys %output_files) {
 		my $file = $output_files{$table}{file};
 		$file =~ s/^.+\///g;
-		if ($sqlite) {
+		if ($dbtype eq 'sqlite') {
 			print $SQL ".import $file $table\n";
-		} else {
+		} elsif ($dbtype eq 'mysql') {
 			print $SQL "LOAD DATA LOCAL INFILE '$file' INTO TABLE $table CHARACTER SET 'utf8';\n";
+		} else {
+			die("Undefined database type\n");
 		}
 	}
-#	print $SQL "*/\n";
 	
 	close($SQL);
 }
@@ -273,11 +281,13 @@ sub print_sql_table
 
 sub print_sql_index
 {
-	my ($SQL, $table, $fields, $sqlite) = @_;
+	my ($SQL, $table, $fields, $dbtype) = @_;
 	
 	foreach my $f (sort keys %$fields) {
 		my $type = $fields->{$f};
-		$type =~ s/\(.+\)// if $sqlite;
+		if ($dbtype eq 'sqlite') {
+			$type =~ s/\(.+\)//;
+		}
 		my $creation = "CREATE INDEX " . $f . "_idx ON $table($type);";
 		print $SQL "$creation\n";
 	}
@@ -726,13 +736,19 @@ sub counter
 init();
 
 # Print the SQL schema
-print_sql_schema($opt{S}, $opt{s});
+if ($opt{S}) {
+	print_sql_schema($opt{S}, 'mysql');
+}
+if ($opt{s}) {
+	print_sql_schema($opt{s}, 'sqlite');
+}
 
-# Actual parsing of the dumps
-parse_articles($opt{i});
-	
-# Lastly, print the language table
-add_to_file_lang();
-
+if ($opt{i}) {
+	# Actual parsing of the dumps
+	parse_articles($opt{i});
+		
+	# Lastly, print the language table
+	add_to_file_lang();
+}
 
 __END__
