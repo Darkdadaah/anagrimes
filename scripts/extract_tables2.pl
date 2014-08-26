@@ -21,7 +21,7 @@ use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_pr
 # Output files:
 our %output_files = (
 	'langs' => {'file' => '', 'order'=>1, 'fields' => {
-		'lg_lang' => 'text PRIMARY KEY',
+		'lg_lang' => 'varchar(32) PRIMARY KEY',
 		'lg_num' => 'int',
 		'lg_num_min' => 'int',
 		}
@@ -80,7 +80,7 @@ our %output_files = (
 	
 	# Redirects are not connected to the other tables
 	'redirects' => {'file' => '', 'order'=>6, 'fields' => {
-		'r_title' => 'text PRIMARY KEY',
+		'r_title' => 'varchar(255) PRIMARY KEY',
 		'r_target' => 'text',
 		}
 	},
