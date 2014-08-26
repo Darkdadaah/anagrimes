@@ -608,7 +608,9 @@ sub section_meanings
 			# Fchim : enlève les séparateurs, met les numéros en indice
 			$def =~ s/(\{\{fchim\|.*)\|([\|\}])/$1$2/g;
 			$def =~ s/\{\{fchim\|(.*)([0-9]+)(.*)\}\}/$1<sub>$2<\/sub>$3/g;
+			# Réfs
 			$def =~ s/<\/?ref>//g;
+			$def =~ s/\{\{R\|[^\}]+\}\}//g;
 			
 			# Change templates like {{foo}} into the form (foo)
 			$def =~ s/\{\{([^\\}\|]+)\|[^\}]+\}\} */($1) /g;
