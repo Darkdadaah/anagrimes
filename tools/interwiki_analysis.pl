@@ -63,7 +63,6 @@ sub interwiki_analyze
 			my $t = $iw{$l};
 			
 			if ($t ne $title) {
-				print STDOUT "$l\t$title\t$t\n";
 				
 				# apostrophe?
 				my $t2 = $t;
@@ -71,19 +70,31 @@ sub interwiki_analyze
 				$t2 =~ s/['ʼ’]/'/g;
 				$title2 =~ s/['ʼ’]/'/g;
 				
-				# Majuscule?
-				my $t3 = uc($t2);
-				my $title3 = uc($title2);
+				# Capital?
+				my $t3 = uc($t);
+				my $title3 = uc($title);
 				
-				# Apostrophe?
+				# Apostrophe + Capital?
+				my $t4 = uc($t2);
+				my $title4 = uc($title2);
+				
+				# Category of difference?
+				my $cat = '';
 				if ($t2 eq $title2) {
 					$count->{interwiki_wrong_apostrophe}++;
+					$cat = 'apostrophe';
 				} elsif ($t3 eq $title3) {
 					$count->{interwiki_wrong_capital}++;
+					$cat = 'capital';
+				} elsif ($t4 eq $title4) {
+					$count->{interwiki_wrong_apostrophe_and_capital}++;
+					$cat = 'apostrophe+capital';
 				} else {
 					$count->{interwiki_wrong_other}++;
+					$cat = 'other';
 				}
 				delete $iw{$l};
+				print STDOUT "$l\t$title\t$t\t$cat\n";
 			}
 		}
 		$count->{interwiki_correct}++ if keys %iw > 0;
@@ -139,7 +150,7 @@ while(<DUMP>) {
 			interwiki_analyze($title, \@article, $count);
 			######################################
 			$count->{articles}++;
-			print STDERR "[$count->{articles}] $title                                         \r" if $count->{articles}%1000==0;
+			#print STDERR "[$count->{articles}] $title                                         \r" if $count->{articles}%1000==0;
 		}
 		$complete_article = 0;
 	}
