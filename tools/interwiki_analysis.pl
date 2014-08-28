@@ -30,6 +30,8 @@ sub usage
 	
 	INPUT
 	-i <path> : dump path
+	OUTPUT
+	STDOUT    : list of pages with differing interwiki link
 EOF
 	exit;
 }
