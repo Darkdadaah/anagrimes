@@ -15,7 +15,7 @@ use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
-use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile section_meanings);
+use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile section_meanings cherche_genre);
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
@@ -47,6 +47,7 @@ our %output_files = (
 		'l_artid' => 'int REFERENCES articles(a_artid)',
 		'l_lang' => 'text REFERENCES langs(lg_lang)',
 		'l_type' => 'text',
+		'l_genre' => 'text',
 		'l_num' => 'int',
 		'l_is_flexion' => 'int',
 		'l_is_locution' => 'int',
@@ -117,6 +118,7 @@ our %indexes = (
 		'l_lexid' => 'l_lexid',
 		'l_lang' => 'l_lang(3)',
 		'l_type' => 'l_type(4)',
+		'l_genre' => 'l_genre(4)',
 		'l_is_flexion' => 'l_is_flexion',
 		'l_is_locution' => 'l_is_locution',
 		'l_is_gentile' => 'l_is_gentile',
@@ -550,6 +552,8 @@ sub parse_language_sections
 		if ($type_nom eq 'nom' or $type_nom eq 'adj') {
 			$gent = is_gentile($lang_section->{'type'}->{$type}->{lines});
 		}
+		# Fing genera
+		my $genre = cherche_genre($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type_nom);
 		
 		# Get all pronunciations for this word that we can find in the text (marked with models usually)
 		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type);
@@ -575,6 +579,7 @@ sub parse_language_sections
 			'l_title' => $title,
 			'l_lang' => $lang,
 			'l_type' => $type_nom,
+			'l_genre' => $genre,
 			'l_num' => $num,
 			'l_is_flexion' => $flex,
 			'l_is_locution' => $loc,
