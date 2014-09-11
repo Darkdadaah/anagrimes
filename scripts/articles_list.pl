@@ -49,7 +49,8 @@ sub usage
 	-p <str>  : regexp pattern to search
 	-n <str>  : regexp pattern to exclude
 	
-	-S <str>  : use this namespace
+	-S <str>  : use this namespace (default: main namespace)
+	-s        : use all namespaces
 	
 	-A <str>  : only edited by (one or several separated by a comma): bot,IP,nouser,user
 	-H        : search the whole history of the articles
@@ -68,16 +69,12 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:O:p:n:S:A:HL:N:', \%opt ) or usage();
+	getopts( 'hi:o:O:p:n:S:sA:HL:N:', \%opt ) or usage();
 	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	usage( "Dump path needed (-i)" ) if not $opt{i};
 	if (not $opt{F}) {
-		#if (not $opt{s} and not $opt{p} and not $opt{A}) {
-		#	usage( "Pattern needed (-p)" );
-		#	usage( "or Author needed (-A)" );
-			usage( "Only 1 language option (-L|-N)" ) if $opt{L} and $opt{N};
-		#}
+		usage( "Only 1 language option (-L|-N)" ) if $opt{L} and $opt{N};
 	}
 	
 	if ($opt{o}) {
@@ -89,10 +86,8 @@ sub init()
 		close(ARTICLES);
 	}
 	
-	unless ($opt{s}) {
-		$opt{p} = correct_pattern($opt{p});
-		$opt{n} = correct_pattern($opt{n});
-	}
+	$opt{p} = correct_pattern($opt{p});
+	$opt{n} = correct_pattern($opt{n});
 }
 
 ##################################
@@ -149,18 +144,18 @@ sub get_articles_list
 			my $ns = $p{'namespace'};
 			
 			# Number? Number of namespace
-			if ($p{'namespace'} =~ /^[0-9]+$/) {
-				if ($article->{'ns'} != $p{'namespace'}) {
+			if ($ns =~ /^[0-9]+$/) {
+				if ($article->{'ns'} != $ns) {
 					next ARTICLE;
 				}
 			# String: name of a namespace
 			} else {
-				if ($article->{'namespace'} ne $p{'namespace'}) {
+				if ($article->{'namespace'} ne $ns) {
 					next ARTICLE;
 				}
 			}
 		# No namespace given: skip if not in the main
-		} elsif ($article->{'namespace'}) {
+		} elsif ($article->{'namespace'} and not $p{'all_namespaces'}) {
 			next ARTICLE;
 		}
 		
@@ -359,6 +354,7 @@ init();
 # Prepare lists
 my %par = ();
 $par{'namespace'} = $opt{S};
+$par{'all_namespaces'} = $opt{s};
 $par{'dump_path'} = $opt{i};
 $par{'output_path'} = $opt{o};
 $par{'output_rejected_path'} = $opt{O};
