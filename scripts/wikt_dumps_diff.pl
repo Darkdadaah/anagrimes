@@ -27,6 +27,13 @@ my $languages = {
 		'it' => 'Italienisch',
 		'ru' => 'Russisch',
 	},
+	'zh' => {
+		'fr' => 'fra?',
+	},
+	'ja' => {
+		'fr' => '(フランス語|\{\{fra?\}\})',
+		'ja' => '(日本語|\{\{(ja|jpn)\}\})',
+	},
 	'vi' => {
 		'fr' => 'fra',
 		'en' => 'eng',
@@ -98,7 +105,7 @@ sub prepare_language_section
 	if ($wiktlang eq 'fr') {
 		$lang_sec = '\{\{langue\|'.$lang.'\}\}';
 	# English
-	} elsif ($wiktlang eq 'en') {
+	} elsif ($wiktlang eq 'en' or $wiktlang eq 'ja') {
 		$lang_sec = "^== *$languages->{$wiktlang}->{$lang} *==";
 	# German
 	} elsif ($wiktlang eq 'de') {
