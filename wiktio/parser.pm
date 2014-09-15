@@ -63,6 +63,11 @@ sub parse_dump
 		}
 		
 		# Get content
+		# No line
+		elsif ($line =~ /^<text[^>]*\/>$/) {
+			@{ $article{'content'} } = ('');
+			last LINE;
+		}
 		# one line
 		elsif ($line =~ /<text.*>(.*?)<\/text>/) {
 			# Latest version or whole history?
@@ -139,8 +144,8 @@ sub _is_redirect
 	# Only look at the first line
 	my $first_line = $article->{'content'}->[0];
 	
-	if ($first_line and $first_line =~ /#redirect *\[\[(.+?)\]\]/i) {
-		return $1;
+	if ($first_line and $first_line =~ /#redirect(ion)? *:? *\[\[(.+?)\]\]/i) {
+		return $2;
 	}
 	return;
 }
