@@ -64,7 +64,7 @@ sub parse_dump
 		
 		# Get content
 		# No line
-		elsif ($line =~ /^<text[^>]*\/>$/) {
+		elsif ($line =~ /<text[^>]*\/>$/) {
 			@{ $article{'content'} } = ('');
 			last LINE;
 		}
