@@ -77,7 +77,7 @@ sub split_file
 	while (my $line = <LIST>) {
 		# If we reached the max number or lines, close the current file
 		# and open a new one with the next file number
-		if ($n>$max) {
+		if ($n >= $max) {
 			# Close old file
 			$n=0;
 			close(OUT);
