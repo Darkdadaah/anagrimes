@@ -204,12 +204,12 @@ sub write_list
 {
 	my ($list, $file, $lang) = @_;
 	open(LISTE, ">$file") or die "Couldn't write $file: $!";
-	print LISTE '<div style="-moz-column-count:4">'."\n";
+	print LISTE '<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">'."\n";
 	foreach my $article (sort keys %$list) {
 		next if not $article;
 		print LISTE "# [[$article]] [[:$lang:$article|*]]\n";
 	}
-	print LISTE '</div>'."\n";
+	print LISTE '</div>'."\n\n";
 	close(LISTE);
 }
 
