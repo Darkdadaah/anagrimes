@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Getopt::Std;
+use Data::Dumper;
 
 # Need utf8 compatibility for input/outputs
 use utf8;
@@ -351,6 +352,7 @@ sub parse_articles
 	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
 	
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {
+		next if not defined( $article->{'ns'} );
 		next ARTICLE if $article->{'ns'} != 0;	# Only main namespace
 		
 		if ($article->{'redirect'}) {
@@ -556,7 +558,7 @@ sub parse_language_sections
 		my $genre = cherche_genre($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type_nom);
 		
 		# Get all pronunciations for this word that we can find in the text (marked with models usually)
-		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type);
+		my $prons = cherche_prononciation($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type, $flex);
 		
 		# This should be improved: add an entry for every different entry
 		my %type_pron = ();

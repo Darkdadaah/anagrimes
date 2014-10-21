@@ -128,7 +128,7 @@ sub cherche_tables
 
 sub cherche_prononciation
 {
-	my ($lignes, $lang, $titre, $type) = @_;
+	my ($lignes, $lang, $titre, $type, $flexion) = @_;
 	
 	if (ref($lignes) eq '') {
 		special_log('mef', $titre, '', "en $lang");
@@ -205,8 +205,8 @@ sub cherche_prononciation
 		}
 	}
 	
-	# Extrait les infos de toutes les tables
-	if (not $type =~ /^flex-/) {
+	# Ignore flexions and don't care further if pronunciations already found
+	if (not $flexion and keys %pron == 0) {
 		my $tables = cherche_tables($lignes, $lang, $titre);
 		
 		# TABLES EN FRANÇAIS - FRENCH
