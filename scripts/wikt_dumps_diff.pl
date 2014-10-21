@@ -9,7 +9,12 @@ use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(step stepl print_value dump_input);
 use wiktio::parser		qw(parse_dump parseArticle);
+use wiktio::string_tools	qw(unisort_key);
 our %opt;
+use utf8;
+use open IO => ':utf8';
+binmode STDOUT, ":utf8";
+binmode STDERR, ":utf8";
 
 # Special case of Wiktionaries that use full name or special codes for their langues
 my $languages = {
@@ -28,18 +33,22 @@ my $languages = {
 		'ru' => 'Russisch',
 	},
 	'zh' => {
-		'fr' => 'fra?',
+		'fr' => '\{\{-fra?-[\|\}]',
 	},
 	'ja' => {
 		'fr' => '(フランス語|\{\{fra?\}\})',
 		'ja' => '(日本語|\{\{(ja|jpn)\}\})',
 	},
 	'vi' => {
-		'fr' => 'fra',
-		'en' => 'eng',
-		'de' => 'deu',
-		'it' => 'ita',
-		'ru' => 'rus',
+		'fr' => '\{\{-fra-[\|\}]',
+		'en' => '\{\{-eng-[\|\}]',
+		'de' => '\{\{-deu-[\|\}]',
+		'it' => '\{\{-ita-[\|\}]',
+		'ru' => '\{\{-rus-[\|\}]',
+	},
+	'es' => {
+		'fr' => '\{\{FR-ES\|',
+		'es' => '\{\{ES\|',
 	},
 };
 
@@ -116,7 +125,7 @@ sub prepare_language_section
 		if ($languages->{$wiktlang}) {
 			my $code = $languages->{$wiktlang}->{$lang};
 			$code = $lang if not $code;
-			$lang_sec = '\{\{-'.$code.'-\}\}';
+			$lang_sec = $code;
 		} else {
 			$lang_sec = '\{\{-'.$lang.'-\}\}';
 		}
@@ -179,7 +188,7 @@ sub diff_lists
 			delete $red2->{$title};
 			$redscore++;
 		} else {
-			$art1_only->{$title} = 1;
+			$art1_only->{$title} = unisort_key($title);
 			delete $art1->{$title};
 		}
 	}
@@ -191,7 +200,7 @@ sub diff_lists
 			delete $red1->{$title};
 			$redscore++;
 		} else {
-			$art2_only->{$title} = 1;
+			$art2_only->{$title} = unisort_key($title);
 			delete $art2->{$title};
 		}
 	}
@@ -204,12 +213,10 @@ sub write_list
 {
 	my ($list, $file, $lang) = @_;
 	open(LISTE, ">$file") or die "Couldn't write $file: $!";
-	print LISTE '<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">'."\n";
-	foreach my $article (sort keys %$list) {
+	foreach my $article (sort { $list->{$a} cmp $list->{$b} } keys %$list) {
 		next if not $article;
-		print LISTE "# [[$article]] [[:$lang:$article|*]]\n";
+		print LISTE "$article\n";
 	}
-	print LISTE '</div>'."\n\n";
 	close(LISTE);
 }
 
