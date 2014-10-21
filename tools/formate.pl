@@ -15,7 +15,7 @@ sub usage
 	
 	This script formats a list in a wiki list or table.
 	
-	usage: $0 [-h] -f file
+	usage: $0 [-h] < file
 	
 	-h        : this (help) message
 	-L        : wiki list
@@ -24,6 +24,9 @@ sub usage
 	-t        : extract_table.pl db table (change from tabs to true csv)
 	
 	-l        : linkify list element (or the first element in a table)
+	-I <lang> : linkify + interlanguage link as *
+
+	-C        : Add div with columns style
 EOF
 	exit;
 }
@@ -32,33 +35,43 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hLNTlt', \%opt ) or usage();
+	getopts( 'hLNTlI:tC', \%opt ) or usage();
 	usage() if $opt{h};
 	usage("Format needed (-L|N|T|t)") unless $opt{L} xor $opt{N} xor $opt{T} xor $opt{t};
 }
 
 ##################################
 # Format subroutines
+sub wiki_link
+{
+	my ($article, $link, $lang) = @_;
+	if ($link) {
+		if ($lang) {
+			return "[[$article]] [[:$lang:$article|*]]";
+		}
+	}
+}
+
 sub wiki_list
 {
-	my $start_char = shift;
-	my $link = shift;
+	my ($start_char, $link, $lang) = @_;
 	
 	while(my $line = <STDIN>) {
 		chomp($line);
 		my @elts = split(/\t/, $line);
-		$elts[0] = "[[$elts[0]]]" if $elts[0] and $link;
+		$elts[0] = wiki_link($elts[0], $link, $lang);
 		print STDOUT "$start_char " . join("\t", @elts) . "\n";
 	}
 }
 
 sub wiki_table
 {
-	my $link = shift;
+	my ($link, $lang) = @_;
+
 	while(my $line = <STDIN>) {
 		chomp($line);
 		my @elts = split(/\t/, $line);
-		$elts[0] = "[[$elts[0]]]" if $elts[0] and $link;
+		$elts[0] = wiki_link($elts[0], $link, $lang);
 		print STDOUT "|-\n| " . join(' || ', @elts) . "\n";
 	}
 }
@@ -81,18 +94,20 @@ sub db_table_csv
 ##################################
 # MAIN
 init();
-
+print STDOUT '<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">' . "\n" if $opt{C};
 if ($opt{L}) {
-	wiki_list('*', $opt{l});
+	wiki_list('*', $opt{l}, $opt{I});
 } elsif ($opt{N}) {
-	wiki_list('#', $opt{l});
+	wiki_list('#', $opt{l}, $opt{I});
 } elsif ($opt{T}) {
-	wiki_table($opt{l});
+	wiki_table($opt{l}, $opt{I});
 } elsif ($opt{t}) {
-	db_table_csv($opt{l});
+	db_table_csv();
 } else {
 	print STDERR "No format given\n";
 }
+print STDOUT "</div>\n\n" if $opt{C};
 
 
 __END__
+
