@@ -17,6 +17,7 @@ use Exporter;
 	transcription
 	anagramme
 	unicode_NFKD
+	unisort_key
 );
 
 use strict;
@@ -102,6 +103,12 @@ sub ascii_strict
 # # 		print "non ascii strict: $mot\n";
 # 		return '';
 # 	}
+}
+
+sub unisort_key
+{
+	my ($word) = @_;
+	return lc(ascii($word)) . ' | ' . $word;
 }
 
 sub anagramme
