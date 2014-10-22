@@ -35,9 +35,8 @@ sub parse_dump
 	$article{'fulltitle'} = undef;
 	$article{'namespace'} = undef;
 	$article{'title'} = undef;
-	$article{'content'} = undef;
+	$article{'content'} = [];
 	$article{'redirect'} = undef;
-	$article{'namespace'} = undef;
 	$article{'contributors'} = {};
 	$article{'id'} = undef;
 	
@@ -155,7 +154,7 @@ sub _extract_namespace
 	my ($article) = @_;
 	return (undef, undef) unless defined($article->{'fulltitle'});
 	
-	my $ns = '';
+	my $ns = undef;
 	my $title = "$article->{'fulltitle'}";
 	if ($title =~ /^([^:]+?):(.+?)$/) {
 		$ns = $1;
