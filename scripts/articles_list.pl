@@ -3,6 +3,7 @@
 use strict;
 use warnings;
 use Getopt::Std;
+use Data::Dumper;
 
 # Need utf8 compatibility for input/outputs
 use utf8;
@@ -85,9 +86,6 @@ sub init()
 		open(ARTICLES, "> $opt{O}") or die "Couldn't write $opt{O}: $!\n";
 		close(ARTICLES);
 	}
-	
-	$opt{p} = correct_pattern($opt{p});
-	$opt{n} = correct_pattern($opt{n});
 }
 
 ##################################
@@ -106,13 +104,14 @@ sub prepare_authors_list
 	return \%auth;
 }
 
-# Correct the pattern so that it can match the special characters < and > in the text of the xml file
-sub correct_pattern
+# Correct the html to be able to match < > "
+sub rewrite_html
 {
 	my $p = shift;
 	if ($p) {
-		$p =~ s/</&lt;/;
-		$p =~ s/>/&gt;/;
+		$p =~ s/&lt;/</g;
+		$p =~ s/&gt;/>/g;
+		$p =~ s/&quot;/"/g;
 	}
 	return $p;
 }
@@ -134,7 +133,6 @@ sub get_articles_list
 	$|=1;
 	ARTICLE : while(my $article = parse_dump($dump_fh, $par)) {
 		$counts{'total articles'}++;
-		print STDERR "[$counts{'total articles'}] [$counts{'matched articles'}] $article->{'title'}                           \r" if $counts{'total articles'} %1000==0;
 		
 		# No article title?
 		next ARTICLE if (not defined($article->{'fulltitle'}));
@@ -155,9 +153,10 @@ sub get_articles_list
 				}
 			}
 		# No namespace given: skip if not in the main
-		} elsif ($article->{'namespace'} and not $p{'all_namespaces'}) {
+		} elsif (defined($article->{'namespace'}) and not $p{'all_namespaces'}) {
 			next ARTICLE;
 		}
+		print STDERR "[$counts{'total articles'}] [$counts{'matched articles'}] $article->{'fulltitle'}                           \r" if $counts{'total articles'} %1000==0;
 		
 		# TO IMPROVE
 		# Selected authors?
@@ -269,6 +268,7 @@ sub read_article
 	# Search for those patterns in the article
 	if ($p{'pat'} or $p{'nopat'}) {
 		foreach my $line (@$art_text) {
+			$line = rewrite_html($line);
 			$n++;
 			# Skip article if found a forbidden pattern
 			if ($opt{n} and $line =~ /($opt{n})/) {
