@@ -329,7 +329,7 @@ sub read_article
 		if ($p{'output_path'}) {
 			open(ARTICLES, ">> $p{'output_path'}") or die "Couldn't write $p{'output_path'}: $!\n";
 			
-			my @line = ("[[$article->{'fulltitle'}]]");
+			my @line = ($article->{'fulltitle'});
 			print ARTICLES join("\t", @line) . "\n";
 			close(ARTICLES);
 		}
