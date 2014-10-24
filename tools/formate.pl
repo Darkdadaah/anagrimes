@@ -25,6 +25,7 @@ sub usage
 	
 	-l        : linkify list element (or the first element in a table)
 	-I <lang> : linkify + interlanguage link as *
+	-F        : add formatnum: to any lone number in a tab other than the first one
 
 	-C        : Add div with columns style
 EOF
@@ -35,9 +36,9 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hLNTlI:tC', \%opt ) or usage();
+	getopts( 'hLNTlI:tCF', \%opt ) or usage();
 	usage() if $opt{h};
-	usage("Format needed (-L|N|T|t)") unless $opt{L} xor $opt{N} xor $opt{T} xor $opt{t};
+	usage("Format needed (-L|N|T|t|C)") unless ($opt{L} xor $opt{N} xor $opt{T} xor $opt{t}) or $opt{C};
 }
 
 ##################################
@@ -56,26 +57,41 @@ sub wiki_link
 	}
 }
 
+# Add formatnum to any number greater than 999
+sub formatnum
+{
+	my @list = @_;
+	
+	for (my $i=0; $i < @list; $i++) {
+		if ($list[$i] =~ /^\d{4,}$/) {
+			$list[$i] = "{{formatnum:$list[$i]}}";
+		}
+	}
+	return @list;
+}
+
 sub wiki_list
 {
-	my ($start_char, $link, $lang) = @_;
+	my ($start_char, $link, $lang, $formatnum) = @_;
 	
 	while(my $line = <STDIN>) {
 		chomp($line);
 		my @elts = split(/\t/, $line);
 		$elts[0] = wiki_link($elts[0], $link, $lang);
+		@elts = formatnum(@elts) if $formatnum;
 		print STDOUT "$start_char " . join("\t", @elts) . "\n";
 	}
 }
 
 sub wiki_table
 {
-	my ($link, $lang) = @_;
+	my ($link, $lang, $formatnum) = @_;
 
 	while(my $line = <STDIN>) {
 		chomp($line);
 		my @elts = split(/\t/, $line);
 		$elts[0] = wiki_link($elts[0], $link, $lang);
+		@elts = formatnum(@elts) if $formatnum;
 		print STDOUT "|-\n| " . join(' || ', @elts) . "\n";
 	}
 }
@@ -100,13 +116,17 @@ sub db_table_csv
 init();
 print STDOUT '<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">' . "\n" if $opt{C};
 if ($opt{L}) {
-	wiki_list('*', $opt{l}, $opt{I});
+	wiki_list('*', $opt{l}, $opt{I}, $opt{F});
 } elsif ($opt{N}) {
-	wiki_list('#', $opt{l}, $opt{I});
+	wiki_list('#', $opt{l}, $opt{I}, $opt{F});
 } elsif ($opt{T}) {
-	wiki_table($opt{l}, $opt{I});
+	wiki_table($opt{l}, $opt{I}, $opt{F});
 } elsif ($opt{t}) {
 	db_table_csv();
+} elsif ($opt{C}) {
+	while(my $line = <STDIN>) {
+		print STDOUT $line;
+	}
 } else {
 	print STDERR "No format given\n";
 }
