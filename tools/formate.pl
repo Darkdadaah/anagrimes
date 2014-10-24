@@ -48,7 +48,11 @@ sub wiki_link
 	if ($link) {
 		if ($lang) {
 			return "[[$article]] [[:$lang:$article|*]]";
+		} else {
+			return "[[$article]]";
 		}
+	} else {
+		return $article;
 	}
 }
 
