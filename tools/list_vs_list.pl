@@ -108,11 +108,11 @@ my $rt = get_words($opt{r}, $opt{L});
 }
 
 # Compare every word
-open(REF, $opt{t}) or die("$opt{t}: $!");
+open(TEST, $opt{t}) or die("$opt{t}: $!");
 open(OUT, ">$opt{o}") or die("Couldn't write $opt{o}: $!");
 my $nref=0;
 my $missing=0;
-while(<REF>) {
+while(<TEST>) {
         next if /^\s*$/;
         
         my $line = $_;
@@ -126,15 +126,15 @@ while(<REF>) {
         
         # Not in the reference?
         if (not $rt->{$key}) {
-                print OUT "$word\n";
+                print OUT "$line\n";
                 $missing++;
         } else {
-			delete $rt->{$key};
-		}
+		delete $rt->{$key};
+	}
         $nref++;
 }
 close(OUT);
-close(REF);
+close(TEST);
 
 {
 	print STDERR "$nref mots dans la liste test\n";
