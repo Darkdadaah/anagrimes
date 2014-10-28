@@ -46,6 +46,7 @@ sub init()
 sub wiki_link
 {
 	my ($article, $link, $lang) = @_;
+	return '' if not $article;
 	if ($link) {
 		if ($lang) {
 			return "[[$article]] [[:$lang:$article|*]]";
