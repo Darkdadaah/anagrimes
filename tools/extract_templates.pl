@@ -66,8 +66,7 @@ sub parse_articles
 			next;
 		} else {
 			# Fully parse the article
-			parse_article($article, $out_fh);
-			
+			parse_template2($article, $out_fh);
 		}
 	}
 	print STDERR "\n";
@@ -76,7 +75,7 @@ sub parse_articles
 
 ###################################
 # ARTICLES PARSER
-sub parse_article
+sub parse_template1
 {
 	my ($article, $out_fh) = @_;
 	
@@ -125,13 +124,13 @@ sub parse_article
 		}
 	}
 	
-	print_data($article->{'title'}, \%data, $out_fh);
+	print_data1($article->{'title'}, \%data, $out_fh);
 }
 
-sub print_data
+sub print_data1
 {
 	my ($title, $data, $out_fh) = @_;
-	my @elts = qw( type nom cat id lien glossaire);
+	my @elts = qw(nom cat id lien glossaire);
 	my @line = ();
 	foreach my $e (@elts) {
 		if ($data->{$e}) {
@@ -142,6 +141,54 @@ sub print_data
 	print $out_fh join(', ', @line);
 	print $out_fh " }\n";
 }
+
+sub parse_template2
+{
+	my ($article, $out_fh) = @_;
+	
+	# Extract data from the template
+	my %data = (
+		'type'	=> 'région',
+		'nom'	=> '',
+		'id'	=> '',
+		'cat'	=> '',
+	);
+	my $n = 0;
+	foreach my $line (@{ $article->{'content'} }) {
+		$n++;
+		chomp($line);
+		if ($line =~ /\{\{ *région *\| *([^\}]+?) *\| *\{.+\} *\| *([^\}]+?) *\| *nocat.+/) {
+			$data{'nom'} = $1;
+			$data{'cat'} = "% " . $2;
+		}
+		elsif ($line =~ /\{\{ *région *\| *([^\}]+?) *\| *\{.+\} *\| *nocat.+/) {
+			$data{'nom'} = $1;
+			$data{'cat'} = "% de " . $1;
+		}
+		elsif ($line =~ /\{\{ *région *\| *([^\}]+?) *\}\}/) {
+			$data{'nom'} = $1;
+			$data{'cat'} = "% de " . $1;
+		}
+	}
+	
+	print_data2($article->{'title'}, \%data, $out_fh);
+}
+
+sub print_data2
+{
+	my ($title, $data, $out_fh) = @_;
+	my @elts = qw(nom cat);
+	my @line = ();
+	foreach my $e (@elts) {
+		if ($data->{$e}) {
+			push @line, "$e = '$data->{$e}'";
+		}
+	}
+	print $out_fh "c['$title'] = { ";
+	print $out_fh join(', ', @line);
+	print $out_fh " }\n";
+}
+
 ###################
 # MAIN
 init();
