@@ -175,9 +175,9 @@ sub usage
 	-L <code> : language code to extract alone (2 or 3 letters) [optional]
 	-c <num>  : length of crossword searchable columns
 	
-	DB schema (at least -o is needed, and -c if defined):
-	-S <path> : print mysql SQL commands to create the corresponding tables of every file created
-	-s <path> : Same as -S but for sqlite3
+	DB schema (at least -o is needed, and -c if defined), files created in the -o path:
+	-S        : print mysql SQL commands to create the corresponding tables of every file created
+	-s        : Same as -S but for sqlite3
 EOF
 	exit;
 }
@@ -186,7 +186,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:L:l:c:S:s:', \%opt ) or usage();
+	getopts( 'hi:o:L:l:c:Ss', \%opt ) or usage();
 	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	
@@ -233,8 +233,9 @@ sub init_crossword_columns
 
 sub print_sql_schema
 {
-	my ($sql_path, $dbtype) = @_;
-	return if not $sql_path;
+	my ($path, $dbtype) = @_;
+	return if not $path;
+	my $sql_path = $path . '_schema_' . $dbtype . '.sql';
 	
 	open(my $SQL, ">$sql_path") or die("Couldn't write $sql_path");
 	
@@ -744,10 +745,10 @@ init();
 
 # Print the SQL schema
 if ($opt{S}) {
-	print_sql_schema($opt{S}, 'mysql');
+	print_sql_schema($opt{o}, 'mysql');
 }
 if ($opt{s}) {
-	print_sql_schema($opt{s}, 'sqlite');
+	print_sql_schema($opt{o}, 'sqlite');
 }
 
 if ($opt{i}) {
