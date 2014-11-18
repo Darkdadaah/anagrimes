@@ -198,12 +198,12 @@ sub init()
 	usage( "Output file path needed (-o)" ) if not $opt{o};
 	
 	# Prepare output file path
-	$opt{o} .= '.txt' if not $opt{o} =~ /\.[a-z0-9]+$/;
+	my $output = ($opt{o} =~ /\.[a-z0-9]+$/ ? $opt{o} : "$opt{o}.txt");
 	
 	# Prepare output files
 	foreach my $type (keys %output_files) {
 		# Name of the file for this type
-		$output_files{$type}{file} = $opt{o};
+		$output_files{$type}{file} = $output;
 		$output_files{$type}{file} =~ s/^(.+?)(\.[a-z0-9]+)$/$1_$type$2/;
 		
 		# Init the file (if we really write it)
@@ -499,7 +499,7 @@ sub parse_article
 		
 		# We want all languages: parse everything
 		} else {
-			foreach my $lang (keys %{$article_section->{language}}) {
+			foreach my $lang (sort keys %{$article_section->{language}}) {
 				my $lang_section = $article_section->{language}->{$lang};
 				
 				# No content? Something's not right
@@ -541,7 +541,7 @@ sub parse_language_sections
 	my %transc = ();	# Prepare to store every transcription found in the text as well
 	
 	# Look into every word type section
-	foreach my $type (@types) {
+	foreach my $type (sort @types) {
 		
 		# Additionnal informations for the word
 		my $type_nom = $lang_section->{'type'}->{$type}->{type};
