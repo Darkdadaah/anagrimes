@@ -4,6 +4,7 @@ use strict;
 use warnings;
 use Getopt::Std;
 use DBI;
+use Encode;
 
 our %opt;	# Getopt options
 
@@ -18,7 +19,10 @@ sub usage
 	
 	-h        : this (help) message
 	-d <path> : database path
+	
+	Type of analysis
 	-p <str>  : analyse pronunciations for the given language
+	-c <str>  : count letters for the given language
 EOF
 	exit;
 }
@@ -27,12 +31,21 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hd:p:', \%opt ) or usage();
+	getopts( 'hd:p:c:', \%opt ) or usage();
 	usage() if $opt{h};
 	usage("Database needed (-d)") unless $opt{d};
+	usage("Type of analysis needed") if not $opt{p} xor $opt{c};
 }
 
 sub get_articles
+{
+	my ($dbh, $lang) = @_;
+	
+	my $query = "SELECT DISTINCT(a_title) FROM articles JOIN lexemes ON a_artid=l_artid WHERE l_lang=?";
+	return $dbh->selectcol_arrayref($query, undef, $lang);
+}
+
+sub get_articles_prons
 {
 	my ($dbh, $lang) = @_;
 	
@@ -45,7 +58,7 @@ sub pronunciations
 	my ($dbh, $lang) = @_;
 	
 	# Get all articles with pronunciations
-	my $articles = get_articles($dbh, $lang);
+	my $articles = get_articles_pron($dbh, $lang);
 	my $n = @$articles;
 	print STDERR "$n articles with pronunciations in lang $lang\n";
 
@@ -125,6 +138,48 @@ sub pron_in_fr
 	return $p;
 }
 
+sub count_letters
+{
+	my ($dbh, $lang) = @_;
+	
+	# Get all articles titles
+	my $articles = get_articles($dbh, $lang);
+	my $n = @$articles;
+	print STDERR "$n articles in lang $lang\n";
+
+	# Count every letter (diacritics included)
+	my $letters = letters($articles, $lang);
+	my $nletters = keys %$letters;
+	print STDERR "$nletters different letters found\n";
+
+	# List all letters counts
+	print_letters($letters);
+}
+
+sub letters
+{
+	my ($articles) = @_;
+	my %letters = ();
+	
+	foreach my $word (@$articles) {
+		$word = decode('utf8', $word);
+		my @chars = split(//, $word);
+		foreach my $c (@chars) {
+			$letters{$c}++;
+		}
+	}
+	return \%letters;
+}
+
+sub print_letters
+{
+	my ($letters) = @_;
+	
+	foreach my $char (sort { $letters->{$b} <=> $letters->{$a} } keys %$letters) {
+		print STDOUT encode('utf8', $char) . "\t$letters->{$char}\n";
+	}
+}
+
 ##################################
 # MAIN
 init();
@@ -132,6 +187,9 @@ init();
 my $dbh = DBI->connect("dbi:SQLite:dbname=$opt{d}","","");
 if ($opt{p}) {
 	pronunciations($dbh, $opt{p});
+} elsif ($opt{c}) {
+	count_letters($dbh, $opt{c});
 }
 
 __END__
+
