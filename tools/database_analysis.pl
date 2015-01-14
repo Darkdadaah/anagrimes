@@ -23,6 +23,7 @@ sub usage
 	Type of analysis
 	-p <str>  : analyse pronunciations for the given language
 	-c <str>  : count letters for the given language
+	-I        : case insensitive (for counts)
 EOF
 	exit;
 }
@@ -31,7 +32,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hd:p:c:', \%opt ) or usage();
+	getopts( 'hd:p:c:I', \%opt ) or usage();
 	usage() if $opt{h};
 	usage("Database needed (-d)") unless $opt{d};
 	usage("Type of analysis needed") if not $opt{p} xor $opt{c};
@@ -140,7 +141,7 @@ sub pron_in_fr
 
 sub count_letters
 {
-	my ($dbh, $lang) = @_;
+	my ($dbh, $lang, $nocase) = @_;
 	
 	# Get all articles titles
 	my $articles = get_articles($dbh, $lang);
@@ -148,36 +149,71 @@ sub count_letters
 	print STDERR "$n articles in lang $lang\n";
 
 	# Count every letter (diacritics included)
-	my $letters = letters($articles, $lang);
-	my $nletters = keys %$letters;
-	print STDERR "$nletters different letters found\n";
-
+	my ($letters, $stats) = letters($articles, $nocase);
+	
 	# List all letters counts
-	print_letters($letters);
+	print_letters($letters, $stats, $lang);
 }
 
 sub letters
 {
-	my ($articles) = @_;
-	my %letters = ();
+	my ($articles, $nocase) = @_;
+	my %count = ();
+	my %stats = ();
 	
 	foreach my $word (@$articles) {
+		$stats{"words"}++;
 		$word = decode('utf8', $word);
 		my @chars = split(//, $word);
+		my %word_count = ();
 		foreach my $c (@chars) {
-			$letters{$c}++;
+			$c = lc($c) if $nocase;
+			$count{$c}{"letters"}++;
+			$word_count{$c}++;
+			$stats{"letters"}++;
+		}
+		
+		# Only count each letter once for each word
+		foreach my $c (keys %word_count) {
+			$count{$c}{"words"}++;
 		}
 	}
-	return \%letters;
+	return \%count, \%stats;
 }
 
 sub print_letters
 {
-	my ($letters) = @_;
+	my ($letters, $stats, $lang) = @_;
 	
-	foreach my $char (sort { $letters->{$b} <=> $letters->{$a} } keys %$letters) {
-		print STDOUT encode('utf8', $char) . "\t$letters->{$char}\n";
+	print STDOUT "#Language: $lang\n";
+	print "#Letters: $stats->{'letters'}\n";
+	print "#Words: $stats->{'words'}\n";
+	foreach my $char (sort { $letters->{$b}->{"letters"} <=> $letters->{$a}->{"letters"} } keys %$letters) {
+		my @line = (
+			formater(encode('utf8', $char)),
+			$letters->{$char}->{'letters'},
+			$letters->{$char}->{'words'},
+			sprintf("%.3f", $letters->{$char}->{'letters'} / $stats->{'letters'} * 100),
+			sprintf("%.3f", $letters->{$char}->{'words'} / $stats->{'words'} * 100),
+		);
+		print STDOUT join("\t", @line) . "\n";
 	}
+}
+
+sub formater
+{
+	my $char = shift;
+	
+	if ($char eq ' ') {
+		return "[espace]";
+	} elsif ($char eq '.') {
+		return "[point]";
+	} elsif ($char eq '/') {
+		return "[barre oblique]";
+	} elsif ($char eq ':') {
+		return "[deux-points]";
+	}
+	return $char;
 }
 
 ##################################
@@ -188,7 +224,7 @@ my $dbh = DBI->connect("dbi:SQLite:dbname=$opt{d}","","");
 if ($opt{p}) {
 	pronunciations($dbh, $opt{p});
 } elsif ($opt{c}) {
-	count_letters($dbh, $opt{c});
+	count_letters($dbh, $opt{c}, $opt{I});
 }
 
 __END__
