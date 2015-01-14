@@ -47,6 +47,7 @@ sub wiki_link
 {
 	my ($article, $link, $lang) = @_;
 	return '' if not $article;
+	return $article if $article =~ /[\[\]]/;
 	if ($link) {
 		if ($lang) {
 			return "[[$article]] [[:$lang:$article|*]]";
@@ -76,6 +77,10 @@ sub wiki_list
 	my ($start_char, $link, $lang, $formatnum) = @_;
 	
 	while(my $line = <STDIN>) {
+		if ($line =~ /^#/) {
+			print STDOUT $line;
+			next;
+		}
 		chomp($line);
 		my @elts = split(/\t/, $line);
 		$elts[0] = wiki_link($elts[0], $link, $lang);
@@ -89,6 +94,10 @@ sub wiki_table
 	my ($link, $lang, $formatnum) = @_;
 
 	while(my $line = <STDIN>) {
+		if ($line =~ /^#/) {
+			print STDOUT $line;
+			next;
+		}
 		chomp($line);
 		my @elts = split(/\t/, $line);
 		$elts[0] = wiki_link($elts[0], $link, $lang);
@@ -100,6 +109,10 @@ sub wiki_table
 sub db_table_csv
 {
 	while(my $line = <STDIN>) {
+		if ($line =~ /^#/) {
+			print STDOUT $line;
+			next;
+		}
 		chomp($line);
 		my @elts = split(/\t/, $line);
 		for (my $i = 0; $i < @elts; $i++) {
