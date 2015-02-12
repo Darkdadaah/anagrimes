@@ -551,10 +551,8 @@ sub parse_language_sections
 		next if $type eq 'erreur';	# Not interested in error sections
 		
 		#  Special, name of inhabitants should be marked to be avoidable in searches as there is *a lot*
-		my $gent = 0;
-		if ($type_nom eq 'nom' or $type_nom eq 'adj') {
-			$gent = is_gentile($lang_section->{'type'}->{$type}->{lines});
-		}
+		my $gent = is_gentile($lang_section->{'type'}->{$type}->{lines}, $type_nom);
+		
 		# Fing genera
 		my $genre = cherche_genre($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type_nom);
 		

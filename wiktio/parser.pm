@@ -560,16 +560,26 @@ sub printType
 
 sub is_gentile
 {
-	my ($lines) = @_;
+	my ($lines, $type) = @_;
 	my $gent = 0;
+	return 0 if $type ne 'nom' and $type ne 'adj';
 	
 	foreach my $line (@$lines) {
-		if ($line =~ /\{\{note-gentilé/ or $line =~ /# ?\[?\[?Habitant\]?\]? (de|du|d'|d’)/ or $line =~ /# Relatif (à|au) .+?, (commune|ville|village|région|pays|continent)/ or $line =~ /# (Relatif à la|Relatif au|Qui concerne) [A-ZÉÈ].+? ses habitants/) {
+		if ($line =~ /\{\{note-gentilé/ or
+			($type eq 'nom' and (
+				$line =~ /# *(\[\[habitant\|)?Habitant(\]\]) (de|du|d'|d’)/ or
+				$line =~ /# *(Personne|Membre) du peuple (de|du|d'|d’)/ or
+				$line =~ /# *(\[\[peuple\|)?Peuple\]?\]?/
+				)) or
+			($type eq 'adj' and (
+				$line =~ /# *Relatif (à|au) .+?, (commune|ville|village|région|pays|continent)/ or
+				$line =~ /# *(Relatif à la|Relatif au|Qui concerne) [A-ZÉÈ].+? ses habitants/
+				))
+			) {
 			$gent = 1;
 			last;
 		}
-	}
-	
+	}	
 	return $gent;
 }
 
