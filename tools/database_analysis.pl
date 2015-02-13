@@ -17,12 +17,10 @@ my $conditions = << "REQ";
 	NOT l_type="nom-sciences" AND
 	NOT l_type="nom-pr" AND
 	NOT l_type="nom-fam" AND
-	NOT l_type="prenom"
+	NOT l_type="prenom" AND
+	NOT l_is_flexion AND
+	NOT l_is_gentile
 REQ
-# AND
-#	NOT l_is_flexion AND
-#	NOT l_is_gentile
-#REQ
 
 #################################################
 # Message about this program and how to use it
@@ -181,6 +179,7 @@ sub simplest
 	$m =~ s/ɛ/e/g;
 	$m =~ s/ʁ/r/g;
 	$m =~ s/ɡ/g/g;
+	$m =~ s/j/i/g;
 	$m =~ s/(.)\1/$1/g;
 	return $m;
 }
@@ -202,8 +201,7 @@ sub pron_in_fr
 	if ($w =~ /\b([A-Z\.,;!\(\)+\-]|−)+\b/ or $w =~ /[0-9]/) {
 		return '';
 	}
-	my $p = lc($w);
-	$p = clean_pron($w);
+	my $p = clean_pron(lc($w));
 	
 	my $voy = "[eaoAiIuUY]";
 	$voy .= "|" . "ɛ|ɛ̃|É|È|œ|œ̃|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø";
@@ -218,6 +216,7 @@ sub pron_in_fr
 	# Mots
 	$p =~ s/\b([ldms])es\b/$1ɛ\b/g;
 	$p =~ s/\b([ldms])e\b/$1ə/g;
+	$p =~ s/\bet\b/É/g;
 	$p =~ s/\buns?\b/œ̃/g;
 	
 	# Terminaisons courantes
@@ -229,10 +228,11 @@ sub pron_in_fr
 		$p =~ s/tions?\b/SJɔ̃/g;
 	}
 	$p =~ s/er\b/É/g;
+	$p =~ s/ert\b/ɛʁ/g;
 	$p =~ s/(ots?|e?aux?)\b/O/g;
 	$p =~ s/ements?\b/əmɑ̃/g;
 	$p =~ s/ments?\b/mɑ̃/g;
-	$p =~ s/ants?\b/ɑ̃/g;
+	$p =~ s/an[tc]s?\b/ɑ̃/g;
 	$p =~ s/antes?\b/ɑ̃t/g;
 	$p =~ s/ient?s?\b/Jɛ̃/g;
 	$p =~ s/ets?$e/ɛ$1/g;
@@ -246,6 +246,7 @@ sub pron_in_fr
 	$p =~ s/eux\b/ø/g;
 	$p =~ s/ails?\b/ɑJ/g;
 	$p =~ s/eds?\b/É/g;
+	$p =~ s/($cons)els?\b/ɛl/g;
 
 	$p =~ s/tionn/SJɔn/g;
 	$p =~ s/euse/øz/g;
@@ -259,7 +260,6 @@ sub pron_in_fr
 	$p =~ s/ê|è/ɛ/g;
 	$p =~ s/é/É/g;
 
-	$p =~ s/([trdp])\1/$1/g;
 	
 	# 1 Voyelles
 	$p =~ s/($voy)s($voy)/$1z$2/g;	# se -> ze
@@ -304,14 +304,14 @@ sub pron_in_fr
 	$p =~ s/e($cons)\1/ɛ$1$1/g;
 	$p =~ s/e([x])/ɛ$1/g;
 	$p =~ s/ai/ɛ/g;
-	$p =~ s/i(ɛ|ɛ̃|É|[aou])/J$1/g;
+	$p =~ s/i(ɛ|ɛ̃|É|ɑ̃|ɔ|ɔ̃|ø|œ|[aou])/J$1/g;
 	
 	# Consonnes
 	$p =~ s/($voy)sh?($voy)/$1z$2/g;
+	$p =~ s/cc([aoUuy]|ɔ|ɔ̃)/k$1/g;
 	$p =~ s/($voy)cc($ei)/$1ks$2/g;
-	$p =~ s/cc/k/g;
-	$p =~ s/cc([aoUiuy]|ɔ)/k$1/g;
 	$p =~ s/cc($ei)/ks$1/g;
+	$p =~ s/cc/k/g;
 	$p =~ s/c([lraouU]|ɔ)/k$1/g;
 	$p =~ s/c($ei|J)/s$1/g;
 	$p =~ s/(sc|c|s)h/ʃ/g;
@@ -327,6 +327,7 @@ sub pron_in_fr
 	
 	# Doubles
 	$p =~ s/($cons)\1/$1/g;
+	#$p =~ s/([trdp])\1/$1/g;
 	#$p =~ s/($voy)\1/$1/g;
 	
 	# Derniers
