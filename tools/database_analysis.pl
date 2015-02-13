@@ -184,6 +184,7 @@ sub simplest
 	$m =~ s/ɡ/g/g;
 	$m =~ s/j/i/g;
 	$m =~ s/ø/œ/g;
+	$m =~ s/[\(\)]//g;
 	$m =~ s/(.)\1/$1/g;
 	return $m;
 }
@@ -218,7 +219,8 @@ sub pron_in_fr
 	my $e = '(\s|$)';
 	
 	# Mots
-	$p =~ s/\b([ldms])es\b/$1ɛ\b/g;
+	$p =~ s/\b([ldms])es ($voy)/$1ɛz$2/g;
+	$p =~ s/\b([ldms])es\b/$1ɛ/g;
 	$p =~ s/\b([ldms])e\b/$1ə/g;
 	$p =~ s/\bet\b/É/g;
 	$p =~ s/\buns?\b/œ̃/g;
@@ -231,38 +233,43 @@ sub pron_in_fr
 	} else {
 		$p =~ s/tions?\b/SJɔ̃/g;
 	}
-	$p =~ s/er\b/É/g;
+	$p =~ s/er$e/É$1/g;
 	$p =~ s/ex\b/ɛks/g;
 	$p =~ s/ert\b/ɛʁ/g;
-	$p =~ s/(ots?|e?aux?)\b/O/g;
-	$p =~ s/ements?\b/əmɑ̃/g;
-	$p =~ s/ments?\b/mɑ̃/g;
-	$p =~ s/an[tc]s?\b/ɑ̃/g;
-	$p =~ s/antes?\b/ɑ̃t/g;
-	$p =~ s/ient?s?\b/Jɛ̃/g;
+	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
+	$p =~ s/ements?$e/əmɑ̃$1/g;
+	$p =~ s/ments?$e/mɑ̃$1/g;
+	$p =~ s/an[tc]s?$e/ɑ̃$1/g;
+	$p =~ s/antes?$e/ɑ̃t$1/g;
+	$p =~ s/ient?s?$e/Jɛ̃$1/g;
 	$p =~ s/ets?$e/ɛ$1/g;
-	$p =~ s/ettes?\b/ɛT/g;
-	$p =~ s/ès\b/ɛS/g;
-	$p =~ s/iers?\b/JÉ/g;
+	$p =~ s/ettes?$e/ɛT$1/g;
+	$p =~ s/ès$e/ɛS$1/g;
+	$p =~ s/iers?$e/JÉ$1/g;
 	$p =~ s/ompt/ɔ̃t/g;
 	$p =~ s/amps/ɑ̃/g;
-	$p =~ s/on[dt]s?\b/ɔ̃/g;
-	$p =~ s/oses?\b/oz/g;
-	$p =~ s/eux\b/ø/g;
-	$p =~ s/ails?\b/ɑJ/g;
+	$p =~ s/on[dt]s?$e/ɔ̃$1/g;
+	$p =~ s/oses?$e/oz$1/g;
+	$p =~ s/eux$e/ø$1/g;
+	$p =~ s/ails?$e/ɑJ$1/g;
 	$p =~ s/ards?$e/ɑʁ$1/g;
-	$p =~ s/eds?\b/É/g;
-	$p =~ s/($cons)els?\b/ɛl/g;
+	$p =~ s/eds?$e/É$1/g;
+	$p =~ s/($cons)els?$e/$1ɛl$2/g;
 
 	$p =~ s/tionn/SJɔn/g;
 	$p =~ s/euse/øz/g;
+	$p =~ s/vingt/vɛ̃t/g;
+	$p =~ s/alcool/alkol/g;
 	
 	# Préfixes courants
-	$p =~ s/\bantis/ɑ̃TIS/g;
-	$p =~ s/\bauto/OTO /g;
+	$p =~ s/${s}antis/$1ɑ̃TIS/g;
+	$p =~ s/${s}auto/$1OTO /g;
+	$p =~ s/${s}hyper/$1Ipɛʁ/g;
+	$p =~ s/${s}super/$1sYpɛʁ/g;
 	
-	$p =~ s/[sx](\s|$)//g;
-	$p =~ s/($voy)[pdt]\b/$1/g;
+	
+	$p =~ s/[sx]$e/$1/g;
+	$p =~ s/($voy)[pdt]$e/$1$2/g;
 	$p =~ s/ç/S/g;
 	$p =~ s/î|ï/I/g;
 	$p =~ s/ô/O/g;
@@ -309,7 +316,7 @@ sub pron_in_fr
 	$p =~ s/[ae][nm]($cons)/ɑ̃$1/g;
 	$p =~ s/[ae]n(($cons)?)/ɑ̃$1/g;
 	$p =~ s/(\b|$cons)(i?)(ain|en|in)h?(\b|$cons)/$1$2ɛ̃$4/g;
-	$p =~ s/\b(ain|en|in)($cons)/ɛ̃$2/g;
+	$p =~ s/$s(?:ain|en|in)($cons)/$1ɛ̃$2/g;
 	#$p =~ s/(\b|$cons)(i?)(an)(\b|$cons)/$1$2ɑ̃$4/g;
 	$p =~ s/e([t])/ə$1/g;
 	$p =~ s/e(($cons){2})/ɛ$1/g;
