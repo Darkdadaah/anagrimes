@@ -83,9 +83,11 @@ sub pronunciations
 	print STDERR "$n articles with pronunciations in lang $lang\n";
 
 	# Compute expected pronunciation based on the language
-	my $same = expected_pronunciation($articles, $lang);
+	my ($same, $sameish) = expected_pronunciation($articles, $lang);
 	my $nsame = @$same;
-	print STDERR "$nsame articles with expected pronunciation " . sprintf("(%.2f %%)\n", $nsame/$n*100);
+	my $nsameish = @$sameish;
+	print STDERR "$nsame articles with precisely expected pronunciation " . sprintf("(%.2f %%)\n", $nsame/$n*100);
+	print STDERR "$nsameish articles with approximate expected pronunciation " . sprintf("(%.2f %%)\n", $nsameish/$n*100);
 
 	# List all words where the pronunciation is different from expected
 }
@@ -95,10 +97,13 @@ sub expected_pronunciation
 	my ($articles, $lang) = @_;
 	
 	my @same = ();
+	my @sameish = ();
 	foreach my $a (@$articles) {
-		push @same, $a if check_pronunciation($a, $lang);
+		my ($is_same, $is_sameish) = check_pronunciation($a, $lang);
+		push @same, $a if $is_same;
+		push @sameish, $a if $is_sameish;
 	}
-	return \@same;
+	return \@same, \@sameish;
 }
 
 sub check_pronunciation
@@ -110,22 +115,20 @@ sub check_pronunciation
 		my $pron = pron_in_fr($art);
 		
 		if ($pron) {
-			my $diff = different($art->{p_pron}, $pron);
-			my $diffest = very_different($art->{p_pron}, $pron);
+			my $same = not different($art->{p_pron}, $pron);
+			my $sameish = not very_different($art->{p_pron}, $pron);
 			my $diffs = '';
-			if ($diff) {
-				if ($diffest) {
-					$diffs = 'nope';
-				} else {
-					$diffs = 'OK?';
-				}
-			} else {
+			if ($same) {
 				$diffs = 'OK';
+			} elsif ($sameish) {
+				$diffs = 'OK?';
+			} else {
+				$diffs = 'nope';
 			}
 			print STDOUT "$diffs\t$art->{'a_title'}\t'$pron'\t'".clean_pron($art->{p_pron})."'\n";
-			return not $diff;
+			return ($same, $sameish);
 		} else {
-			return 0;
+			return 0, 0;
 		}
 	}
 	return 1;
@@ -180,6 +183,7 @@ sub simplest
 	$m =~ s/ʁ/r/g;
 	$m =~ s/ɡ/g/g;
 	$m =~ s/j/i/g;
+	$m =~ s/ø/œ/g;
 	$m =~ s/(.)\1/$1/g;
 	return $m;
 }
@@ -206,7 +210,7 @@ sub pron_in_fr
 	my $voy = "[eaoAiIuUY]";
 	$voy .= "|" . "ɛ|ɛ̃|É|È|œ|œ̃|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø";
 	$voy .= "|" . decode('utf8',"ɛ|ɛ̃|É|È|œ|œ̃|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø");
-	my $cons = "[cbdfgGklmnpqrRsStTvz]";
+	my $cons = "[cbdfgjGklmnpqrRsStTvz]";
 	$cons .= "|" . decode('utf8', "ɡ|ʒ|ʁ|ʃ");
 	my $ei = decode("utf8", "i|É|ə|œ");
 	$ei .= "|e|i|É|ə|œ";
@@ -253,7 +257,9 @@ sub pron_in_fr
 	$p =~ s/tionn/SJɔn/g;
 	$p =~ s/euse/øz/g;
 	
+	# Préfixes courants
 	$p =~ s/\bantis/ɑ̃TIS/g;
+	$p =~ s/\bauto/OTO /g;
 	
 	$p =~ s/[sx](\s|$)//g;
 	$p =~ s/($voy)[pdt]\b/$1/g;
@@ -265,7 +271,6 @@ sub pron_in_fr
 	$p =~ s/ê|è/ɛ/g;
 	$p =~ s/é/É/g;
 
-	
 	# 1 Voyelles
 	$p =~ s/($voy)s($voy)/$1z$2/g;	# se -> ze
 	$p =~ s/oy($voy)/waJ$1/g;
@@ -300,6 +305,7 @@ sub pron_in_fr
 	$p =~ s/en($voy)/ən$1/g;
 	$p =~ s/an($voy)/An$1/g;
 	$p =~ s/mn/MN/g;
+	$p =~ s/amm/AM/g;
 	$p =~ s/[ae][nm]($cons)/ɑ̃$1/g;
 	$p =~ s/[ae]n(($cons)?)/ɑ̃$1/g;
 	$p =~ s/(\b|$cons)(i?)(ain|en|in)h?(\b|$cons)/$1$2ɛ̃$4/g;
