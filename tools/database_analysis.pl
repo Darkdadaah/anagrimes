@@ -18,9 +18,9 @@ my $conditions = << "REQ";
 	NOT l_type="nom-pr" AND
 	NOT l_type="nom-fam" AND
 	NOT l_type="prenom" AND
-	NOT l_is_flexion AND
 	NOT l_is_gentile AND
-	NOT l_is_locution
+	NOT l_is_locution AND
+	NOT l_is_flexion
 REQ
 
 #################################################
@@ -247,6 +247,7 @@ sub pron_in_fr
 	$p =~ s/ient?s?$e/Jɛ̃$1/g;
 	$p =~ s/ets?$e/ɛ$1/g;
 	$p =~ s/ettes?$e/ɛT$1/g;
+	$p =~ s/els?$e/ɛl$1/g;
 	$p =~ s/ès$e/ɛ$1/g;
 	$p =~ s/iers?$e/JÉ$1/g;
 	$p =~ s/ompt/ɔ̃t/g;
@@ -279,8 +280,15 @@ sub pron_in_fr
 	$p =~ s/${s}hyper/$1Ipɛʁ/g;
 	$p =~ s/${s}super/$1sYpɛʁ/g;
 	$p =~ s/${s}asthm/$1asm/g;
-	$p =~ s/${s}ens/$1ɑ̃S/g;
+	$p =~ s/bienn/bJɛn/g;
+	$p =~ s/bien/bJɛ̃ /g;
+	$p =~ s/ens/ɑ̃S/g;
+	$p =~ s/${s}ex($voy)/$1ɛgz$2/g;
 	
+	$p =~ s/esse?s?$e/ɛS$1/g;
+	$p =~ s/sse?s?$e/S$1/g;
+	$p =~ s/ette?s?$e/ɛT$1/g;
+	$p =~ s/tte?s?$e/T$1/g;
 	$p =~ s/[sx]$e/$1/g;
 	$p =~ s/($voy)[pdt]$e/$1$2/g;
 	$p =~ s/ç/S/g;
