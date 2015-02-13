@@ -19,7 +19,8 @@ my $conditions = << "REQ";
 	NOT l_type="nom-fam" AND
 	NOT l_type="prenom" AND
 	NOT l_is_flexion AND
-	NOT l_is_gentile
+	NOT l_is_gentile AND
+	NOT l_is_locution
 REQ
 
 #################################################
@@ -167,7 +168,7 @@ sub simple
 {
 	my ($m) = @_;
 	
-	$m =~ s/([\s\.‿  ])+//g;
+	$m =~ s/([\s\.‿ ː ])+//g;
 	$m =~ s/ə//g;
 	return $m;
 }
@@ -180,9 +181,11 @@ sub simplest
 	$m =~ s/ɑ/a/g;
 	$m =~ s/ɔ/o/g;
 	$m =~ s/ɛ/e/g;
+	$m =~ s/ǝ/ə/g;
 	$m =~ s/ʁ/r/g;
 	$m =~ s/ɡ/g/g;
 	$m =~ s/j/i/g;
+	$m =~ s/ɥ/y/g;
 	$m =~ s/ø/œ/g;
 	$m =~ s/[\(\)]//g;
 	$m =~ s/(.)\1/$1/g;
@@ -208,15 +211,15 @@ sub pron_in_fr
 	}
 	my $p = clean_pron(lc($w));
 	
-	my $voy = "[eaoAiIuUY]";
+	my $voy = "[aAieEIoOuUyY]";
 	$voy .= "|" . "ɛ|ɛ̃|É|È|œ|œ̃|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø";
 	$voy .= "|" . decode('utf8',"ɛ|ɛ̃|É|È|œ|œ̃|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø");
 	my $cons = "[cbdfgjGklmnpqrRsStTvz]";
-	$cons .= "|" . decode('utf8', "ɡ|ʒ|ʁ|ʃ");
+	$cons .= "|" . decode('utf8', "ɡ|ʒ|ʁ|ʃ|ɲ");
 	my $ei = decode("utf8", "i|É|ə|œ");
 	$ei .= "|e|i|É|ə|œ";
-	my $s = '(\s|^)';
-	my $e = '(\s|$)';
+	my $s = '(\s|^|-)';
+	my $e = '(\s|$|-)';
 	
 	# Mots
 	$p =~ s/\b([ldms])es ($voy)/$1ɛz$2/g;
@@ -244,29 +247,39 @@ sub pron_in_fr
 	$p =~ s/ient?s?$e/Jɛ̃$1/g;
 	$p =~ s/ets?$e/ɛ$1/g;
 	$p =~ s/ettes?$e/ɛT$1/g;
-	$p =~ s/ès$e/ɛS$1/g;
+	$p =~ s/ès$e/ɛ$1/g;
 	$p =~ s/iers?$e/JÉ$1/g;
 	$p =~ s/ompt/ɔ̃t/g;
 	$p =~ s/amps/ɑ̃/g;
+	$p =~ s/scr/Skʁ/g;
+	$p =~ s/ons[sc]?/ɔ̃S/g;
 	$p =~ s/on[dt]s?$e/ɔ̃$1/g;
 	$p =~ s/oses?$e/oz$1/g;
 	$p =~ s/eux$e/ø$1/g;
 	$p =~ s/ails?$e/ɑJ$1/g;
 	$p =~ s/ards?$e/ɑʁ$1/g;
+	$p =~ s/ault$e/o$1/g;
 	$p =~ s/eds?$e/É$1/g;
+	$p =~ s/([^oae])ums?$e/$1ɔm$2/g;
 	$p =~ s/($cons)els?$e/$1ɛl$2/g;
 
+	$p =~ s/ss?ex/Sɛks/g;
+	$p =~ s/stion/STJon/g;
 	$p =~ s/tionn/SJɔn/g;
 	$p =~ s/euse/øz/g;
 	$p =~ s/vingt/vɛ̃t/g;
 	$p =~ s/alcool/alkol/g;
+	$p =~ s/(.)gn/$1ɲ/g;
+	$p =~ s/acqui/aki/g;
 	
 	# Préfixes courants
 	$p =~ s/${s}antis/$1ɑ̃TIS/g;
+	$p =~ s/${s}aqua/$1akwa/g;
 	$p =~ s/${s}auto/$1OTO /g;
 	$p =~ s/${s}hyper/$1Ipɛʁ/g;
 	$p =~ s/${s}super/$1sYpɛʁ/g;
-	
+	$p =~ s/${s}asthm/$1asm/g;
+	$p =~ s/${s}ens/$1ɑ̃S/g;
 	
 	$p =~ s/[sx]$e/$1/g;
 	$p =~ s/($voy)[pdt]$e/$1$2/g;
@@ -274,6 +287,7 @@ sub pron_in_fr
 	$p =~ s/î|ï/I/g;
 	$p =~ s/ô/O/g;
 	$p =~ s/oû/U/g;
+	$p =~ s/û/Y/g;
 	$p =~ s/à|â/ɑ/g;
 	$p =~ s/ê|è/ɛ/g;
 	$p =~ s/é/É/g;
@@ -289,7 +303,7 @@ sub pron_in_fr
 	$p =~ s/aill/ɑJ/gi;
 	$p =~ s/euill?e?/ŒJ/g;
 	$p =~ s/ueill?e?/ŒJ/g;
-	$p =~ s/(œ|oe)il/ŒJ/g;
+	$p =~ s/(œ|oe)il+/ŒJ/g;
 	$p =~ s/œ/É/g;
 	$p =~ s/eill?e?/ɛJ/g;
 	$p =~ s/vill/vil/g;
@@ -313,16 +327,20 @@ sub pron_in_fr
 	$p =~ s/an($voy)/An$1/g;
 	$p =~ s/mn/MN/g;
 	$p =~ s/amm/AM/g;
+	$p =~ s/imm/IM/g;
+	$p =~ s/($voy)n($voy)/$1N$2/g;
 	$p =~ s/[ae][nm]($cons)/ɑ̃$1/g;
 	$p =~ s/[ae]n(($cons)?)/ɑ̃$1/g;
+	$p =~ s/${s}a?in($cons)/$1ɛ̃$2/g;
+	#$p =~ s/($cons)a?ins?$e/ɛ̃$1$2/g;
 	$p =~ s/(\b|$cons)(i?)(ain|en|in)h?(\b|$cons)/$1$2ɛ̃$4/g;
-	$p =~ s/$s(?:ain|en|in)($cons)/$1ɛ̃$2/g;
+	$p =~ s/$s(?:ain|en|[iy][nm])($cons)/$1ɛ̃$2/g;
 	#$p =~ s/(\b|$cons)(i?)(an)(\b|$cons)/$1$2ɑ̃$4/g;
 	$p =~ s/e([t])/ə$1/g;
 	$p =~ s/e(($cons){2})/ɛ$1/g;
 	$p =~ s/e($cons)\1/ɛ$1$1/g;
 	$p =~ s/e([x])/ɛ$1/g;
-	$p =~ s/ai/ɛ/g;
+	$p =~ s/[ae]i/ɛ/g;
 	$p =~ s/i(ɛ|ɛ̃|É|ɑ̃|ɔ|ɔ̃|ø|œ|[aou])/J$1/g;
 	
 	# Consonnes
@@ -351,9 +369,11 @@ sub pron_in_fr
 	#$p =~ s/($voy)\1/$1/g;
 	
 	# Derniers
+	$p =~ s/(ɲ)[Jj]/$1/g;
 	$p =~ s/ant?s?\b/ɑ̃/g;
 	$p =~ s/u/Y/g;
-	$p =~ s/Y[iI]/ɥi/g;
+	$p =~ s/Y([iIa]|É)/ɥ$1/g;
+	$p =~ s/q/k/g;
 	$p =~ s/($voy)[ts]\b/$1/g;
 	$p =~ s/([^\b]{2})e /$1 /g;
 	$p =~ s/e\b//g;	# e muet
