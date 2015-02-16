@@ -220,6 +220,8 @@ sub pron_in_fr
 	$cons .= "|" . decode('utf8', "ɡ|ʒ|ʁ|ʃ|ɲ");
 	my $ei = decode("utf8", "i|É|ə|œ");
 	$ei .= "|e|i|É|ə|œ";
+	my $aou = "[aoUY]";
+	$aou .= "|" . "ɔ|ɔ̃|ɑ|ɑ̃|ø";
 	my $s = '(\s|^|-)';
 	my $e = '(\s|$|-)';
 	
@@ -247,10 +249,12 @@ sub pron_in_fr
 	$p =~ s/ex\b/ɛks/g;
 	$p =~ s/ert\b/ɛʁ/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
+	$p =~ s/gemments?$e/ʒamɑ̃$1/g;
+	$p =~ s/emments?$e/amɑ̃$1/g;
 	$p =~ s/ements?$e/əmɑ̃$1/g;
 	$p =~ s/ments?$e/mɑ̃$1/g;
 	$p =~ s/an[tc]s?$e/ɑ̃$1/g;
-	$p =~ s/antes?$e/ɑ̃t$1/g;
+	$p =~ s/antes?$e/ɑ̃T$1/g;
 	$p =~ s/ient?s?$e/Jɛ̃$1/g;
 	$p =~ s/ets?$e/ɛ$1/g;
 	$p =~ s/ettes?$e/ɛT$1/g;
@@ -272,6 +276,9 @@ sub pron_in_fr
 	$p =~ s/([^oae])ums?$e/$1ɔm$2/g;
 	$p =~ s/($cons)els?$e/$1ɛl$2/g;
 
+	$p =~ s/gen([tc])/ʒɑ̃$1/g;
+	$p =~ s/ca/ka/g;
+	$p =~ s/genou/ʒənu/g;
 	$p =~ s/ss?ex/Sɛks/g;
 	$p =~ s/stion/STJon/g;
 	$p =~ s/tionn/SJɔn/g;
@@ -280,6 +287,7 @@ sub pron_in_fr
 	$p =~ s/alcool/alkol/g;
 	$p =~ s/(.)gn/$1ɲ/g;
 	$p =~ s/acqui/aki/g;
+	$p =~ s/qui/ki/g;
 	
 	# Préfixes courants
 	$p =~ s/${s}antis/$1ɑ̃TIS/g;
@@ -354,7 +362,8 @@ sub pron_in_fr
 	$p =~ s/[ae][nm]($cons)/ɑ̃$1/g;
 	$p =~ s/[ae]n(($cons)?)/ɑ̃$1/g;
 	$p =~ s/${s}a?in($cons)/$1ɛ̃$2/g;
-	#$p =~ s/($cons)a?ins?$e/ɛ̃$1$2/g;
+	$p =~ s/($cons)a?in($cons)/$1ɛ̃$2/g;
+	$p =~ s/($cons)a?in$e/$1ɛ̃$2/g;
 	$p =~ s/(\b|$cons)(i?)(ain|en|in)h?(\b|$cons)/$1$2ɛ̃$4/g;
 	$p =~ s/$s(?:ain|en|[iy][nm])($cons)/$1ɛ̃$2/g;
 	#$p =~ s/(\b|$cons)(i?)(an)(\b|$cons)/$1$2ɑ̃$4/g;
@@ -377,7 +386,7 @@ sub pron_in_fr
 	$p =~ s/c/k/g;
 	$p =~ s/ph/f/g;
 	$p =~ s/gn($voy)/ɲ$1/g;
-	$p =~ s/g([aoUY]|ɔ)/G$1/g;
+	$p =~ s/g($aou)/G$1/g;
 	$p =~ s/g($ei)/ʒ$1/g;
 	$p =~ s/j|ge$/ʒ/g;
 	$p =~ s/qu($voy)/k$1/g;
