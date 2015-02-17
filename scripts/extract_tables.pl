@@ -16,7 +16,7 @@ use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
-use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile section_meanings cherche_genre);
+use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile is_sigle section_meanings cherche_genre);
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
@@ -53,6 +53,7 @@ our %output_files = (
 		'l_is_flexion' => 'int',
 		'l_is_locution' => 'int',
 		'l_is_gentile' => 'int',
+		'l_sigle' => 'text',
 		'l_rand' => 'int',
 		},
 		'constraints' => []
@@ -123,6 +124,7 @@ our %indexes = (
 		'l_is_flexion' => 'l_is_flexion',
 		'l_is_locution' => 'l_is_locution',
 		'l_is_gentile' => 'l_is_gentile',
+		'l_sigle' => 'l_sigle(2)',
 		'l_rand' => 'l_rand',
 	},
 	'prons' => {
@@ -553,6 +555,9 @@ sub parse_language_sections
 		#  Special, name of inhabitants should be marked to be avoidable in searches as there is *a lot*
 		my $gent = is_gentile($lang_section->{'type'}->{$type}->{lines}, $type_nom);
 		
+		#  Special, is it an initialism or an abreviation?
+		my $sigle = is_sigle($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type_nom);
+		
 		# Fing genera
 		my $genre = cherche_genre($lang_section->{'type'}->{$type}->{lines}, $lang, $title, $type_nom);
 		
@@ -585,6 +590,7 @@ sub parse_language_sections
 			'l_is_flexion' => $flex,
 			'l_is_locution' => $loc,
 			'l_is_gentile' => $gent,
+			'l_sigle' => $sigle,
 			'l_lexid' => counter('lexemes'),
 		);
 		

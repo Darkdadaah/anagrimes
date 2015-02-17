@@ -12,7 +12,7 @@ use Exporter;		# So that we can export functions and vars
 @ISA=('Exporter');	# This module is a subclass of Exporter
 
 # What can be exported
-@EXPORT_OK = qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile section_meanings cherche_genre);
+@EXPORT_OK = qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile is_sigle section_meanings cherche_genre);
 
 use strict;
 use warnings;
@@ -650,8 +650,6 @@ sub cherche_genre
 		return;
 	}
 	
-	my %pron = ();
-	
 	# Stop at the form line
 	my $genre = '';
 	my $max = 0;
@@ -672,7 +670,38 @@ sub cherche_genre
 	return $genre;
 }
 
+sub is_sigle
+{
+	my ($lignes, $lang, $titre, $type) = @_;
+	
+	if (ref($lignes) eq '') {
+		special_log('mef', $titre, '', "en $lang");
+		return;
+	}
+	
+	# Stop at the form line
+	my $sigle = '';
+	my $max = 0;
+	foreach my $ligne (@$lignes) {
+		if ($ligne =~ /^'''.+?''' .*\{\{(sigle|abrév|abréviation|acron|acronyme)(?:\|.+)?\}\}/) {
+			$sigle = $1;
+			$sigle = 'abrev' if $sigle eq 'abrév' or $sigle eq 'abréviation';
+			$sigle = 'acron' if $sigle eq 'acronyme';
+			last;
+		} elsif ($ligne =~ /^'''.+'''/) {
+			last;
+		}
+		$max++;
+		if ($max > 15) {
+			special_log('ligne_forme_loin', $titre, "$lang"."-$type");
+			last;
+		}
+	}
+	
+	return $sigle;
+}
+
 1;
 
-
 __END__
+
