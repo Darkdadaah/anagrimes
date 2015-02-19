@@ -267,6 +267,7 @@ sub pron_in_fr
 	$p =~ s/ert$e/ɛʁ$1/g;
 	$p =~ s/ing$e/iŋ$1/g;
 	$p =~ s/eo$e/ÉO$1/g;
+	$p =~ s/grand$e/grɑ̃/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
 	$p =~ s/gemments?$e/ʒamɑ̃$1/g;
 	$p =~ s/emments?$e/amɑ̃$1/g;
