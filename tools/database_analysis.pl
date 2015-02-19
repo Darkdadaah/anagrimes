@@ -182,7 +182,8 @@ sub simplest
 	$m =~ s/ɑ/a/g;
 	$m =~ s/ɔ/o/g;
 	$m =~ s/ɛ/e/g;
-	$m =~ s/ǝ/ə/g;
+	#$m =~ s/ǝ/ə/g;
+	$m =~ s/ǝ//g;
 	$m =~ s/ʁ/r/g;
 	$m =~ s/ɡ/g/g;
 	$m =~ s/ɲ/nj/g;
@@ -252,7 +253,10 @@ sub pron_in_fr
 		$p =~ s/tients?$e/SJɑ̃$1/g;
 		$p =~ s/ients?$e/Jɑ̃$1/g;
 	}
+	$p =~ s/geances?$e/ʒɑ̃S$1/g;
+	$p =~ s/ances?$e/ɑ̃S$1/g;
 	$p =~ s/stionn/STJɔN/g;
+	$p =~ s/bapt/baT/g;
 	$p =~ s/tionn/SJɔN/g;
 	$p =~ s/stions?$e/STJon$1/g;
 	$p =~ s/tions?$e/SJɔ̃$1/g;
@@ -262,6 +266,7 @@ sub pron_in_fr
 	$p =~ s/ax$e/AkS$1/g;
 	$p =~ s/ert$e/ɛʁ$1/g;
 	$p =~ s/ing$e/iŋ$1/g;
+	$p =~ s/eo$e/ÉO$1/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
 	$p =~ s/gemments?$e/ʒamɑ̃$1/g;
 	$p =~ s/emments?$e/amɑ̃$1/g;
@@ -273,8 +278,12 @@ sub pron_in_fr
 	$p =~ s/éens?$e/Éɛ̃$1/g;
 	$p =~ s/ets?$e/ɛ$1/g;
 	$p =~ s/ettes?$e/ɛT$1/g;
+	$p =~ s/${s}antis/$1ɑ̃TIS/g;
+	$p =~ s/${s}anti/$1ɑ̃Ti/g;
 	$p =~ s/stiel$e/STJɛl$1/g;
 	$p =~ s/tiel$e/SJɛl$1/g;
+	$p =~ s/stial/STJal/g;
+	$p =~ s/tial/SJal/g;
 	$p =~ s/els?$e/ɛl$1/g;
 	$p =~ s/ès$e/ɛ$1/g;
 	$p =~ s/iers?$e/JÉ$1/g;
@@ -290,11 +299,12 @@ sub pron_in_fr
 	$p =~ s/ards?$e/ɑʁ$1/g;
 	$p =~ s/ault$e/o$1/g;
 	$p =~ s/aims?$e/ɛ̃$1/g;
-	$p =~ s/ecs?$e/ɛk$1/g;
+	$p =~ s/e[ck]s?$e/ɛk$1/g;
 	$p =~ s/eds?$e/É$1/g;
 	$p =~ s/([^oae])ums?$e/$1ɔm$2/g;
 	$p =~ s/($cons)els?$e/$1ɛl$2/g;
-
+	#$p =~ s/($cons)us$e/$1YS$2/g;	# latin?
+	
 	$p =~ s/s?cenn/SSɛN/g;
 	$p =~ s/s?cens($voy)/SSɑ̃S$1/g;
 	$p =~ s/s?ce[nm]($cons)/SSɑ̃$1/g;
@@ -304,6 +314,8 @@ sub pron_in_fr
 	$p =~ s/gien/ʒJɛ̃/g;
 	$p =~ s/ca/ka/g;
 	$p =~ s/genou/ʒənu/g;
+	$p =~ s/aiguill/ɛGɥIJ/g;
+	$p =~ s/gu($ei)/G$1/g;
 	$p =~ s/tech/tɛk/g;
 	$p =~ s/ss?ex/Sɛks/g;
 	$p =~ s/euse/øz/g;
@@ -317,7 +329,7 @@ sub pron_in_fr
 	$p =~ s/oyo/oJo/g;
 	
 	# Préfixes courants
-	$p =~ s/${s}antis/$1ɑ̃TIS/g;
+	$p =~ s/${s}er/$1ɛr/g;
 	$p =~ s/${s}aqua/$1akwa/g;
 	$p =~ s/${s}auto/$1OTO /g;
 	$p =~ s/${s}hyper/$1Ipɛʁ/g;
@@ -343,6 +355,7 @@ sub pron_in_fr
 	$p =~ s/î/i/g;
 	$p =~ s/ô/O/g;
 	$p =~ s/oû/U/g;
+	$p =~ s/${s}oe/$1œ/g;
 	$p =~ s/æ/É/g;
 	$p =~ s/û/Y/g;
 	$p =~ s/à|â/ɑ/g;
