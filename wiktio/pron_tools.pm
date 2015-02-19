@@ -295,7 +295,7 @@ sub cherche_prononciation
 					}
 				}
 				# Radical en 1
-				elsif ($nom =~ /^accord-(an|el|en|et|in|s|mf-x)$/) {
+				elsif ($nom =~ /^accord-(an|el|en|et|in|s|mf-x|ot)$/) {
 					my $suff = '';
 					if    ($1 eq 'an') {	$suff = 'ɑ̃';	}
 					elsif ($1 eq 'el') {	$suff = 'ɛl';	}
@@ -304,6 +304,7 @@ sub cherche_prononciation
 					elsif ($1 eq 'in') {	$suff = 'ɛ̃';	}
 					elsif ($1 eq 's') {	$suff = '';	}
 					elsif ($1 eq 'mf-x') {	$suff = '';	}
+					elsif ($1 eq 'ot') {	$suff = 'o';	}
 					else { special_log('accord', $titre, "'accord-$1'"); }
 					$pron{$arg->{1}.$suff} = 1 if ($arg->{1});
 					$pron{$arg->{pron}.$suff} = 1 if ($arg->{pron});
@@ -311,14 +312,13 @@ sub cherche_prononciation
 					$pron{$arg->{pron3}.$suff} = 1 if ($arg->{pron3});
 				}
 				# Radical en 2
-				elsif ($nom =~ /^accord-(mf-ail|mf-al|al|if|f|ot|eau|ef|er|eur|eux|oux)$/) {
+				elsif ($nom =~ /^accord-(mf-ail|mf-al|al|if|f|eau|ef|er|eur|eux|oux)$/) {
 					my $suff = '';
 					if ($1 eq 'mf-ail') {	$suff = 'aj';	}
 					elsif ($1 eq 'mf-al') {	$suff = 'al';	}
 					elsif    ($1 eq 'al') {	$suff = 'al';	}
 					elsif ($1 eq 'if') {	$suff = 'if';	}
 					elsif ($1 eq 'f')  {	$suff = 'f';	}
-					elsif ($1 eq 'ot') {	$suff = 'o';	}
 					elsif ($1 eq 'eau') {	$suff = 'o';	}
 					elsif ($1 eq 'ef') {	$suff = 'ɛf';	}
 					elsif ($1 eq 'er') {	$suff = 'e';	}
