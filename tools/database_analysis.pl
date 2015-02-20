@@ -85,27 +85,28 @@ sub pronunciations
 	print STDERR "$n articles with pronunciations in lang $lang\n";
 
 	# Compute expected pronunciation based on the language
-	my ($same, $sameish) = expected_pronunciation($articles, $lang);
-	my $nsame = @$same;
-	my $nsameish = @$sameish;
-	print STDERR "$nsame articles with precisely expected pronunciation " . sprintf("(%.2f %%)\n", $nsame/$n*100);
-	print STDERR "$nsameish articles with approximate expected pronunciation " . sprintf("(%.2f %%)\n", $nsameish/$n*100);
-
-	# List all words where the pronunciation is different from expected
+	my ($total, $same, $sameish) = expected_pronunciation($articles, $lang);
+	my $nsame = $total - @$same;
+	my $nsameish = $total - @$sameish;
+	print STDERR "$total articles with usable pronunciations\n";
+	print STDERR "$nsame articles without precisely expected pronunciation " . sprintf("(%.2f %%)\n", $nsame/$total*100);
+	print STDERR "$nsameish articles without even approximate expected pronunciation " . sprintf("(%.2f %%)\n", $nsameish/$total*100);
 }
 
 sub expected_pronunciation
 {
 	my ($articles, $lang) = @_;
 	
+	my $count = 0;
 	my @same = ();
 	my @sameish = ();
 	foreach my $a (@$articles) {
-		my ($is_same, $is_sameish) = check_pronunciation($a, $lang);
+		my ($correct, $is_same, $is_sameish) = check_pronunciation($a, $lang);
+		$count += $correct;
 		push @same, $a if $is_same;
 		push @sameish, $a if $is_sameish;
 	}
-	return \@same, \@sameish;
+	return $count, \@same, \@sameish;
 }
 
 sub check_pronunciation
@@ -128,12 +129,12 @@ sub check_pronunciation
 				$diffs = 'nope';
 			}
 			print STDOUT "$diffs\t$art->{'a_title'}\t'$pron'\t'".clean_pron($art->{p_pron})."'\n";
-			return ($same, $sameish);
+			return (1, $same, $sameish);
 		} else {
-			return 0, 0;
+			return 0, 0, 0;
 		}
 	}
-	return 1;
+	return 0, 0, 0;
 }
 
 sub different
@@ -340,6 +341,7 @@ sub pron_in_fr
 	$p =~ s/qu(o?i)/k$1/g;
 	$p =~ s/oyoi/wAJU/g;
 	$p =~ s/oyo/oJo/g;
+	$p =~ s/gay($voy)/GɛJ$1/g;
 	$p =~ s/($cons)ay($voy)/$1ɛJ$2/g;
 	
 	# Préfixes courants
@@ -405,9 +407,10 @@ sub pron_in_fr
 	$p =~ s/oue($cons)/wɛ$1/g;
 
 	$p =~ s/y/i/g;
-	$p =~ s/eu[xs]?$/ø/g;
+	$p =~ s/eu[xs]?$e/ø$1/g;
 	$p =~ s/eu/ø/g;
 	$p =~ s/ø($cons)/œ$1/g;
+	$p =~ s/œ([zs])/ø$1/g;
 	$p =~ s/an([ow])/AN$1/g;
 	$p =~ s/ou/U/g;
 	$p =~ s/ann/AN/g;
