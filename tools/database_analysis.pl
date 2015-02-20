@@ -19,10 +19,10 @@ my $conditions = << "REQ";
 	NOT l_type="nom-fam" AND
 	NOT l_type="prenom" AND
 	NOT l_is_gentile AND
-	NOT l_is_locution AND
-	NOT l_is_flexion AND
 	l_sigle=""
 REQ
+#NOT l_is_locution AND
+#NOT l_is_flexion AND
 
 #################################################
 # Message about this program and how to use it
@@ -245,21 +245,29 @@ sub pron_in_fr
 	# Terminaisons courantes
 	if ($typ eq 'verb' and not $art->{'l_is_locution'}) {
 		$p =~ s/ez$e/É$1/g;
+		$p =~ s/ai$e/É$1/g;
+		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2/g;
 		$p =~ s/e(?:nt|s)?$e/$1/g;
 		$p =~ s/ient$e/I$1/g;
 		$p =~ s/ent$e/$1/g;
+		$p =~ s/tions?$e/TJɔ̃$1/g;
 	} else {
 		$p =~ s/($voy)tiens?$e/$1SJɛ̃$2/g;
 		$p =~ s/tients?$e/SJɑ̃$1/g;
 		$p =~ s/ients?$e/Jɑ̃$1/g;
 	}
+	$p =~ s/doigts?/dwat/g;
+	$p =~ s/deux($voy)/døz/g;
+	$p =~ s/deux$e/dø$1/g;
 	$p =~ s/geances?$e/ʒɑ̃S$1/g;
+	$p =~ s/bourgs?$e/bour$1/g;
 	$p =~ s/ances?$e/ɑ̃S$1/g;
 	$p =~ s/stionn/STJɔN/g;
 	$p =~ s/bapt/baT/g;
 	$p =~ s/tionn/SJɔN/g;
 	$p =~ s/stions?$e/STJon$1/g;
 	$p =~ s/tions?$e/SJɔ̃$1/g;
+	$p =~ s/ons?$e/ɔ̃$1/g;
 	$p =~ s/er$e/É$1/g;
 	$p =~ s/${s}ex($voy)/$1ɛgz$2/g;
 	$p =~ s/ex$e/ɛkS$1/g;
@@ -269,10 +277,10 @@ sub pron_in_fr
 	$p =~ s/eo$e/ÉO$1/g;
 	$p =~ s/grand$e/grɑ̃/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
-	$p =~ s/gemments?$e/ʒamɑ̃$1/g;
-	$p =~ s/emments?$e/amɑ̃$1/g;
-	$p =~ s/ements?$e/əmɑ̃$1/g;
-	$p =~ s/ments?$e/mɑ̃$1/g;
+	$p =~ s/gemment?s?$e/ʒamɑ̃$1/g;
+	$p =~ s/emment?s?$e/amɑ̃$1/g;
+	$p =~ s/ement?s?$e/əmɑ̃$1/g;
+	$p =~ s/ment?s?$e/mɑ̃$1/g;
 	$p =~ s/an[tc]s?$e/ɑ̃$1/g;
 	$p =~ s/antes?$e/ɑ̃T$1/g;
 	$p =~ s/ient?s?$e/Jɛ̃$1/g;
@@ -305,7 +313,10 @@ sub pron_in_fr
 	$p =~ s/([^oae])ums?$e/$1ɔm$2/g;
 	$p =~ s/($cons)els?$e/$1ɛl$2/g;
 	#$p =~ s/($cons)us$e/$1YS$2/g;	# latin?
+	$p =~ s/tes$e/T$1/g;
+	$p =~ s/qu /k/g;
 	
+	$p =~ s/${s}second/$1segond/g;
 	$p =~ s/s?cenn/SSɛN/g;
 	$p =~ s/s?cens($voy)/SSɑ̃S$1/g;
 	$p =~ s/s?ce[nm]($cons)/SSɑ̃$1/g;
@@ -325,9 +336,11 @@ sub pron_in_fr
 	$p =~ s/ymph/inf/g;
 	$p =~ s/(.)g[nN]/$1ɲ/g;
 	$p =~ s/acqui/aki/g;
-	$p =~ s/qui/ki/g;
+	$p =~ s/cqu(o?i)/kk$1/g;
+	$p =~ s/qu(o?i)/k$1/g;
 	$p =~ s/oyoi/wAJU/g;
 	$p =~ s/oyo/oJo/g;
+	$p =~ s/($cons)ay($voy)/$1ɛJ$2/g;
 	
 	# Préfixes courants
 	$p =~ s/${s}er/$1ɛr/g;
@@ -430,6 +443,8 @@ sub pron_in_fr
 	$p =~ s/i(ɛ|ɛ̃|É|ɑ̃|ɔ|ɔ̃|ø|œ|[aou])/J$1/g;
 	
 	# Consonnes
+	$p =~ s/t{2}/T/gi;
+	#$p =~ s/s{2}/S/gi;
 	$p =~ s/($voy)sh?($voy)/$1z$2/g;
 	$p =~ s/cc([aoUuy]|ɔ|ɔ̃)/k$1/g;
 	$p =~ s/($voy)cc($ei)/$1ks$2/g;
@@ -448,7 +463,6 @@ sub pron_in_fr
 	$p =~ s/g/G/g;
 	
 	# Doubles
-	$p =~ s/($cons)\1/$1/g;
 	#$p =~ s/([trdp])\1/$1/g;
 	#$p =~ s/($voy)\1/$1/g;
 	
@@ -464,13 +478,16 @@ sub pron_in_fr
 	$p =~ s/e/ə/g;	# e caduc
 	$p =~ s/h//g;
 	
-	return SAMPA_API($p);
+	$p = SAMPA_API($p);
+	$p =~ s/($cons)\1/$1/g;
+	
+	return $p;
 }
 
 sub SAMPA_API
 {
 	my ($w) = @_;
-	$w =~ tr/ADUIOJGMNSTY/aduiojgmnsty/;
+	$w =~ s/([A-Z])/\l$1/g;
 	$w =~ s/Œ/œ/g;
 	$w =~ s/r/ʁ/g;
 	$w =~ s/g/ɡ/g;
