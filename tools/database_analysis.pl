@@ -85,12 +85,14 @@ sub pronunciations
 	print STDERR "$n articles with pronunciations in lang $lang\n";
 
 	# Compute expected pronunciation based on the language
-	my ($total, $same, $sameish) = expected_pronunciation($articles, $lang);
+	my ($total, $same, $samer, $sameish) = expected_pronunciation($articles, $lang);
 	my $nsame = $total - @$same;
+	my $nsamer = $total - @$samer;
 	my $nsameish = $total - @$sameish;
-	print STDERR "$total articles with usable pronunciations\n";
-	print STDERR "$nsame articles without precisely expected pronunciation " . sprintf("(%.2f %%)\n", $nsame/$total*100);
-	print STDERR "$nsameish articles without even approximate expected pronunciation " . sprintf("(%.2f %%)\n", $nsameish/$total*100);
+	print STDERR "$total\tarticles with usable pronunciations\n";
+	print STDERR "$nsame\tnot exact " . sprintf("(%.2f %%)\n", $nsame/$total*100);
+	print STDERR "$nsamer\talmost exact " . sprintf("(%.2f %%)\n", $nsamer/$total*100);
+	print STDERR "$nsameish\ttoo different " . sprintf("(%.2f %%)\n", $nsameish/$total*100);
 }
 
 sub expected_pronunciation
@@ -99,14 +101,16 @@ sub expected_pronunciation
 	
 	my $count = 0;
 	my @same = ();
+	my @samer = ();
 	my @sameish = ();
 	foreach my $a (@$articles) {
-		my ($correct, $is_same, $is_sameish) = check_pronunciation($a, $lang);
+		my ($correct, $is_same, $is_samer, $is_sameish) = check_pronunciation($a, $lang);
 		$count += $correct;
 		push @same, $a if $is_same;
+		push @samer, $a if $is_samer;
 		push @sameish, $a if $is_sameish;
 	}
-	return $count, \@same, \@sameish;
+	return $count, \@same, \@samer, \@sameish;
 }
 
 sub check_pronunciation
@@ -119,22 +123,25 @@ sub check_pronunciation
 		
 		if ($pron) {
 			my $same = not different($art->{p_pron}, $pron);
+			my $samer = not quite_different($art->{p_pron}, $pron);
 			my $sameish = not very_different($art->{p_pron}, $pron);
 			my $diffs = '';
 			if ($same) {
 				$diffs = 'OK';
-			} elsif ($sameish) {
+			} elsif ($samer) {
 				$diffs = 'OK?';
+			} elsif ($sameish) {
+				$diffs = 'bof';
 			} else {
-				$diffs = 'nope';
+				$diffs = 'nope!';
 			}
 			print STDOUT "$diffs\t$art->{'a_title'}\t'$pron'\t'".clean_pron($art->{p_pron})."'\n";
-			return (1, $same, $sameish);
+			return (1, $same, $samer, $sameish);
 		} else {
-			return 0, 0, 0;
+			return 0, 0, 0, 0;
 		}
 	}
-	return 0, 0, 0;
+	return 0, 0, 0, 0;
 }
 
 sub different
@@ -143,6 +150,20 @@ sub different
 	
 	my $pron1 = simple($p1);
 	my $pron2 = simple($p2);
+	
+	if ($pron1 eq $pron2) {
+		return 0;
+	} else {
+		return 1;
+	}
+}
+
+sub quite_different
+{
+	my ($p1, $p2) = @_;
+	
+	my $pron1 = simpler($p1);
+	my $pron2 = simpler($p2);
 	
 	if ($pron1 eq $pron2) {
 		return 0;
@@ -172,6 +193,21 @@ sub simple
 	
 	$m =~ s/([\s\.‿ ː ])+//g;
 	$m =~ s/ə//g;
+	$m =~ s/ʁ/r/g;
+	$m =~ s/ɡ/g/g;
+	return $m;
+}
+
+sub simpler
+{
+	my ($m) = @_;
+	$m = simple($m);
+	$m =~ s/ɑ/a/g;
+	$m =~ s/ɔ/o/g;
+	$m =~ s/ɛ/e/g;
+	$m =~ s/gn/nj/g;
+	$m =~ s/ɲ/nj/g;
+	
 	return $m;
 }
 
@@ -179,16 +215,8 @@ sub simplest
 {
 	my ($m) = @_;
 	
-	$m = simple($m);
-	$m =~ s/ɑ/a/g;
-	$m =~ s/ɔ/o/g;
-	$m =~ s/ɛ/e/g;
-	#$m =~ s/ǝ/ə/g;
+	$m = simpler($m);
 	$m =~ s/ǝ//g;
-	$m =~ s/ʁ/r/g;
-	$m =~ s/ɡ/g/g;
-	$m =~ s/ɲ/nj/g;
-	$m =~ s/gn/nj/g;
 	$m =~ s/j/i/g;
 	$m =~ s/ɥ/y/g;
 	$m =~ s/w/u/g;
@@ -248,7 +276,8 @@ sub pron_in_fr
 		$p =~ s/ez$e/É$1/g;
 		$p =~ s/ai$e/É$1/g;
 		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2/g;
-		$p =~ s/e(?:nt|s)?$e/$1/g;
+		$p =~ s/iLL$e/ill$1/g;
+		$p =~ s/e(?:nt|s)?$e/ə$1/g;
 		$p =~ s/ient$e/I$1/g;
 		$p =~ s/ent$e/$1/g;
 		$p =~ s/tions?$e/TJɔ̃$1/g;
@@ -257,6 +286,8 @@ sub pron_in_fr
 		$p =~ s/tients?$e/SJɑ̃$1/g;
 		$p =~ s/ients?$e/Jɑ̃$1/g;
 	}
+	$p =~ s/que?s?$e/k$1/g;
+	$p =~ s/ge?s?$e/ʒ$1/g;
 	$p =~ s/doigts?/dwat/g;
 	$p =~ s/deux($voy)/døz/g;
 	$p =~ s/deux$e/dø$1/g;
@@ -268,6 +299,7 @@ sub pron_in_fr
 	$p =~ s/tionn/SJɔN/g;
 	$p =~ s/stions?$e/STJon$1/g;
 	$p =~ s/tions?$e/SJɔ̃$1/g;
+	$p =~ s/motion/moSJon/g;
 	$p =~ s/ons?$e/ɔ̃$1/g;
 	$p =~ s/er$e/É$1/g;
 	$p =~ s/${s}ex($voy)/$1ɛgz$2/g;
@@ -322,7 +354,7 @@ sub pron_in_fr
 	$p =~ s/s?cens($voy)/SSɑ̃S$1/g;
 	$p =~ s/s?ce[nm]($cons)/SSɑ̃$1/g;
 	$p =~ s/geoi/ʒwA/g;
-	$p =~ s/gen([tc])/ʒɑ̃$1/g;
+	$p =~ s/gen([tcd])/ʒɑ̃$1/g;
 	$p =~ s/gi/ʒi/g;
 	$p =~ s/gien/ʒJɛ̃/g;
 	$p =~ s/ca/ka/g;
@@ -345,6 +377,7 @@ sub pron_in_fr
 	$p =~ s/($cons)ay($voy)/$1ɛJ$2/g;
 	
 	# Préfixes courants
+	$p =~ s/${s}re($cons)/$1rə$2/g;
 	$p =~ s/${s}er/$1ɛr/g;
 	$p =~ s/${s}aqua/$1akwa/g;
 	$p =~ s/${s}auto/$1OTO /g;
@@ -399,7 +432,8 @@ sub pron_in_fr
 	$p =~ s/œu/Œ/g;
 	$p =~ s/œ/É/g;
 	$p =~ s/eill?e?/ɛJ/g;
-	$p =~ s/vill/vil/g;
+	$p =~ s/vill(oi|j|w)/viL$1/g;
+	$p =~ s/${s}vill/$1vil/g;
 	$p =~ s/ill/iJ/g;
 	$p =~ s/JJ/J/g;
 	$p =~ s/nou/Nou/g;
@@ -408,7 +442,7 @@ sub pron_in_fr
 
 	$p =~ s/y/i/g;
 	$p =~ s/eu[xs]?$e/ø$1/g;
-	$p =~ s/eu/ø/g;
+	$p =~ s/e(?:u|û)(d?)/ø$1/g;
 	$p =~ s/ø($cons)/œ$1/g;
 	$p =~ s/œ([zs])/ø$1/g;
 	$p =~ s/an([ow])/AN$1/g;
@@ -471,13 +505,13 @@ sub pron_in_fr
 	
 	# Derniers
 	$p =~ s/(ɲ)[Jj]/$1/g;
-	$p =~ s/ant?s?\b/ɑ̃/g;
+	$p =~ s/ant?s?$e/ɑ̃$1/g;
 	$p =~ s/u/Y/g;
 	$p =~ s/Y([iIa]|É)/ɥ$1/g;
 	$p =~ s/q/k/g;
-	$p =~ s/($voy)[ts]\b/$1/g;
+	$p =~ s/($voy)[ts]$e/$1$2/g;
 	$p =~ s/([^\b]{2})e /$1 /g;
-	$p =~ s/e\b//g;	# e muet
+	$p =~ s/(e|ə)$e//g;	# e muet
 	$p =~ s/e/ə/g;	# e caduc
 	$p =~ s/h//g;
 	
