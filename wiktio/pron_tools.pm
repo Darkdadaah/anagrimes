@@ -215,8 +215,10 @@ sub cherche_prononciation
 				my $nom = $tables->[$i]->{'nom'};
 				my $arg = $tables->[$i]->{'arg'};
 				
-				# Table in flexions? Detect with s=
-				if (defined($arg->{s})) {
+				# Table in flexions? Detect with s= or ms= without p= or mp=
+				if ((defined($arg->{s}) and not defined($arg->{p})) or
+						(defined($arg->{ms}) and not defined($arg->{mp}))
+					) {
 					next TABLE;
 				}
 				
