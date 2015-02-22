@@ -245,7 +245,11 @@ sub pron_in_fr
 	my $w = $art->{'a_title'};
 	my $typ = $art->{'l_type'} ? $art->{'l_type'} : '';
 	
-	if ($w =~ /\b([A-Z\.,;!\(\)+\-]|−)+\b/ or $w =~ /[0-9]/) {
+	if ($w =~ /\b([A-Z\.,;!\(\)+\-]|−)+\b/ or
+			$w =~ /[0-9]/ or
+			$w =~ /[A-Z]{2,}/ or
+			$w =~ /[&\(\)]/
+		) {
 		return '';
 	}
 	my $p = clean_pron(lc($w));
@@ -262,6 +266,7 @@ sub pron_in_fr
 	$aou .= "|" . "ɔ|ɔ̃|ɑ|ɑ̃|ø";
 	my $s = '(\s|^|-)';
 	my $e = '(\s|$|-)';
+	my $E = '(?:ə|e)';
 	
 	# Mots
 	$p =~ s/${s}([ldms])es ($voy)/$1$2ɛz$3/g;
@@ -277,7 +282,7 @@ sub pron_in_fr
 		$p =~ s/ai$e/É$1/g;
 		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2/g;
 		$p =~ s/iLL$e/ill$1/g;
-		$p =~ s/e(?:nt|s)?$e/ə$1/g;
+		$p =~ s/e(?:nt|s)?$e/e$1/g;
 		$p =~ s/ient$e/I$1/g;
 		$p =~ s/ent$e/$1/g;
 		$p =~ s/tions?$e/TJɔ̃$1/g;
@@ -286,12 +291,12 @@ sub pron_in_fr
 		$p =~ s/tients?$e/SJɑ̃$1/g;
 		$p =~ s/ients?$e/Jɑ̃$1/g;
 	}
-	$p =~ s/que?s?$e/k$1/g;
-	$p =~ s/ge?s?$e/ʒ$1/g;
+	$p =~ s/qu$E?s?$e/k$1/g;
+	$p =~ s/[gG]$E?s?$e/ʒ$1/g;
 	$p =~ s/doigts?/dwat/g;
 	$p =~ s/deux($voy)/døz/g;
 	$p =~ s/deux$e/dø$1/g;
-	$p =~ s/geances?$e/ʒɑ̃S$1/g;
+	$p =~ s/geanc${E}s?$e/ʒɑ̃S$1/g;
 	$p =~ s/bourgs?$e/bour$1/g;
 	$p =~ s/ances?$e/ɑ̃S$1/g;
 	$p =~ s/stionn/STJɔN/g;
@@ -355,6 +360,7 @@ sub pron_in_fr
 	$p =~ s/s?ce[nm]($cons)/SSɑ̃$1/g;
 	$p =~ s/geoi/ʒwA/g;
 	$p =~ s/gen([tcd])/ʒɑ̃$1/g;
+	$p =~ s/geu([sz])/ʒø$1/g;
 	$p =~ s/gi/ʒi/g;
 	$p =~ s/gien/ʒJɛ̃/g;
 	$p =~ s/ca/ka/g;
@@ -511,7 +517,7 @@ sub pron_in_fr
 	$p =~ s/q/k/g;
 	$p =~ s/($voy)[ts]$e/$1$2/g;
 	$p =~ s/([^\b]{2})e /$1 /g;
-	$p =~ s/(e|ə)$e//g;	# e muet
+	$p =~ s/(e|ə)$//g;	# e muet
 	$p =~ s/e/ə/g;	# e caduc
 	$p =~ s/h//g;
 	
