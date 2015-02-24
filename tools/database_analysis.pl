@@ -205,6 +205,7 @@ sub simpler
 	$m = simple($m);
 	$m =~ s/ɔ/o/g;
 	$m =~ s/ɛ/e/g;
+	$m =~ s/ø/œ/g;
 	$m =~ s/gn/nj/g;
 	$m =~ s/ɲ/nj/g;
 	
@@ -220,7 +221,6 @@ sub simplest
 	$m =~ s/j/i/g;
 	$m =~ s/ɥ/y/g;
 	$m =~ s/w/u/g;
-	$m =~ s/ø/œ/g;
 	$m =~ s/ʃ/k/g;
 	$m =~ s/z/s/g;
 	$m =~ s/b/p/g;
@@ -280,6 +280,7 @@ sub pron_in_fr
 	if ($typ eq 'verb' and not $art->{'l_is_locution'}) {
 		$p =~ s/ez$e/É$1/g;
 		$p =~ s/ai$e/É$1/g;
+		$p =~ s/($voy)se(?:nt|s)?$e/$1Z$2/g;
 		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2/g;
 		$p =~ s/iLL$e/ill$1/g;
 		$p =~ s/e(?:nt|s)?$e/e$1/g;
@@ -313,7 +314,7 @@ sub pron_in_fr
 	$p =~ s/ert$e/ɛʁ$1/g;
 	$p =~ s/ing$e/iŋ$1/g;
 	$p =~ s/eo$e/ÉO$1/g;
-	$p =~ s/grand$e/grɑ̃/g;
+	$p =~ s/and$e/ɑ̃/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
 	$p =~ s/gemment?s?$e/ʒamɑ̃$1/g;
 	$p =~ s/emment?s?$e/amɑ̃$1/g;
@@ -469,6 +470,7 @@ sub pron_in_fr
 	$p =~ s/en($voy)/ən$1/g;
 	$p =~ s/an($voy)/An$1/g;
 	$p =~ s/am[mh]/AM/g;
+	$p =~ s/anh/AN/g;
 	$p =~ s/im[mh]/IM/g;
 	$p =~ s/($voy)n($voy)/$1N$2/g;
 	$p =~ s/[ae][nm]($cons)/ɑ̃$1/g;
