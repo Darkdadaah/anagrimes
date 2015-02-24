@@ -195,6 +195,7 @@ sub simple
 	$m =~ s/ə//g;
 	$m =~ s/ʁ/r/g;
 	$m =~ s/ɡ/g/g;
+	$m =~ s/ɑ/a/g;
 	return $m;
 }
 
@@ -202,7 +203,6 @@ sub simpler
 {
 	my ($m) = @_;
 	$m = simple($m);
-	$m =~ s/ɑ/a/g;
 	$m =~ s/ɔ/o/g;
 	$m =~ s/ɛ/e/g;
 	$m =~ s/gn/nj/g;
@@ -423,6 +423,7 @@ sub pron_in_fr
 	$p =~ s/(sc|c|s)h/ʃ/g;
 
 	# 1 Voyelles
+	$p =~ s/ey($voy)/ɛJ$1/g;
 	$p =~ s/($voy)s($voy)/$1z$2/g;	# se -> ze
 	$p =~ s/oy($voy)/waJ$1/g;
 	$p =~ s/y($voy)/J$1/g;
