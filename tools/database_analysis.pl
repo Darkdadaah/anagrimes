@@ -275,12 +275,14 @@ sub pron_in_fr
 	$p =~ s/${s}et$e/$1É$2/g;
 	$p =~ s/${s}uns?$e/$1œ̃$2/g;
 	$p =~ s/^s /S/g;
+	$p =~ s/${s}ré($voy)/$1RÉ $2/g;
 	
 	# Terminaisons courantes
 	if ($typ eq 'verb' and not $art->{'l_is_locution'}) {
 		$p =~ s/ez$e/É$1/g;
 		$p =~ s/ai$e/É$1/g;
 		$p =~ s/($voy)se(?:nt|s)?$e/$1Z$2/g;
+		$p =~ s/($voy)ce(?:nt|s)?$e/$1S$2/g;
 		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2/g;
 		$p =~ s/iLL$e/ill$1/g;
 		$p =~ s/e(?:nt|s)?$e/e$1/g;
@@ -526,6 +528,8 @@ sub pron_in_fr
 	
 	$p = SAMPA_API($p);
 	$p =~ s/($cons)\1/$1/g;
+	$p =~ s/^ +//;
+	$p =~ s/ +$//;
 	
 	return $p;
 }
