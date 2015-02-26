@@ -21,8 +21,6 @@ my $conditions = << "REQ";
 	NOT l_is_gentile AND
 	l_sigle=""
 REQ
-#NOT l_is_locution AND
-#NOT l_is_flexion AND
 
 #################################################
 # Message about this program and how to use it
@@ -40,6 +38,8 @@ sub usage
 	-p <str>  : analyse pronunciations for the given language
 	-c <str>  : count letters for the given language
 	-I        : case insensitive (for counts)
+	
+	-F        : exclude flexions
 EOF
 	exit;
 }
@@ -48,10 +48,11 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hd:p:c:I', \%opt ) or usage();
+	getopts( 'hd:p:c:IF', \%opt ) or usage();
 	usage() if $opt{h};
 	usage("Database needed (-d)") unless $opt{d};
 	usage("Type of analysis needed") if not $opt{p} xor $opt{c};
+	$conditions .= ' AND NOT l_is_flexion' if $opt{F};
 }
 
 sub get_articles
@@ -488,7 +489,7 @@ sub pron_in_fr
 	$p =~ s/e($cons)\1/ɛ$1$1/g;
 	$p =~ s/e([x])/ɛ$1/g;
 	$p =~ s/[ae]i/ɛ/g;
-	$p =~ s/i(ɛ|ɛ̃|É|ɑ̃|ɔ|ɔ̃|ø|œ|[aou])/J$1/g;
+	$p =~ s/i(ɛ|ɛ̃|É|ɑ̃|ɔ|ɔ̃|ø|œ|ɑ|[aou])/J$1/g;
 	
 	# Consonnes
 	$p =~ s/t{2}/T/gi;
