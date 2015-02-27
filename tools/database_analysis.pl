@@ -274,9 +274,20 @@ sub pron_in_fr
 	$p =~ s/${s}([ldms])es$e/$1$2ɛ$3/g;
 	$p =~ s/${s}([ldms])e$e/$1$2ə$3/g;
 	$p =~ s/${s}et$e/$1É$2/g;
-	$p =~ s/${s}uns?$e/$1œ̃$2/g;
+	$p =~ s/${s}uns?$e/$1ŒŒ$2/g;
+	$p =~ s/${s}longs?$e/$1Lɔ̃$2/g;
 	$p =~ s/^s /S/g;
 	$p =~ s/${s}ré($voy)/$1RÉ $2/g;
+	$p =~ s/${s}nez$e/$1NE$2/g;
+	$p =~ s/${s}culs?$e/$1KY$2/g;
+	$p =~ s/${s}temps$e/$1tɑ̃$2/g;
+	$p =~ s/${s}ego$e/$1ÉGO$2/g;
+	$p =~ s/${s}sang?s$e/$1sɑ̃$2/g;
+	$p =~ s/${s}ne$e/$1Nə$2/g;
+	#$p =~ s/${s}tous$e/$1TUS$2/g;
+	$p =~ s/ est? / ɛ /g;
+	$p =~ s/${s}[cs] /$1S /g;
+	#$p =~ s/${s}h/$1/g;
 	
 	# Terminaisons courantes
 	if ($typ eq 'verb' and not $art->{'l_is_locution'}) {
@@ -288,18 +299,24 @@ sub pron_in_fr
 		$p =~ s/iLL$e/ill$1/g;
 		$p =~ s/e(?:nt|s)?$e/e$1/g;
 		$p =~ s/ient$e/I$1/g;
-		$p =~ s/ent$e/$1/g;
+		$p =~ s/ents?$e/$1/g;
+		$p =~ s/ends?$e/ɑ̃$1/g;
 		$p =~ s/tions?$e/TJɔ̃$1/g;
+		$p =~ s/erds?$e/ɛR$1/g;
 	} else {
 		$p =~ s/($voy)tiens?$e/$1SJɛ̃$2/g;
 		$p =~ s/tients?$e/SJɑ̃$1/g;
 		$p =~ s/ients?$e/Jɑ̃$1/g;
 	}
+	$p =~ s/yx$e/IKS$1/g;
+	$p =~ s/art$e/AR$1/g;
+	$p =~ s/($cons)uns?$e/$1ŒŒ$2/g;
 	$p =~ s/qu$E?s?$e/k$1/g;
-	$p =~ s/[gG]$E?s?$e/ʒ$1/g;
+	$p =~ s/[gG]${E}s?$e/ʒ$1/g;
 	$p =~ s/doigts?/dwat/g;
-	$p =~ s/deux($voy)/døz/g;
+	$p =~ s/deux($voy)/døz$1/g;
 	$p =~ s/deux$e/dø$1/g;
+	$p =~ s/dix($voy)/diz$1/g;
 	$p =~ s/geanc${E}s?$e/ʒɑ̃S$1/g;
 	$p =~ s/bourgs?$e/bour$1/g;
 	$p =~ s/ances?$e/ɑ̃S$1/g;
@@ -309,6 +326,7 @@ sub pron_in_fr
 	$p =~ s/stions?$e/STJon$1/g;
 	$p =~ s/tions?$e/SJɔ̃$1/g;
 	$p =~ s/motion/moSJon/g;
+	$p =~ s/${s}([b])on ($voy)/$1$2ɔn$3/g;
 	$p =~ s/ons?$e/ɔ̃$1/g;
 	$p =~ s/er$e/É$1/g;
 	$p =~ s/${s}ex($voy)/$1ɛgz$2/g;
@@ -317,7 +335,8 @@ sub pron_in_fr
 	$p =~ s/ert$e/ɛʁ$1/g;
 	$p =~ s/ing$e/iŋ$1/g;
 	$p =~ s/eo$e/ÉO$1/g;
-	$p =~ s/and$e/ɑ̃/g;
+	$p =~ s/rand ($voy)/rɑ̃t$1/g;
+	$p =~ s/and$e/ɑ̃$1/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
 	$p =~ s/gemment?s?$e/ʒamɑ̃$1/g;
 	$p =~ s/emment?s?$e/amɑ̃$1/g;
@@ -391,8 +410,10 @@ sub pron_in_fr
 	$p =~ s/${s}er/$1ɛr/g;
 	$p =~ s/${s}aqua/$1akwa/g;
 	$p =~ s/${s}auto/$1OTO /g;
+	$p =~ s/${s}hexa/$1exa/g;
 	$p =~ s/${s}hyper/$1Ipɛʁ/g;
 	$p =~ s/${s}super/$1sYpɛʁ/g;
+	$p =~ s/${s}hyper/$1IPɛʁ/g;
 	$p =~ s/${s}asthm/$1asm/g;
 	$p =~ s/psycho/psiko/g;
 	$p =~ s/bienn/bJɛn/g;
@@ -410,6 +431,7 @@ sub pron_in_fr
 	$p =~ s/($voy)[ptd]$e/$1$2/g;
 	$p =~ s/ç/S/g;
 	$p =~ s/ïn($cons)/ɛ̃$1/g;
+	$p =~ s/eï/ɛJ/g;
 	$p =~ s/ï/I/g;
 	$p =~ s/î/i/g;
 	$p =~ s/ô/O/g;
@@ -432,6 +454,7 @@ sub pron_in_fr
 	$p =~ s/oy($voy)/waJ$1/g;
 	$p =~ s/y($voy)/J$1/g;
 	$p =~ s/oine/wANe/g;
+	$p =~ s/in($voy)/iN$1/g;
 	$p =~ s/ou?in/wɛ̃/g;
 	$p =~ s/oi/wa/g;
 	$p =~ s/aill/ɑJ/g;
@@ -488,6 +511,7 @@ sub pron_in_fr
 	$p =~ s/e(($cons){2})/ɛ$1/g;
 	$p =~ s/e($cons)\1/ɛ$1$1/g;
 	$p =~ s/e([x])/ɛ$1/g;
+	$p =~ s/e([gm])s?$e/ɛ$1/g;
 	$p =~ s/[ae]i/ɛ/g;
 	$p =~ s/i(ɛ|ɛ̃|É|ɑ̃|ɔ|ɔ̃|ø|œ|ɑ|[aou])/J$1/g;
 	
@@ -505,7 +529,9 @@ sub pron_in_fr
 	$p =~ s/gn($voy)/ɲ$1/g;
 	$p =~ s/g($aou)/G$1/g;
 	$p =~ s/g($ei)/ʒ$1/g;
-	$p =~ s/j|ge$/ʒ/g;
+	$p =~ s/j/ʒ/g;
+	$p =~ s/ge$e/ʒ$1/g;
+	$p =~ s/g$e/G$1/g;
 	$p =~ s/qu($voy)/k$1/g;
 	$p =~ s/gu($voy)/G$1/g;
 	$p =~ s/x/ks/g;
@@ -539,6 +565,7 @@ sub SAMPA_API
 {
 	my ($w) = @_;
 	$w =~ s/([A-Z])/\l$1/g;
+	$w =~ s/ŒŒ/œ̃/g;
 	$w =~ s/Œ/œ/g;
 	$w =~ s/r/ʁ/g;
 	$w =~ s/g/ɡ/g;
