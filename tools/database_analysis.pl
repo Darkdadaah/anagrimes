@@ -71,7 +71,7 @@ sub get_articles_prons
 	SELECT *
 	FROM entries
 	WHERE $conditions
-	GROUP BY a_title
+	GROUP BY a_title, p_pron
 REQ
 	return $dbh->selectall_arrayref($query, { Slice => {} }, $lang);
 }
