@@ -235,7 +235,7 @@ sub clean_pron
 	my ($pron) = @_;
 	$pron =~ s/[\.,;:!\?]//g;
 	$pron =~ s/'|’/ /g;
-	$pron =~ s/-//g;
+	$pron =~ s/-/ /g;
 	$pron =~ s/Â/â/g;
 	return $pron;
 }
@@ -284,6 +284,8 @@ sub pron_in_fr
 	$p =~ s/${s}temps$e/$1tɑ̃$2/g;
 	$p =~ s/${s}ego$e/$1ÉGO$2/g;
 	$p =~ s/${s}sang?s$e/$1sɑ̃$2/g;
+	$p =~ s/${s}corps$e/$1KɔR$2/g;
+	$p =~ s/${s}clefs?$e/$1KLÉ$2/g;
 	$p =~ s/${s}ne$e/$1Nə$2/g;
 	$p =~ s/${s}[sS]ud$e/$1SYD$2/g;
 	#$p =~ s/${s}tous$e/$1TUS$2/g;
@@ -338,6 +340,7 @@ sub pron_in_fr
 	$p =~ s/ert$e/ɛʁ$1/g;
 	$p =~ s/ing$e/iŋ$1/g;
 	$p =~ s/eo$e/ÉO$1/g;
+	$p =~ s/efs?$e/ɛF$1/g;
 	$p =~ s/rand ($voy)/rɑ̃t$1/g;
 	$p =~ s/and$e/ɑ̃$1/g;
 	$p =~ s/(?:ots?|e?aux?)$e/O$1/g;
@@ -414,6 +417,8 @@ sub pron_in_fr
 	
 	# Préfixes courants
 	$p =~ s/${s}chr/$1KR/g;
+	$p =~ s/${s}renn/$1RɛN/g;
+	$p =~ s/${s}re[nm]($cons)/$1rɑ̃$2/g;
 	$p =~ s/${s}re($cons)/$1rə$2/g;
 	$p =~ s/${s}er/$1ɛr/g;
 	$p =~ s/${s}aqua/$1akwa/g;
@@ -501,6 +506,7 @@ sub pron_in_fr
 	$p =~ s/e?oi/wa/g;
 	#$p =~ s/i([$voy])[^es]/j$1/g;
 	$p =~ s/ann/An/g;
+	$p =~ s/em([bp])/ɑ̃$1/g;
 	$p =~ s/e([nt])\1/ɛ$1/g;
 	$p =~ s/en($voy)/ən$1/g;
 	$p =~ s/an($voy)/An$1/g;
