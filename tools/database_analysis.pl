@@ -246,14 +246,15 @@ sub pron_in_fr
 	my $w = $art->{'a_title'};
 	my $typ = $art->{'l_type'} ? $art->{'l_type'} : '';
 	
-	if ($w =~ /\b([A-Z\.,;!\(\)+\-]|−)+\b/ or
-			$w =~ /[0-9]/ or
-			$w =~ /[A-Z]{2,}/ or
-			$w =~ /[&\(\)]/
+	my $p = clean_pron($w);
+	if ($p =~ /\b([A-Z\.,;!\(\)+\-]|−)+\b/ or
+			$p =~ /[0-9]/ or
+			$p =~ /[A-Z]{2,}/ or
+			$p =~ /[&\(\)]/
 		) {
 		return '';
 	}
-	my $p = clean_pron(lc($w));
+	$p = lc($p);
 	
 	my $voy = "[aAiIeEJoOuUyY]";
 	$voy .= "|" . "é|è|ê|ɛ|ɛ̃|É|È|œ|œ̃|Œ|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø";
@@ -284,7 +285,9 @@ sub pron_in_fr
 	$p =~ s/${s}ego$e/$1ÉGO$2/g;
 	$p =~ s/${s}sang?s$e/$1sɑ̃$2/g;
 	$p =~ s/${s}ne$e/$1Nə$2/g;
+	$p =~ s/${s}[sS]ud$e/$1SYD$2/g;
 	#$p =~ s/${s}tous$e/$1TUS$2/g;
+	$p =~ s/${s}Est$e/$1ɛST$2/g;
 	$p =~ s/ est? / ɛ /g;
 	$p =~ s/${s}[cs] /$1S /g;
 	#$p =~ s/${s}h/$1/g;
@@ -354,6 +357,7 @@ sub pron_in_fr
 	$p =~ s/tiel$e/SJɛl$1/g;
 	$p =~ s/stial/STJal/g;
 	$p =~ s/tial/SJal/g;
+	$p =~ s/craties?$e/KRASI$1/g;
 	$p =~ s/els?$e/ɛl$1/g;
 	$p =~ s/ès$e/ɛ$1/g;
 	$p =~ s/iers?$e/JÉ$1/g;
@@ -388,6 +392,7 @@ sub pron_in_fr
 	$p =~ s/gien/ʒJɛ̃/g;
 	$p =~ s/ca/ka/g;
 	$p =~ s/genou/ʒənu/g;
+	$p =~ s/nation/NA.SJon/g;
 	$p =~ s/aiguill/ɛGɥIJ/g;
 	$p =~ s/gu($ei)/G$1/g;
 	$p =~ s/tech/tɛk/g;
@@ -398,6 +403,8 @@ sub pron_in_fr
 	$p =~ s/ymph/inf/g;
 	$p =~ s/(.)g[nN]/$1ɲ/g;
 	$p =~ s/acqui/aki/g;
+	$p =~ s/schn/ʃN/g;
+	$p =~ s/chn/KN/g;
 	$p =~ s/cqu(o?i)/kk$1/g;
 	$p =~ s/qu(o?i)/k$1/g;
 	$p =~ s/oyoi/wAJU/g;
@@ -406,6 +413,7 @@ sub pron_in_fr
 	$p =~ s/($cons)ay($voy)/$1ɛJ$2/g;
 	
 	# Préfixes courants
+	$p =~ s/${s}chr/$1KR/g;
 	$p =~ s/${s}re($cons)/$1rə$2/g;
 	$p =~ s/${s}er/$1ɛr/g;
 	$p =~ s/${s}aqua/$1akwa/g;
@@ -421,6 +429,7 @@ sub pron_in_fr
 	$p =~ s/ens/ɑ̃S/g;
 	$p =~ s/aiguill/ɛGYIJ/g;
 	$p =~ s/${s}ex($voy)/$1ɛgz$2/g;
+	$p =~ s/${s}voy($voy)/$1VWAJ$2/g;
 	
 	$p =~ s/esse?s?$e/ɛS$1/g;
 	$p =~ s/sse?s?$e/S$1/g;
@@ -443,7 +452,7 @@ sub pron_in_fr
 	$p =~ s/ê|è|ë/ɛ/g;
 	$p =~ s/é/É/g;
 	$p =~ s/[ʒg]ea([tds])/ʒa$1/g;
-	$p =~ s/e[ae]([tdn])/I$1/g;
+	$p =~ s/e[e]([tdn])/I$1/g;
 	$p =~ s/ph/f/g;
 	$p =~ s/cch/kk/g;
 	$p =~ s/(sc|c|s)h/ʃ/g;
@@ -466,7 +475,7 @@ sub pron_in_fr
 	$p =~ s/œu/Œ/g;
 	$p =~ s/œ/É/g;
 	$p =~ s/eill?e?/ɛJ/g;
-	$p =~ s/vill(oi|j|w)/viL$1/g;
+	$p =~ s/vill(ois|ien|j|w)/viL$1/g;
 	$p =~ s/${s}vill/$1vil/g;
 	$p =~ s/ill/iJ/g;
 	$p =~ s/JJ/J/g;
