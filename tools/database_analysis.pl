@@ -254,7 +254,6 @@ sub pron_in_fr
 		) {
 		return '';
 	}
-	$p = lc($p);
 	
 	my $voy = "[aAiIeEJoOuUyY]";
 	$voy .= "|" . "é|è|ê|ɛ|ɛ̃|É|È|œ|œ̃|Œ|ɑ|ɑ̃|ə|ɔ|ɔ̃|ø";
@@ -270,15 +269,23 @@ sub pron_in_fr
 	my $e = '(\s|$|-)';
 	my $E = '(?:ə|e)';
 	
+	# Before lowercase
+	$p =~ s/${s}Est$e/$1ɛST$2/g;
+	$p = lc($p);
+	
+	# Single unambiguous letters
+	$p =~ s/ù/u/g;
+	
 	# Mots
 	$p =~ s/${s}([ldms])es ($voy)/$1$2ɛz$3/g;
 	$p =~ s/${s}([ldms])es$e/$1$2ɛ$3/g;
-	$p =~ s/${s}([ldms])e$e/$1$2ə$3/g;
+	$p =~ s/${s}([cldmst])e$e/$1$2ə$3/g;
 	$p =~ s/${s}et$e/$1É$2/g;
 	$p =~ s/${s}uns?$e/$1ŒŒ$2/g;
 	$p =~ s/${s}longs?$e/$1Lɔ̃$2/g;
 	$p =~ s/^s /S/g;
 	$p =~ s/${s}ré($voy)/$1RÉ $2/g;
+	$p =~ s/${s}sud$e/$1SYD$2/g;
 	$p =~ s/${s}nez$e/$1NE$2/g;
 	$p =~ s/${s}culs?$e/$1KY$2/g;
 	$p =~ s/${s}temps$e/$1tɑ̃$2/g;
@@ -287,10 +294,8 @@ sub pron_in_fr
 	$p =~ s/${s}corps$e/$1KɔR$2/g;
 	$p =~ s/${s}clefs?$e/$1KLÉ$2/g;
 	$p =~ s/${s}ne$e/$1Nə$2/g;
-	$p =~ s/${s}[sS]ud$e/$1SYD$2/g;
 	#$p =~ s/${s}tous$e/$1TUS$2/g;
-	$p =~ s/${s}Est$e/$1ɛST$2/g;
-	$p =~ s/ est? / ɛ /g;
+	$p =~ s/${s}est?${e}/$1ɛ$2/g;
 	$p =~ s/${s}[cs] /$1S /g;
 	#$p =~ s/${s}h/$1/g;
 	
@@ -300,7 +305,7 @@ sub pron_in_fr
 		$p =~ s/ai$e/É$1/g;
 		$p =~ s/($voy)se(?:nt|s)?$e/$1Z$2/g;
 		$p =~ s/($voy)ce(?:nt|s)?$e/$1S$2/g;
-		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2/g;
+		$p =~ s/($cons)(\1?)e(?:nt|s)?$e/\u$1\u$2$3/g;
 		$p =~ s/iLL$e/ill$1/g;
 		$p =~ s/e(?:nt|s)?$e/e$1/g;
 		$p =~ s/ient$e/I$1/g;
@@ -394,7 +399,7 @@ sub pron_in_fr
 	$p =~ s/gi/ʒi/g;
 	$p =~ s/gien/ʒJɛ̃/g;
 	$p =~ s/ca/ka/g;
-	$p =~ s/genou/ʒənu/g;
+	$p =~ s/genoux?/ʒəNou/g;
 	$p =~ s/nation/NA.SJon/g;
 	$p =~ s/aiguill/ɛGɥIJ/g;
 	$p =~ s/gu($ei)/G$1/g;
