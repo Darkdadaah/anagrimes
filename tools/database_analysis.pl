@@ -265,8 +265,8 @@ sub pron_in_fr
 	$ei .= "|e|i|É|ə|œ";
 	my $aou = "[aoUY]";
 	$aou .= "|" . "ɔ|ɔ̃|ɑ|ɑ̃|ø";
-	my $s = '(\s|^|-)';
-	my $e = '(\s|$|-)';
+	my $s = '(\s|^|-|‿)';
+	my $e = '(\s|$|-|‿)';
 	my $E = '(?:ə|e)';
 	
 	# Before lowercase
@@ -277,21 +277,25 @@ sub pron_in_fr
 	$p =~ s/ù/u/g;
 	
 	# Mots
+	$p =~ s/${s}et$e/$1É$2/g;
+	$p =~ s/t ($voy)/tT‿$1/g;
+	$p =~ s/n ($voy)/nN‿$1/g;
 	$p =~ s/${s}([ldms])es ($voy)/$1$2ɛz$3/g;
 	$p =~ s/${s}([ldms])es$e/$1$2ɛ$3/g;
 	$p =~ s/${s}([cldmst])e$e/$1$2ə$3/g;
-	$p =~ s/${s}et$e/$1É$2/g;
+	$p =~ s/${s}un ($voy)/$1ŒŒN‿$2/g;
 	$p =~ s/${s}uns?$e/$1ŒŒ$2/g;
 	$p =~ s/${s}longs?$e/$1Lɔ̃$2/g;
 	$p =~ s/^s /S/g;
 	$p =~ s/${s}ré($voy)/$1RÉ $2/g;
 	$p =~ s/${s}sud$e/$1SYD$2/g;
+	$p =~ s/${s}zut$e/$1ZYT$2/g;
 	$p =~ s/${s}nez$e/$1NE$2/g;
 	$p =~ s/${s}culs?$e/$1KY$2/g;
 	$p =~ s/${s}temps$e/$1tɑ̃$2/g;
 	$p =~ s/${s}ego$e/$1ÉGO$2/g;
 	$p =~ s/${s}sang?s$e/$1sɑ̃$2/g;
-	$p =~ s/${s}corps$e/$1KɔR$2/g;
+	$p =~ s/orps$e/ɔR$1/g;
 	$p =~ s/${s}clefs?$e/$1KLÉ$2/g;
 	$p =~ s/${s}ne$e/$1Nə$2/g;
 	#$p =~ s/${s}tous$e/$1TUS$2/g;
@@ -438,6 +442,9 @@ sub pron_in_fr
 	$p =~ s/bien/bJɛ̃ /g;
 	$p =~ s/ens/ɑ̃S/g;
 	$p =~ s/aiguill/ɛGYIJ/g;
+	$p =~ s/${s}enn(e|E|É)([^i])/$1ɛN$2$3/g;
+	$p =~ s/${s}e(?:[nm])($cons)/$1ɑ̃$2/g;
+	$p =~ s/${s}e((?:$cons)+)($voy)/$1ɛ$2$3/g;
 	$p =~ s/${s}ex($voy)/$1ɛgz$2/g;
 	$p =~ s/${s}voy($voy)/$1VWAJ$2/g;
 	
