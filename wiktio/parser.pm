@@ -343,7 +343,7 @@ sub parseLanguage
 				# Is it a registered type3 header?
 				if ( exists $word_type->{$type} ) {
 					# Number (if any)
-					my $num = 1;
+					my $num = 0;
 					if ( $line =~ /\|num=([0-9]+)[\|\}]/ ) {
 						$num = $1;
 					}
