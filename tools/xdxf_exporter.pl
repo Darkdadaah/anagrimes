@@ -10,6 +10,24 @@ use Data::Dumper;
 
 our %opt;	# Getopt options
 
+my %lang_data = (
+	'fr' => {'3' => 'FRE', 'full' => 'français'},
+	'it' => {'3' => 'ITA', 'full' => 'italien'},
+	'en' => {'3' => 'ENG', 'full' => 'anglais'},
+);
+
+my %abbrev = (
+	'nom' => 'nom commun',
+	'adj' => 'adjectif',
+	'verb' => 'verbe',
+
+	'm' => 'masculin',
+	'f' => 'féminin',
+	'mf' => 'masculin et féminin',
+	'mf?' => "masculin et féminin, l'usage hésite",
+	'n' => 'neutre',
+);
+
 #################################################
 # Message about this program and how to use it
 sub usage
@@ -87,7 +105,7 @@ sub write_xdxf
 	my ($outpath, $lexemes, $lang) = @_;
 	
 	my $out = IO::File->new(">$outpath");
-	my $dico = XML::Writer->new(OUTPUT => $out);#, DATA_MODE => 1, DATA_INDENT => "\t");
+	my $dico = XML::Writer->new(OUTPUT => $out, DATA_MODE => 1, DATA_INDENT => "\t");
 	$dico->startTag("xdxf",
 		"lang_from" => trilang($lang),
 		"lang_to" => "FRE",
@@ -108,6 +126,19 @@ sub write_xdxf
 		$dico->characters($meta{$elt});
 		$dico->endTag($elt);
 	}
+	# Abbrev
+	$dico->startTag("abbreviations");
+	foreach my $abbr (keys %abbrev) {
+		$dico->startTag("abbr_def");
+		$dico->startTag("abbr_k");
+		$dico->characters($abbr);
+		$dico->endTag("abbr_k");
+		$dico->startTag("abbr_v");
+		$dico->characters($abbrev{$abbr});
+		$dico->endTag("abbr_v");
+		$dico->endTag("abbr_def");
+	}
+	$dico->endTag("abbreviations");
 	$dico->endTag("meta_info");
 
 	# List of words
@@ -119,16 +150,21 @@ sub write_xdxf
 		$dico->startTag("k");
 		$dico->characters($lex->{'a_title'});
 		$dico->endTag("k");
-		# Word type
+		# Grammar
+		$dico->startTag("def");
 		$dico->startTag("gr");
+		# Word type
+		$dico->startTag("abbr");
 		$dico->characters($lex->{'l_type'});
+		$dico->endTag("abbr");
 		# grammar (if any)
 		if ($lex->{'l_genre'}) {
+			$dico->startTag("abbr");
 			$dico->characters( " " . $lex->{'l_genre'});
+			$dico->endTag("abbr");
 		}
 		$dico->endTag("gr");
-		# Def
-		$dico->startTag("def");
+		# Defs
 		foreach my $def (@{ $lex->{'defs'} }) {
 			$dico->startTag("def");
 			$dico->characters($def);
@@ -142,12 +178,6 @@ sub write_xdxf
 	$dico->end();
 	$out->close();
 }
-
-my %lang_data = (
-	'fr' => {'3' => 'FRE', 'full' => 'français'},
-	'it' => {'3' => 'ITA', 'full' => 'italien'},
-	'en' => {'3' => 'ENG', 'full' => 'anglais'},
-);
 
 sub trilang
 {
