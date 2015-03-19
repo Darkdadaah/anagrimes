@@ -87,10 +87,10 @@ sub write_xdxf
 	my ($outpath, $lexemes, $lang) = @_;
 	
 	my $out = IO::File->new(">$outpath");
-	my $dico = XML::Writer->new(OUTPUT => $out, DATA_MODE => 1, DATA_INDENT => "\t");
+	my $dico = XML::Writer->new(OUTPUT => $out);#, DATA_MODE => 1, DATA_INDENT => "\t");
 	$dico->startTag("xdxf",
 		"lang_from" => trilang($lang),
-		"lang_to" => "fra",
+		"lang_to" => "FRE",
 		"format" => "logical",
 		"version" => "DD"
 	);
@@ -115,9 +115,19 @@ sub write_xdxf
 	foreach my $lex (@$lexemes) {
 		next if @{ $lex->{'defs'} } == 0;
 		$dico->startTag("ar");
+		# Keyword
 		$dico->startTag("k");
 		$dico->characters($lex->{'a_title'});
 		$dico->endTag("k");
+		# Word type
+		$dico->startTag("gr");
+		$dico->characters($lex->{'l_type'});
+		# grammar (if any)
+		if ($lex->{'l_genre'}) {
+			$dico->characters( " " . $lex->{'l_genre'});
+		}
+		$dico->endTag("gr");
+		# Def
 		$dico->startTag("def");
 		foreach my $def (@{ $lex->{'defs'} }) {
 			$dico->startTag("def");
@@ -134,15 +144,15 @@ sub write_xdxf
 }
 
 my %lang_data = (
-	'fr' => {'3' => 'fra', 'full' => 'français'},
-	'it' => {'3' => 'ita', 'full' => 'italien'},
-	'en' => {'3' => 'eng', 'full' => 'anglais'},
+	'fr' => {'3' => 'FRE', 'full' => 'français'},
+	'it' => {'3' => 'ITA', 'full' => 'italien'},
+	'en' => {'3' => 'ENG', 'full' => 'anglais'},
 );
 
 sub trilang
 {
 	my ($lang) = @_;
-	return uc(${$lang_data{$lang}}{3});
+	return ${$lang_data{$lang}}{3};
 }
 sub fullang
 {
