@@ -91,9 +91,9 @@ sub pronunciations
 	my $nsamer = $total - @$samer;
 	my $nsameish = $total - @$sameish;
 	print STDERR "$total\tarticles with usable pronunciations\n";
-	print STDERR "$nsame\tnot exact " . sprintf("(%.2f %%)\n", $nsame/$total*100);
-	print STDERR "$nsamer\talmost exact " . sprintf("(%.2f %%)\n", $nsamer/$total*100);
-	print STDERR "$nsameish\ttoo different " . sprintf("(%.2f %%)\n", $nsameish/$total*100);
+	print STDERR "$nsame\tdifferent " . sprintf("(%.2f %%)\n", $nsame/$total*100);
+	print STDERR "$nsamer\tquite different " . sprintf("(%.2f %%)\n", $nsamer/$total*100);
+	print STDERR "$nsameish\tcompletely different " . sprintf("(%.2f %%)\n", $nsameish/$total*100);
 }
 
 sub expected_pronunciation
@@ -192,7 +192,7 @@ sub simple
 {
 	my ($m) = @_;
 	
-	$m =~ s/([\s\.‿ ː ])+//g;
+	$m =~ s/([\s\. ]|‿|ː)+//g;
 	$m =~ s/ə//g;
 	$m =~ s/ʁ/r/g;
 	$m =~ s/ɡ/g/g;
@@ -225,6 +225,7 @@ sub simplest
 	$m =~ s/ʃ/k/g;
 	$m =~ s/z/s/g;
 	$m =~ s/b/p/g;
+	$m =~ s/ks/gz/g;
 	$m =~ s/[\(\)]//g;
 	$m =~ s/(.)\1/$1/g;
 	return $m;
@@ -287,6 +288,11 @@ sub pron_in_fr
 	$p =~ s/${s}uns?$e/$1ŒŒ$2/g;
 	$p =~ s/${s}longs?$e/$1Lɔ̃$2/g;
 	$p =~ s/^s /S/g;
+	$p =~ s/α/ALFA/g;
+	$p =~ s/β/BɛTA/g;
+	$p =~ s/γ/GAMA/g;
+	$p =~ s/δ/DɛLTA/g;
+	$p =~ s/ε/ɛPSILɔN/g;
 	$p =~ s/${s}ré($voy)/$1RÉ $2/g;
 	$p =~ s/${s}sud$e/$1SYD$2/g;
 	$p =~ s/${s}zut$e/$1ZYT$2/g;
