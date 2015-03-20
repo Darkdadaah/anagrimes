@@ -20,6 +20,7 @@ my %abbrev = (
 	'nom' => 'nom commun',
 	'adj' => 'adjectif',
 	'verb' => 'verbe',
+	'adverbe' => 'adverbe',
 
 	'm' => 'masculin',
 	'f' => 'féminin',
@@ -40,8 +41,15 @@ sub usage
 	-h        : this (help) message
 	-d <path> : database path
 	
+	# Export one language
 	-l <str>  : language code
 	-o <path> : output file path
+	
+	OR
+	
+	# Export all languages (one file each)
+	-L <num>  : minimum number of articles in the language [optional]
+	-O <path> : output dir (many contain a lot of files!)
 EOF
 	exit;
 }
@@ -50,11 +58,27 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hd:l:o:', \%opt ) or usage();
+	getopts( 'hd:l:o:L:O:', \%opt ) or usage();
 	usage() if $opt{h};
 	usage("Database needed (-d)") unless $opt{d};
-	usage("Language code needed -l") unless $opt{l};
-	usage("Output path needed (-o)") unless $opt{o};
+	if ($opt{o} or $opt{l}) {
+		usage("Language code needed (-l)") unless $opt{l};
+		usage("Output path needed (-o)") unless $opt{o};
+	} elsif ($opt{O} or $opt{L}) {
+		usage("Output dir path needed (-O)") unless $opt{O};
+	} else {
+		usage();
+	}
+}
+
+sub get_langs
+{
+	my ($dbh, $max_lang) = @_;
+	my $conditions = "";
+	$max_lang = 0 if not defined($max_lang);
+	$conditions = "WHERE lg_num > ?";
+	my $query = "SELECT lg_lang FROM langs $conditions";
+	return $dbh->selectcol_arrayref($query, undef, $max_lang);
 }
 
 sub get_definitions
@@ -82,9 +106,6 @@ sub format_defs
 		}
 		push @{ $fused{ $lexid }{ 'defs' } }, $line->{'d_def'};
 	}
-	
-	print STDERR (0 + @$defs) . " lines\n";
-	print STDERR (0 + keys(%fused)) . " lexids\n";
 
 	my @lexemes = ();
 	foreach my $line (@$defs) {
@@ -95,7 +116,7 @@ sub format_defs
 			delete $fused{ $lexid };
 		}
 	}
-	print STDERR (0 + @lexemes) . " final lexemes\n";
+	#print STDERR (0 + @lexemes) . " lexemes\n";
 	
 	return \@lexemes;
 }
@@ -160,7 +181,7 @@ sub write_xdxf
 		# grammar (if any)
 		if ($lex->{'l_genre'}) {
 			$dico->startTag("abbr");
-			$dico->characters( " " . $lex->{'l_genre'});
+			$dico->characters( $lex->{'l_genre'});
 			$dico->endTag("abbr");
 		}
 		$dico->endTag("gr");
@@ -182,12 +203,28 @@ sub write_xdxf
 sub trilang
 {
 	my ($lang) = @_;
-	return ${$lang_data{$lang}}{3};
+	if ($lang_data{$lang}) {
+		return ${$lang_data{$lang}}{3};
+	} else {
+		return $lang;
+	}
 }
 sub fullang
 {
 	my ($lang) = @_;
-	return $lang_data{$lang}{'full'};
+	if ($lang_data{$lang}) {
+		return $lang_data{$lang}{'full'};
+	} else {
+		return $lang;
+	}
+}
+
+sub export_xdxf
+{
+	my ($dbh, $lang, $outpath) = @_;
+	
+	my $lexemes = get_definitions($dbh, $lang);
+	write_xdxf($outpath, $lexemes, $lang);
 }
 
 ##################################
@@ -195,7 +232,17 @@ sub fullang
 init();
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$opt{d}","","");
-my $lexemes = get_definitions($dbh, $opt{l});
-write_xdxf($opt{o}, $lexemes, $opt{l});
+if ($opt{o} and $opt{l}) {
+	export_xdxf($dbh, $opt{l}, $opt{o});
+} elsif ($opt{O}) {
+	my $langs = get_langs($dbh, $opt{L});
+	print STDERR (0+@$langs) . " languages\n";
+	foreach my $l (@$langs) {
+		my $outpath = "$opt{O}/$l.xdxf";
+		print STDERR "$l ";
+		export_xdxf($dbh, $l, $outpath);
+	}
+	print STDERR "\n";
+}
 __END__
 
