@@ -225,7 +225,7 @@ sub simplest
 	$m =~ s/ʃ/k/g;
 	$m =~ s/z/s/g;
 	$m =~ s/b/p/g;
-	$m =~ s/ks/gz/g;
+	$m =~ s/gz/ks/g;
 	$m =~ s/[\(\)]//g;
 	$m =~ s/(.)\1/$1/g;
 	return $m;
