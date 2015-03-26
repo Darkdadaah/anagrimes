@@ -170,10 +170,29 @@ sub parseArticle
 	die "Not an array (parseArticle)\n" if not ref($article0) eq 'ARRAY';
 	die "Empty array (parseArticle)\n" if $#{$article0} == -1;
 	
-	# copy
+	# copy and clean
 	my $article = ();
-	foreach my $line (@$article0) {
+	for (my $i=0; $i < @$article0; $i++) {
+		my $line = $article0->[$i];
 		next if $line =~ /^\s*$/;
+		# Delete
+		if ($line =~ s/&lt;!--(.*)--&gt;//) {
+			special_log('html_hidden', $title, "<!--$1-->");
+		}
+		# Don't delete for now, multiple lines...
+		elsif ($line =~ /(&lt;!--.*)$/) {
+			my $hidden = $1;
+			$i++;
+			while($i < @$article0) {
+				$line = $article0->[$i];
+				last if ($line =~ /--&gt;/);
+				$hidden .= $line;
+				$i++;
+			}
+			$line =~ s/^(.*--&gt;)//;
+			$hidden .= $1;
+			special_log('html_hidden_long', $title, "$hidden");
+		}
 		push @$article, $line;
 	}
 	

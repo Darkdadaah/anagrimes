@@ -72,7 +72,7 @@ sub special_log
 	
 	open(LOG, ">>$logfile") or die("Couldn't write $logfile: $!");
 	my $raw_texte = $texte ? $texte : '';
-	$raw_texte =~ s/\[\[([^\]]+)\]\]/__((__$1__))__/g;
+	#$raw_texte =~ s/\[\[([^\]]+)\]\]/__((__$1__))__/g;
 	$raw_texte .= "\t($other)" if $other;
 	print LOG "$titre\t$raw_texte\n";
 	close(LOG);
