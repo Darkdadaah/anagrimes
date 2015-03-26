@@ -173,6 +173,7 @@ sub parseArticle
 	# copy
 	my $article = ();
 	foreach my $line (@$article0) {
+		next if $line =~ /^\s*$/;
 		push @$article, $line;
 	}
 	
@@ -182,11 +183,10 @@ sub parseArticle
 	$sections->{'head'} = ();
 	
 	# head, languages, tail
-	my $line;
 	my $language ='';
 	
 	# HEAD
-	while ( my $line = shift @$article ) {
+	while (my $line = shift @$article) {
 		if ( $line =~ /^#REDIRECT/i ) {
 			$sections->{'redirect'} = 1;
 			return $sections;
@@ -204,7 +204,7 @@ sub parseArticle
 	}
 	
 	# continue to retrieve the languages
-	while ($line = shift @$article) {
+	while (my $line = shift @$article) {
 		special_log('oldlevel2', $title) if $line =~ /\{\{=[^\}]+=\}\}/;
 		
 		# TAIL ?

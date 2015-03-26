@@ -508,8 +508,10 @@ sub parse_article
 				# No content? Something's not right
 				if (not $lang_section) {
 					special_log('empty_lang', $title_val->{'a_title'}, $lang);	# Log just to be sure
-					
-				# Everything is here, let's part this section (-> table lexemes)
+				# No code in the language section
+				} elsif (not $lang) {
+					special_log('no_lang', $title_val->{'a_title'}, $lang);
+				# Everything is here, let's parse this section (-> table lexemes)
 				} else {
 					parse_language_sections($article, $lang_section, $lang);
 				}

@@ -240,15 +240,11 @@ sub cherche_prononciation
 					$pron{$arg->{1}} = 1 if ($arg->{1});
 					$pron{$arg->{pron2}} = 1 if ($arg->{pron2});
 					$pron{$arg->{pron3}} = 1 if ($arg->{pron3});
-					$pron{$arg->{p2}} = 1 if ($arg->{p2});
-					$pron{$arg->{p3}} = 1 if ($arg->{p3});
 				}
 				elsif ($nom eq 'rég-x') {
 					$pron{$arg->{1}} = 1 if ($arg->{1});
 					$pron{$arg->{pron2}} = 1 if ($arg->{pron2});
 					$pron{$arg->{pron3}} = 1 if ($arg->{pron3});
-					$pron{$arg->{p2}} = 1 if ($arg->{p2});
-					$pron{$arg->{p3}} = 1 if ($arg->{p3});
 				}
 				elsif ($nom eq 'accord-mf') {
 					$pron{$arg->{ps}} = 1 if ($arg->{ps});
