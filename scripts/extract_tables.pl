@@ -14,7 +14,6 @@ binmode STDERR, ":encoding(utf8)";
 # Useful Anagrimes libraries
 use lib '..';
 use wiktio::basic;
-use wiktio::basic		qw( to_utf8 );
 use wiktio::string_tools	qw( ascii_strict transcription anagramme unicode_NFKD );
 use wiktio::dump_reader;
 use wiktio::parser		qw( parseArticle parseLanguage parseType is_gentile is_sigle section_meanings cherche_genre );

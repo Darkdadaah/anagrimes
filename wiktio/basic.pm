@@ -12,6 +12,7 @@ use Exporter;
 	special_log
 	$true $false
 	print_value
+	to_utf8
 );
 
 @EXPORT_OK = qw(
@@ -22,7 +23,6 @@ use Exporter;
 	$langues_transcrites
 	step
 	stepl
-	to_utf8
 );
 
 use strict;
