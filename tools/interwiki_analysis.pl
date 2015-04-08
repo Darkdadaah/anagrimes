@@ -109,7 +109,7 @@ sub interwiki_analyze
 # MAIN
 init();
 
-open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n";
+my $dump_fh = dump_open($opt{i});
 my $title = '';
 my ($n, $redirect) = (0,0);
 my $complete_article = 0;
@@ -118,7 +118,7 @@ my @article = ();
 my $count = {};
 
 $|=1;
-while(<DUMP>) {
+while(<$dump_fh>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1;
 		$title = '' if $title =~ /[:\/]/;
@@ -131,7 +131,7 @@ while(<DUMP>) {
 		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
 		@article = ();
 		push @article, "$1\n";
-		while ( <DUMP> ) {
+		while ( <$dump_fh> ) {
 			next if /^\s+$/;
 			if ( /^(.*?)<\/text>/ ) {
 				push @article, "$1\n";
@@ -158,7 +158,7 @@ while(<DUMP>) {
 }
 $|=0;
 print STDERR "\n";
-close(DUMP);
+close($dump_fh);
 
 foreach my $c (sort keys %$count) {
 	print STDERR "$c:\t$count->{$c}\n";

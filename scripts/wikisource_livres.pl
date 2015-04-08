@@ -14,8 +14,8 @@ binmode STDERR, ":encoding(utf8)";
 use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
-use wiktio::string_tools	qw(ascii ascii_strict anagramme);
 use wiktio::dump_reader;
+use wiktio::string_tools	qw(ascii ascii_strict anagramme);
 
 our %opt;	# Getopt options
 
@@ -70,7 +70,7 @@ sub get_books
 		'books' => 0,
 	);
 	
-	open(my $dump_fh, dump_input($p{'dump_path'})) or die "Couldn't open '$p{'dump_path'}': $!\n";
+	my $dump_fh = dump_open($p{'dump_path'});
 	
 	$|=1;
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {

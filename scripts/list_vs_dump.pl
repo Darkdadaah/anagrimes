@@ -12,6 +12,7 @@ binmode STDERR, ":utf8";
 
 use lib '..';
 use wiktio::basic;
+use wiktio::dump_reader;
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
 use wiktio::parser			qw( parseArticle parseLanguage parseType is_gentile);
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation);
@@ -255,7 +256,7 @@ my $past = time();
 #close(DICO);
 
 # Read dump
-open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n";
+my $dump_fh = open_dump($opt{i});
 my $title = '';
 my $complete_article = 0;
 my @article = ();
@@ -268,7 +269,7 @@ print STDERR "Allowed namespaces: ".join(", ", @namespaces)."\n";
 open(my $sql, ">$sqlfile") or die("$sqlfile: $!");
 
 $|=1;
-while(<DUMP>) {
+while(<$dump_fh>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1;
 		
@@ -288,10 +289,10 @@ while(<DUMP>) {
 		
 		# Si avec historique : vérifier s'il y a une version plus récente (=après)
 		if ($opt{H}) {
-			my $mark = tell(DUMP);
-			HISTORY : while(<DUMP>) {
+			my $mark = tell($dump_fh);
+			HISTORY : while(<$dump_fh>) {
 				if ( /<revision>/ ) {
-					$mark = tell(DUMP);
+					$mark = tell($dump_fh);
 				}
 				# Woops, on est arrivé à la fin
 				elsif (/<\/page>/) {
@@ -299,7 +300,7 @@ while(<DUMP>) {
 				}
 			}
 			# Retour au début de la dernière version
-			seek(DUMP, $mark, 0);
+			seek($dump_fh, $mark, 0);
 		}
 	
 	} elsif ( $title and /<text xml:space="preserve">(.*?)<\/text>/ ) {
@@ -310,7 +311,7 @@ while(<DUMP>) {
 		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
 		@article = ();
 		push @article, "$1\n";
-		while ( <DUMP> ) {
+		while ( <$dump_fh> ) {
 			next if /^\s+$/;
 			if ( /^(.*?)<\/text>/ ) {
 				push @article, "$1\n";
@@ -344,7 +345,7 @@ while(<DUMP>) {
 }
 $|=0;
 print STDERR "\n";
-close(DUMP);
+close($dump_fh);
 close($sql);
 
 print "Total = $count{pages}\n";

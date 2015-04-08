@@ -358,7 +358,7 @@ sub parse_articles
 	my ($dump_path, $wlang) = @_;
 	
 	# Scan every line of the dump
-	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
+	my $dump_fh = open_dump($dump_path);
 	
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {
 		next if not defined( $article->{'ns'} );

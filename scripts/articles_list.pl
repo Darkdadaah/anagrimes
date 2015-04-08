@@ -129,7 +129,7 @@ sub get_articles_list
 		'redirects' => 0,
 	);
 	
-	open(my $dump_fh, dump_input($p{'dump_path'})) or die "Couldn't open '$p{'dump_path'}': $!\n";
+	my $dump_fh = open_dump($p{'dump_path'});
 	
 	$|=1;
 	ARTICLE : while(my $article = parse_dump($dump_fh, $par)) {

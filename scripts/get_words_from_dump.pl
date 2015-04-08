@@ -133,7 +133,7 @@ sub words
 # MAIN
 init();
 
-open(DUMP, dump_input($opt{i})) or die "Couldn't open '$opt{i}': $!\n";
+my $dump_fh = open_dump($opt{i});
 my $title = '';
 my ($n, $word_count, $redirect) = (0,0,0);
 my $complete_article = 0;
@@ -146,7 +146,7 @@ my $nolist = get_list($opt{n});
 
 # Get author type list
 $|=1;
-while(<DUMP>) {
+while(<$dump_fh>) {
 	if ( /<title>(.+?)<\/title>/ ) {
 		$title = $1;
 		# Exclut toutes les pages en dehors de l'espace principal
@@ -160,7 +160,7 @@ while(<DUMP>) {
 		} elsif ( $title and  /<text xml:space="preserve">(.*?)$/ ) {
 		@article = ();
 		push @article, "$1\n";
-		while ( <DUMP> ) {
+		while ( <$dump_fh> ) {
 			next if /^\s+$/;
 			if ( /^(.*?)<\/text>/ ) {
 				push @article, "$1\n";
@@ -192,7 +192,7 @@ while(<DUMP>) {
 }
 print STDERR "\n";
 $|=0;
-close(DUMP);
+close($dump_fh);
 
 print STDERR "Total = $word_count words in $n articles\n";
 print STDERR "Total_redirects = $redirect\n";

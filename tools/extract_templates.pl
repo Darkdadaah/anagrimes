@@ -53,7 +53,7 @@ sub parse_articles
 	my ($dump_path, $outpath) = @_;
 	
 	# Scan every line of the dump
-	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
+	my $dump_fh = dump_open($dump_path);
 	open(my $out_fh, ">". $outpath) or die "Couldn't write '$outpath': $!\n";
 	
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {

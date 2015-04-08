@@ -12,7 +12,7 @@ use Exporter;		# So that we can export functions and vars
 @ISA=('Exporter');	# This module is a subclass of Exporter
 
 # What can be exported
-@EXPORT = qw( dump_input parse_dump );
+@EXPORT = qw( open_dump parse_dump );
 
 use strict;
 use warnings;
@@ -23,7 +23,7 @@ binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
 # Change the input to automatically handle file compression
-sub dump_input
+sub _dump_input
 {
 	my $infile = shift;
 	
@@ -43,6 +43,13 @@ sub dump_input
 	}
 	
 	return $input;
+}
+
+sub open_dump
+{
+	my ($dump_path) = @_;
+	open(my $dump_fh, _dump_input($dump_path)) or die("Couldn't open '$dump_path': $!\n");
+	return $dump_fh;
 }
 
 # Right now this parser uses regex to get data from an XML file...

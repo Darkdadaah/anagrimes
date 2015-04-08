@@ -142,7 +142,7 @@ sub get_articles_list
 	my $list = {};
 	my $redirect = {};
 	
-	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
+	my $dump_fh = dump_open($dump_path);
 	
 	ARTICLE : while(my $article = parse_dump($dump_fh)) {
 		if (not defined($article->{'fulltitle'})) {
