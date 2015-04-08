@@ -618,7 +618,7 @@ sub parse_language_sections
 		
 		# Then add each pron
 		my $pnum = 1;
-		foreach my $pronunciation (@pron) {
+		foreach my $pronunciation (sort { $a cmp $b } @pron) {
 			#die " @pron : $article->{title}\n";
 			my %values = %word_values;	# clone
 			$values{'p_num'} = $pnum;

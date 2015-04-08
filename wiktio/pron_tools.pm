@@ -158,7 +158,7 @@ sub cherche_prononciation
 				special_log('bad_pron', $titre, '', "p='$p'");
 			}
 		}
-		elsif ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}.+ \{\{pron\|([^\}\r\n]+?)\}\}\}/) {
+		elsif ($ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}\}.+ \{\{pron\|([^\}\r\n]+?)\}\}\}/) {
 			my $p1 = $1;
 			my $p2 = $2;
 			# Pron donnée mais sans code langue
@@ -193,7 +193,7 @@ sub cherche_prononciation
 		}
 		
 		# Ancien
-		if ($ligne =~ /^'''.+?'''.*?\/([^\/]*?)\/.+ \/([^\/]*?)\//) {
+		elsif ($ligne =~ /^'''.+?'''.*?\/([^\/]*?)\/.+ \/([^\/]*?)\//) {
 			$pron{$1} = 1;
 			$pron{$2} = 1;
 			#print STDERR "[[$titre]]\tvieille prononciation de ligne de forme /$1/, /$2/\n";
