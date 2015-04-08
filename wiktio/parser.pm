@@ -12,7 +12,7 @@ use Exporter;		# So that we can export functions and vars
 @ISA=('Exporter');	# This module is a subclass of Exporter
 
 # What can be exported
-@EXPORT_OK = qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile is_sigle section_meanings cherche_genre);
+@EXPORT_OK = qw( parse_dump parseArticle parseLanguage parseType is_gentile is_sigle section_meanings cherche_genre);
 
 use strict;
 use warnings;
@@ -253,38 +253,6 @@ sub parseArticle
 	return $sections;
 }
 
-sub printArticle
-{
-	my $sections = shift;
-	
-	if ( $#{$sections->{'head'}} > -1 ) {
-		step( "\n== HEAD ==" );
-		foreach ( @{$sections->{'head'}} ) {
-			step( $_ );
-		}
-	}
-	
-	foreach my $lang ( sort keys %{$sections->{'language'}} ) {
-	step( "\n".("-"x50) );
-	step( "\n== LANGUAGE: $lang ==\n" );
-		if ( ref($sections->{'language'}->{$lang}) eq 'ARRAY' ) {
-			foreach ( @{$sections->{'language'}->{$lang}} ) {
-				step( $_ );
-			}
-		} elsif ( ref($sections->{'language'}->{$lang}) eq 'HASH' ) {
-			printLanguage( $sections->{'language'}->{$lang} );
-		}
-	}
-	
-	if ( $#{$sections->{'tail'}} > -1 ) {
-		step( "\n".("-"x50) );
-		step( "\n== TAIL ==" );
-		foreach ( @{$sections->{'tail'}} ) {
-			step( $_ );
-		}
-	}
-}
-
 sub parseLanguage
 {
 	my ( $article, $title, $lang ) = @_;
@@ -439,60 +407,6 @@ sub parseLanguage
 	return $sections;
 }
 
-sub printLanguage
-{
-	my $sections = shift;
-	
-	if ( $#{$sections->{'head'}} > -1 ) {
-		step( "\n=== HEAD ===" );
-		foreach ( @{$sections->{'head'}} ) {
-			step( $_ );
-		}
-	}
-	
-	if ( $#{$sections->{'etymologie'}} > -1 ) {
-		step( "\n=== ÉTYMOLOGIE ===" );
-		foreach ( @{$sections->{'etymologie'}} ) {
-			step( $_ );
-		}
-	}
-	
-	# TYPES
-	foreach my $type ( sort keys %{$sections->{'type'}} ) {
-	step( "\n=== TYPE: $type ===" );
-		if ( ref($sections->{'type'}->{$type}) eq 'ARRAY' ) {
-			foreach ( @{$sections->{'type'}->{$type}} ) {
-				step( $_ );
-			}
-		} elsif ( ref($sections->{'type'}->{$type}) eq 'HASH' ) {
-			printType( $sections->{'type'}->{$type} );
-		}
-	}
-	
-	if ( $#{$sections->{'prononciation'}} > -1 ) {
-		step( "\n=== PRONONCIATION ===" );
-		foreach ( @{$sections->{'prononciation'}} ) {
-			step( $_ );
-		}
-	}
-	
-	if ( $#{$sections->{'voir'}} > -1 ) {
-		step( "\n=== VOIR AUSSI ===" );
-		foreach ( @{$sections->{'voir'}} ) {
-			step( $_ );
-		}
-	}
-	
-	if ( $#{$sections->{'references'}} > -1 ) {
-		step( "\n=== RÉFÉRENCES ===" );
-		foreach ( @{$sections->{'references'}} ) {
-			step( $_ );
-		}
-	}
-	
-}
-
-
 sub parseType
 {
 	my ($article, $title) = @_;
@@ -555,26 +469,6 @@ sub parseType
 	}
 	
 	return $sections;
-}
-
-sub printType
-{
-	my $sections = shift;
-	
-	# HEAD
-	step( "\n---- head ----" );
-	foreach ( @{$sections->{head}} ) {
-		step( $_ );
-	}
-	
-	# TYPES
-	foreach my $sec ( sort keys %$sections ) {
-		next if $sec eq 'head';
-		step( "\n---- $sec ----" );
-			foreach ( @{$sections->{$sec}} ) {
-				step( $_ );
-			}
-	}
 }
 
 sub is_gentile

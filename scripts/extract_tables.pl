@@ -16,7 +16,7 @@ use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
-use wiktio::parser			qw( parse_dump parseArticle printArticle parseLanguage printLanguage parseType printType is_gentile is_sigle section_meanings cherche_genre);
+use wiktio::parser			qw( parse_dump parseArticle parseLanguage parseType is_gentile is_sigle section_meanings cherche_genre);
 use wiktio::pron_tools		qw(cherche_prononciation cherche_transcription simple_prononciation extrait_rimes section_prononciation nombre_de_syllabes);
 
 # Output files:
