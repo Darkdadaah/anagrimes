@@ -13,6 +13,7 @@ use Encode qw(decode);	# Needed?
 
 use lib '..';
 use wiktio::basic;
+use wiktio::dump_reader;
 our %opt;	# Getopt options
 
 #################################################

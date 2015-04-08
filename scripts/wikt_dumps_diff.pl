@@ -7,8 +7,9 @@ use Getopt::Std;
 
 use lib '..';
 use wiktio::basic;
-use wiktio::basic		qw(step stepl print_value dump_input);
-use wiktio::parser		qw(parse_dump parseArticle);
+use wiktio::basic		qw(step stepl print_value);
+use wiktio::dump_reader;
+use wiktio::parser		qw(parseArticle);
 use wiktio::string_tools	qw(unisort_key);
 our %opt;
 use utf8;

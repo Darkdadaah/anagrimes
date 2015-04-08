@@ -15,7 +15,7 @@ use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii ascii_strict anagramme);
-use wiktio::parser		qw(parse_dump);
+use wiktio::dump_reader;
 
 our %opt;	# Getopt options
 

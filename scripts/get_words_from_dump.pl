@@ -14,6 +14,7 @@ binmode STDERR, ":encoding(utf8)";
 use lib '..';
 use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
+use wiktio::dump_reader;
 
 our %opt;
 

@@ -10,7 +10,6 @@ use Exporter;
 @EXPORT = qw(
 	$log
 	special_log
-	dump_input
 	$true $false
 	print_value
 );
@@ -77,30 +76,6 @@ sub special_log
 	print LOG "$titre\t$raw_texte\n";
 	close(LOG);
 }
-
-# Change the input to automatically handle file compression
-sub dump_input
-{
-	my $infile = shift;
-	
-	# Open file (compressed or not)
-	my $input = '';
-	if ($infile =~ /\.bz2$/) {
-		$input = "bzcat $infile |";
-	} elsif ($infile =~ /\.gz$/) {
-		$input = "gunzip -c $infile |";
-	} elsif ($infile =~ /\.7z$/) {
-		$input = "7z x -so $infile 2> /dev/null |";
-	} elsif ($infile =~ /\.xml$/) {
-		$input = $infile;
-	} else {
-		print STDERR "Error: unsupported dump file format or compression: $infile\n";
-		exit(1);
-	}
-	
-	return $input;
-}
-
 
 sub to_utf8
 {

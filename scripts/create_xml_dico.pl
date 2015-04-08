@@ -16,6 +16,7 @@ use wiktio::basic;
 use wiktio::basic		qw(to_utf8);
 use wiktio::string_tools	qw(ascii_strict transcription anagramme unicode_NFKD);
 use wiktio::parser			qw( parseArticle parseLanguage parseType is_gentile);
+use wiktio::dump_reader;
 use wiktio::pron_tools		qw(cherche_prononciation simple_prononciation section_prononciation);
 our %opt;
 my $redirects = '';
