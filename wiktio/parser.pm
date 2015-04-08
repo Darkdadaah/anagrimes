@@ -170,7 +170,7 @@ sub parseArticle
 	die "Not an array (parseArticle)\n" if not ref($article0) eq 'ARRAY';
 	die "Empty array (parseArticle)\n" if $#{$article0} == -1;
 	
-	# copy and clean
+	# copy and clean before parsing
 	my $article = ();
 	for (my $i=0; $i < @$article0; $i++) {
 		my $line = $article0->[$i];

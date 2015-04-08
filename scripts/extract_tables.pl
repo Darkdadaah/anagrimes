@@ -171,6 +171,7 @@ sub usage
 	-h        : this (help) message
 	-i <path> : input dump path (compressed or not)
 	-o <path> : output path (this needs to be a path + prefix of the file names that will be created: path/filename)
+	-w <str>  : wiktionary language code
 	
 	Optional:
 	-l <path> : special log_files (like -o path + prefix). Those files log specific errors defined in the parser.
@@ -188,7 +189,7 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:o:L:l:c:Ss', \%opt ) or usage();
+	getopts( 'hi:o:L:l:c:Ssw:', \%opt ) or usage();
 	%opt = %{ to_utf8(\%opt) };
 	usage() if $opt{h};
 	
@@ -198,6 +199,9 @@ sub init()
 		usage( "Dump path needed (-i)" ) if not $opt{i};
 	}
 	usage( "Output file path needed (-o)" ) if not $opt{o};
+
+	# Language
+	$opt{w} = 'fr' if not $opt{w};
 	
 	# Prepare output file path
 	my $output = ($opt{o} =~ /\.[a-z0-9]+$/ ? $opt{o} : "$opt{o}.txt");
@@ -350,7 +354,7 @@ sub add_to_file_lang
 
 sub parse_articles
 {
-	my ($dump_path) = @_;
+	my ($dump_path, $wlang) = @_;
 	
 	# Scan every line of the dump
 	open(my $dump_fh, dump_input($dump_path)) or die "Couldn't open '$dump_path': $!\n";
@@ -364,7 +368,7 @@ sub parse_articles
 			parse_redirect($article);
 		} else {
 			# Fully parse the article
-			parse_article($article);
+			parse_article($article, $wlang);
 			
 		}
 	}
@@ -465,7 +469,7 @@ sub prepare_crossword
 # ARTICLES PARSER
 sub parse_article
 {
-	my ($article) = @_;
+	my ($article, $wlang) = @_;
 	
 	# Discard any *ffixes
 	return if $article->{'title'} =~ /^-/ or $article->{'title'} =~ /-$/;
@@ -481,18 +485,18 @@ sub parse_article
 	# Everything is ok thus far
 	} else {
 		# Let's parse the whole article and divide it into languages sections
-		my $article_section = parseArticle($article->{'content'}, $article->{'title'});
+		my $article_section = parseArticle($article->{'content'}, $article->{'title'}, $wlang);
 		
 		# If we are only interested in one language, only parse this one further
 		my $lang_ok = $false;
 		if ($opt{L}) {
-			# Ok, so it there such a section?
+			# Ok, so is there such a section?
 			my $lang = $opt{L};
 			my $lang_section = $article_section->{language}->{$lang};
 			
 			# Yes there is: let's parse it further (-> table mots)
 			if ($#{$lang_section}+1 > 0) {
-				parse_language_sections($article, $lang_section, $lang);
+				parse_language_sections($article, $lang_section, $wlang, $lang);
 				$lang_ok = $true;
 				
 			# No: then no need to stay here
@@ -513,7 +517,7 @@ sub parse_article
 					special_log('no_lang', $title_val->{'a_title'}, $lang);
 				# Everything is here, let's parse this section (-> table lexemes)
 				} else {
-					parse_language_sections($article, $lang_section, $lang);
+					parse_language_sections($article, $lang_section, $wlang, $lang);
 				}
 			}
 			$lang_ok = $true;
@@ -533,7 +537,7 @@ sub parse_article
 # LANGUAGE SECTION
 sub parse_language_sections
 {
-	my ($article, $section, $lang) = @_;
+	my ($article, $section, $wlang, $lang) = @_;
 	my $title = $article->{'title'};
 	
 	# First extract all level 3 sections, even the etymology, pron, ref, etc.
@@ -760,9 +764,9 @@ if ($opt{s}) {
 
 if ($opt{i}) {
 	# Actual parsing of the dumps
-	parse_articles($opt{i});
+	parse_articles($opt{i}, $opt{w});
 		
-	# Lastly, print the language table
+	# Lastly, print the language table (with the stats)
 	add_to_file_lang();
 }
 
