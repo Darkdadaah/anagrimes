@@ -150,6 +150,33 @@ our %indexes = (
 	}
 );
 
+our %special_indexes = (
+	'entries_fr' => {
+		'fra_title' => 'a_title(15)',
+		'fra_title_flat' => 'a_title_flat(15)',
+		'fra_title_r' => 'a_title_r(15)',
+		'fra_title_flat_r' => 'a_title_flat_r(15)',
+		'fra_trans' => 'a_trans(10)',
+		'fra_trans_flat' => 'a_trans_flat(10)',
+		'fra_trans_flat_r' => 'a_trans_flat_r(10)',
+		'fra_alphagram' => 'a_alphagram(15)',
+		'frl_lexid' => 'l_lexid',
+		'frl_lang' => 'l_lang(3)',
+		'frl_type' => 'l_type(4)',
+		'frl_genre' => 'l_genre(4)',
+		'frl_is_flexion' => 'l_is_flexion',
+		'frl_is_locution' => 'l_is_locution',
+		'frl_is_gentile' => 'l_is_gentile',
+		'frl_sigle' => 'l_sigle(2)',
+		'frl_rand' => 'l_rand',
+		'frp_pronid' => 'p_pronid',
+		'frp_lexid' => 'p_lexid',
+		'frp_pron' => 'p_pron(15)',
+		'frp_pron_flat' => 'p_pron_flat(15)',
+		'frp_pron_flat_r' => 'p_pron_flat_r(15)',
+	}
+);
+
 my $max_col = 0;
 my %lang_total = ();
 my %lang_filter = ();
@@ -272,6 +299,13 @@ sub print_sql_schema
 		} else {
 			die("Undefined database type\n");
 		}
+	}
+	
+	# Create special fr table
+	print $SQL "CREATE TABLE entries_fr AS SELECT * FROM entries WHERE l_lang=\"fr\" AND NOT l_is_flexion AND NOT l_is_gentile AND NOT l_is_locution;\n";
+	# Create its indexes
+	foreach my $table (sort keys %special_indexes) {
+		print_sql_index($SQL, $table, $special_indexes{$table}, $dbtype);
 	}
 	
 	close($SQL);
