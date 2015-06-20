@@ -6,6 +6,7 @@ use Getopt::Std;
 use DBI;
 use Encode;
 use Data::Dumper;
+use List::Util 'sum';
 
 our %opt;	# Getopt options
 
@@ -35,11 +36,13 @@ sub usage
 	-d <path> : database path
 	
 	Type of analysis
-	-p <str>  : analyse pronunciations for the given language
-	-c <str>  : count letters for the given language
+	-p        : analyse pronunciations
+	-c        : count letters
 	-I        : case insensitive (for counts)
+	-S        : syllables frequency
 	
 	-F        : exclude flexions
+	-l <lang> : restrict to a given language
 EOF
 	exit;
 }
@@ -48,10 +51,10 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hd:p:c:IF', \%opt ) or usage();
+	getopts( 'hd:pcISFl:', \%opt ) or usage();
 	usage() if $opt{h};
 	usage("Database needed (-d)") unless $opt{d};
-	usage("Type of analysis needed") if not $opt{p} xor $opt{c};
+	usage("Type of analysis needed") if not $opt{p} xor $opt{c} xor $opt{S};
 	$conditions .= ' AND NOT l_is_flexion' if $opt{F};
 }
 
@@ -683,15 +686,80 @@ sub formater
 	return $char;
 }
 
+sub count_syllables
+{
+	my ($dbh, $lang, $noflex) = @_;
+	
+	# Get all articles with pronunciations
+	my $articles = get_articles_prons($dbh, $lang);
+	my $n = @$articles;
+	print STDERR "$n articles with pronunciations in lang $lang\n";
+
+	my $syllables = get_syllables($articles);
+	my $c = 0+ keys(%$syllables);
+	print STDERR "$c different syllables\n";
+	print_syllables($syllables);
+}
+
+sub get_syllables
+{
+	my ($articles) = @_;
+	
+	my $prons = get_prons_from_articles($articles);
+	
+	my %syllables = ();
+	foreach my $p (keys %$prons) {
+		my @syll = explode_syllables($p);
+		next if (@syll < 2);
+
+		foreach my $s (@syll) {
+			$syllables{ $s }++;
+		}
+	}
+	return \%syllables;
+}
+
+sub get_prons_from_articles
+{
+	my ($articles) = @_;
+	my %prons = ();
+	foreach my $a (@$articles) {
+		$prons{ $a->{'p_pron'} }++;
+	}
+	return \%prons;
+}
+
+sub explode_syllables
+{
+	my ($p) = @_;
+
+	my @syll = split(/\.| |‿|ː|ˈ|ˌ/, $p);
+	return @syll;
+}
+
+sub print_syllables
+{
+	my ($syll) = @_;
+	
+	my $total = sum values %$syll;
+	my @list;
+	foreach my $s (sort { $syll->{$b} <=> $syll->{$a} } keys %$syll) {
+		my $freq = $syll->{$s} / $total * 100;
+		printf("%.2f\t%s\n", $freq, $s);
+	}
+}
+
 ##################################
 # MAIN
 init();
 
 my $dbh = DBI->connect("dbi:SQLite:dbname=$opt{d}","","");
 if ($opt{p}) {
-	pronunciations($dbh, $opt{p});
+	pronunciations($dbh, $opt{l});
 } elsif ($opt{c}) {
-	count_letters($dbh, $opt{c}, $opt{I});
+	count_letters($dbh, $opt{l}, $opt{I});
+} elsif ($opt{S}) {
+	count_syllables($dbh, $opt{l});
 }
 
 __END__
