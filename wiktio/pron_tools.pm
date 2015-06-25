@@ -500,7 +500,11 @@ sub check_prononciation
 			special_log('API_ton', $titre, "$p -> $p2");
 			push @pron, $p2;
 		} elsif ($p =~ /ǝ|ᴣ/) {
+			my $p2 = $p;
+			$p2 =~ s/ǝ/ə/g;
+			$p2 =~ s/ᴣ/ʒ/g;
 			special_log('API_wrong_letter', $titre, "$p");
+			push @pron, $p2;
 		} elsif ($p =~ /\/( ou |, )\// or $p =~ /( ou |, )/) {
 			special_log('double_pron', $titre, $p);
 			my @ou_pron = split(/\/? ou \/?/, $p);
