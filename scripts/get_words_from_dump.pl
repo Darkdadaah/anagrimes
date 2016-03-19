@@ -29,13 +29,19 @@ sub usage
 	usage: $0 [-h] -f file
 	
 	-h        : this (help) message
+
+	Input:
 	-i <path> : dump path. Can be in xml, xml.gz, xml.bz2
+
+	Output:
 	-o <path> : list of all the words
 	-O <path> : list of all the words, without case
-	-n <path> : list of words not to list
 	
+	Options:
 	-L <num>  : maximum number of articles to parse
-	-C        : case insensitive
+
+	-n <path> : list of words not to list
+	-C        : case insensitive to this list of words (NB: -o will still list unrecognized, capitalized words!)
 	
 	example: $0 -i data/frwikt.xml
 EOF

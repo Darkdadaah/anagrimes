@@ -39,8 +39,7 @@ sub step { print STDERR $_[0] ? ($_[0] =~ /[\r\n]$/ ? "$_[0]" : "$_[0]\n") : "\n
 sub stepl { print STDERR $_[0] ? "$_[0]" : "" };
 
 # Print a value for a given hash ref, array ref or text
-sub print_value
-{
+sub print_value {
 	my ($text, $ref) = @_;
 	
 	# Get the number if the ref is a hash or an array
