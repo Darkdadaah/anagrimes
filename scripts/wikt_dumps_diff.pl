@@ -52,6 +52,9 @@ my $languages = {
 		'es' => '\{\{ES\|',
 	},
 };
+my @langs = qw( fr );
+push @langs, keys %$languages;
+my $supported_lang = join ', ', (sort @langs);
 
 #################################################
 # Message about this program and how to use it
@@ -67,7 +70,7 @@ sub usage
 	
 	-h        : this (help) message
 	
-	-c <code> : language code (2 or 3 letters)
+	-c <code> : language code
 	
 	-l <code> : first dump language code
 	-L <code> : second dump language code
@@ -81,6 +84,8 @@ sub usage
 	-R		  : disable redirect matching
 	
 	example: $0 -c en -l fr -L en -i frwikt.xml -I enwikt.xml -o en_frwikt-only.txt -O en_enwikt_only.txt
+
+	Supported language codes: $supported_lang
 EOF
 	exit;
 }
