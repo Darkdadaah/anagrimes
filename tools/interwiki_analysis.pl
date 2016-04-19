@@ -20,19 +20,21 @@ our %opt;	# Getopt options
 # Message about this program and how to use it
 sub usage
 {
-	print STDERR "[ $_[0] ]\n" if $_[0];
-	print STDERR << "EOF";
-	
-	This script parses a Wiktionary dump and analyzes interwiki usage.
-	
-	usage: $0 [-h] -f file
-	
-	-h        : this (help) message
-	
-	INPUT
-	-i <path> : dump path
-	OUTPUT
-	STDOUT    : list of pages with differing interwiki link
+    print STDERR "[ $_[0] ]\n" if $_[0];
+    print STDERR << "EOF";
+
+    This script parses a Wiktionary dump and analyzes interwiki usage.
+
+    usage: $0 [-h] -f file
+
+    -h        : this (help) message
+
+    INPUT
+    -i <path> : dump path
+    -l <str>  : language code of the wiki
+
+    OUTPUT
+    STDOUT    : list of pages with differing interwiki link
 EOF
 	exit;
 }
@@ -41,21 +43,40 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hi:', \%opt ) or usage();
+	getopts( 'hi:l:', \%opt ) or usage();
 	usage() if $opt{h};
 	usage( "Dump path needed (-i)" ) if not $opt{i};
+
+    if (not $opt{l}) {
+        my $lang;
+        if ($opt{i} =~ /(?:\/|^)([a-z]{2,3})wikt/) {
+            $lang = $1;
+        }
+        if (defined $lang) {
+            $opt{l} = $lang;
+        } else {
+            usage("Wiki language code needed -l");
+        }
+    }
 }
 
 sub interwiki_analyze
 {
-	my ($title, $lines, $count) = @_;
+	my ($title, $lines, $count, $dump_lang) = @_;
 	
 	# Extract interwikis
 	my %iw = ();
-	foreach (@$lines) {
-		if (/^ *\[\[(.{2,3}):(.+)\]\] *$/) {
-			$iw{$1} = $2;
-		}
+	foreach my $line (@$lines) {
+        my $full_line = $line;
+        $full_line =~ s/\]\]/]]\n/g;
+        $full_line =~ s/\[\[/\n[[/g;
+        my @elements = split /\n/, $full_line;
+
+        foreach my $elt (@elements) {
+            if ($elt =~ /^ *\[\[ *([a-z]{2,3}) *: *(.+) *\]\] *$/) {
+                $iw{$1} = $2;
+            }
+        }
 	}
 	
 	# Analyze the data
@@ -95,7 +116,7 @@ sub interwiki_analyze
 					$cat = 'other';
 				}
 				delete $iw{$l};
-				print STDOUT "$l\t$title\t$t\t$cat\n";
+				print STDOUT "$dump_lang\t$l\t$title\t$t\t$cat\n";
 			}
 		}
 		$count->{interwiki_correct}++ if keys %iw > 0;
@@ -109,7 +130,7 @@ sub interwiki_analyze
 # MAIN
 init();
 
-my $dump_fh = dump_open($opt{i});
+my $dump_fh = open_dump($opt{i});
 my $title = '';
 my ($n, $redirect) = (0,0);
 my $complete_article = 0;
@@ -148,7 +169,7 @@ while(<$dump_fh>) {
 		} else {
 			######################################
 			# Traiter les articles ici
-			interwiki_analyze($title, \@article, $count);
+			interwiki_analyze($title, \@article, $count, $opt{l});
 			######################################
 			$count->{articles}++;
 			#print STDERR "[$count->{articles}] $title                                         \r" if $count->{articles}%1000==0;
