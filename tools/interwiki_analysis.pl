@@ -99,6 +99,18 @@ sub interwiki_analyze
 				# Apostrophe + Capital?
 				my $t4 = uc($t2);
 				my $title4 = uc($title2);
+
+                # Hyphen
+                my $th = $t;
+                $th =~ s/[- ]+//g;
+                my $titleh = $title;
+                $titleh =~ s/[- ]+//g;
+
+                # Punctuation
+                my $tp = $t;
+                $tp =~ s/\W+//g;
+                my $titlep = $title;
+                $titlep =~ s/\W+//g;
 				
 				# Category of difference?
 				my $cat = '';
@@ -110,7 +122,25 @@ sub interwiki_analyze
 					$cat = 'capital';
 				} elsif ($t4 eq $title4) {
 					$count->{interwiki_wrong_apostrophe_and_capital}++;
-					$cat = 'apostrophe+capital';
+					$cat = 'apostrophe_capital';
+				} elsif (index($t, $title) != -1) {
+					$count->{interwiki_partial_title}++;
+					$cat = 'partial_title';
+				} elsif (index($title, $t) != -1) {
+					$count->{interwiki_part_of_title}++;
+					$cat = 'part_of_title';
+				} elsif ($titleh eq $th) {
+					$count->{interwiki_hyphen}++;
+					$cat = 'hyphen';
+				} elsif ($title eq $t . ".") {
+					$count->{interwiki_endpoint}++;
+					$cat = 'endpoint';
+				} elsif ($t eq $title . ".") {
+					$count->{interwiki_endpoint_of}++;
+					$cat = 'endpoint_of';
+				} elsif ($titlep eq $tp) {
+					$count->{interwiki_notletter}++;
+					$cat = 'notletter';
 				} else {
 					$count->{interwiki_wrong_other}++;
 					$cat = 'other';
