@@ -260,6 +260,7 @@ our $level4 = {
 	'méro' => 	'méronymes',
 	'noms vernaculaires' => 	'noms vernaculaires',
 	'noms-vern' => 	'noms vernaculaires',
+	'phrases' => 	'Proverbes et phrases toutes faites',
 	'quasi-synonymes' => 	'quasi-synonymes',
 	'q-syn' => 	'quasi-synonymes',
 	'quasi-syn' => 	'quasi-synonymes',
