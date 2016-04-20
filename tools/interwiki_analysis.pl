@@ -13,8 +13,12 @@ use Encode qw(decode);	# Needed?
 
 use lib '..';
 use wiktio::basic;
+use wiktio::string_tools qw( ascii );
 use wiktio::dump_reader;
 our %opt;	# Getopt options
+
+# Codes to skip (not language codes)
+our %EXCEPT = map { $_ => 1 } qw( ws doi );
 
 #################################################
 # Message about this program and how to use it
@@ -82,6 +86,9 @@ sub interwiki_analyze
 	# Analyze the data
 	if (keys %iw > 0) {
 		foreach my $l (sort keys %iw) {
+      # Skip some codes that are not language codes
+      next if defined $EXCEPT{$l};
+      
 			my $t = $iw{$l};
 			
 			if ($t ne $title) {
@@ -91,6 +98,10 @@ sub interwiki_analyze
 				my $title2 = $title;
 				$t2 =~ s/['ʼ’]/'/g;
 				$title2 =~ s/['ʼ’]/'/g;
+        
+        # Diacritics?
+				my $title_dia = ascii($title);
+				my $t_dia = ascii($t);
 				
 				# Capital?
 				my $t3 = uc($t);
@@ -100,21 +111,24 @@ sub interwiki_analyze
 				my $t4 = uc($t2);
 				my $title4 = uc($title2);
 
-                # Hyphen
-                my $th = $t;
-                $th =~ s/[- ]+//g;
-                my $titleh = $title;
-                $titleh =~ s/[- ]+//g;
+        # Hyphen
+        my $th = $t;
+        $th =~ s/[- ]+//g;
+        my $titleh = $title;
+        $titleh =~ s/[- ]+//g;
 
-                # Punctuation
-                my $tp = $t;
-                $tp =~ s/\W+//g;
-                my $titlep = $title;
-                $titlep =~ s/\W+//g;
+        # Punctuation
+        my $tp = $t;
+        $tp =~ s/\W+//g;
+        my $titlep = $title;
+        $titlep =~ s/\W+//g;
 				
 				# Category of difference?
 				my $cat = '';
-				if ($t2 eq $title2) {
+				if ($t =~ /^\s*$/) {
+					$count->{interwiki_wrong_empty}++;
+					$cat = 'empty';
+        } elsif ($t2 eq $title2) {
 					$count->{interwiki_wrong_apostrophe}++;
 					$cat = 'apostrophe';
 				} elsif ($t3 eq $title3) {
@@ -124,23 +138,29 @@ sub interwiki_analyze
 					$count->{interwiki_wrong_apostrophe_and_capital}++;
 					$cat = 'apostrophe_capital';
 				} elsif (index($t, $title) != -1) {
-					$count->{interwiki_partial_title}++;
+					$count->{interwiki_wrong_partial_title}++;
 					$cat = 'partial_title';
 				} elsif (index($title, $t) != -1) {
-					$count->{interwiki_part_of_title}++;
+					$count->{interwiki_wrong_part_of_title}++;
 					$cat = 'part_of_title';
 				} elsif ($titleh eq $th) {
-					$count->{interwiki_hyphen}++;
+					$count->{interwiki_wrong_hyphen}++;
 					$cat = 'hyphen';
 				} elsif ($title eq $t . ".") {
-					$count->{interwiki_endpoint}++;
+					$count->{interwiki_wrong_endpoint}++;
 					$cat = 'endpoint';
 				} elsif ($t eq $title . ".") {
-					$count->{interwiki_endpoint_of}++;
+					$count->{interwiki_wrong_endpoint_of}++;
 					$cat = 'endpoint_of';
 				} elsif ($titlep eq $tp) {
-					$count->{interwiki_notletter}++;
+					$count->{interwiki_wrong_notletter}++;
 					$cat = 'notletter';
+				} elsif ($t =~ /:/) {
+					$count->{interwiki_wrong_colon}++;
+					$cat = 'colon';
+        } elsif ($t_dia eq $title_dia) {
+					$count->{interwiki_wrong_diacritics}++;
+					$cat = 'diacritics';
 				} else {
 					$count->{interwiki_wrong_other}++;
 					$cat = 'other';
@@ -212,7 +232,7 @@ print STDERR "\n";
 close($dump_fh);
 
 foreach my $c (sort keys %$count) {
-	print STDERR "$c:\t$count->{$c}\n";
+	printf STDERR "%9d  %s\n", $count->{$c}, $c;
 }
 
 __END__
