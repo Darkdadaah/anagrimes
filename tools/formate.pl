@@ -12,22 +12,23 @@ sub usage
 {
 	print STDERR "[ $_[0] ]\n" if $_[0];
 	print STDERR << "EOF";
-	
+
 	This script formats a list in a wiki list or table.
-	
+
 	usage: $0 [-h] < file
-	
+
 	-h        : this (help) message
 	-L        : wiki list
 	-N        : wiki numbered list
 	-T        : wiki table
 	-t        : extract_table.pl db table (change from tabs to true csv)
-	
+
 	-l        : linkify list element (or the first element in a table)
 	-I <lang> : linkify + interlanguage link as *
 	-F        : add formatnum: to any lone number in a tab other than the first one
 
 	-C        : Add div with columns style
+	-P <str>  : Format to import via Pywiki bot, parameter = the page name
 EOF
 	exit;
 }
@@ -36,9 +37,9 @@ EOF
 # Command line options processing
 sub init()
 {
-	getopts( 'hLNTlI:tCF', \%opt ) or usage();
+	getopts( 'hLNTlI:tCFP:', \%opt ) or usage();
 	usage() if $opt{h};
-	usage("Format needed (-L|N|T|t|C)") unless ($opt{L} xor $opt{N} xor $opt{T} xor $opt{t}) or $opt{C};
+	usage("Format needed (-L|N|T|t|C¬P)") unless ($opt{L} xor $opt{N} xor $opt{T} xor $opt{t}) or $opt{C} or $opt{P};
 }
 
 ##################################
@@ -63,7 +64,7 @@ sub wiki_link
 sub formatnum
 {
 	my @list = @_;
-	
+
 	for (my $i=0; $i < @list; $i++) {
 		if ($list[$i] =~ /^\d{4,}$/) {
 			$list[$i] = "{{formatnum:$list[$i]}}";
@@ -75,7 +76,7 @@ sub formatnum
 sub wiki_list
 {
 	my ($start_char, $link, $lang, $formatnum) = @_;
-	
+
 	while(my $line = <STDIN>) {
 		if ($line =~ /^#/) {
 			print STDOUT $line;
@@ -128,6 +129,8 @@ sub db_table_csv
 ##################################
 # MAIN
 init();
+print "{{-start-}}\n" if $opt{P};
+print "'''$opt{P}'''\n" if $opt{P};
 print STDOUT '<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">' . "\n" if $opt{C};
 if ($opt{L}) {
 	wiki_list('*', $opt{l}, $opt{I}, $opt{F});
@@ -144,7 +147,9 @@ if ($opt{L}) {
 } else {
 	print STDERR "No format given\n";
 }
-print STDOUT "</div>\n\n" if $opt{C};
+print "</div>\n" if $opt{C};
+print "{{-end-}}\n" if $opt{P};
+print STDOUT "\n" if $opt{C} or $opt{D};
 
 
 __END__
