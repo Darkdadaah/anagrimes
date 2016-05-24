@@ -4,14 +4,13 @@ use strict;
 use warnings;
 use Getopt::Std;
 
-our %opt;	# Getopt options
+our %opt;    # Getopt options
 
 #################################################
 # Message about this program and how to use it
-sub usage
-{
-	print STDERR "[ $_[0] ]\n" if $_[0];
-	print STDERR << "EOF";
+sub usage {
+    print STDERR "[ $_[0] ]\n" if $_[0];
+    print STDERR << "EOF";
 
 	This script formats a list in a wiki list or table.
 
@@ -30,127 +29,134 @@ sub usage
 	-C        : Add div with columns style
 	-P <str>  : Format to import via Pywiki bot, parameter = the page name
 EOF
-	exit;
+    exit;
 }
 
 ##################################
 # Command line options processing
-sub init()
-{
-	getopts( 'hLNTlI:tCFP:', \%opt ) or usage();
-	usage() if $opt{h};
-	usage("Format needed (-L|N|T|t|C¬P)") unless ($opt{L} xor $opt{N} xor $opt{T} xor $opt{t}) or $opt{C} or $opt{P};
+sub init() {
+    getopts( 'hLNTlI:tCFP:', \%opt ) or usage();
+    usage() if $opt{h};
+    usage("Format needed (-L|N|T|t|C¬P)")
+      unless ( $opt{L} xor $opt{N} xor $opt{T} xor $opt{t} )
+      or $opt{C}
+      or $opt{P};
 }
 
 ##################################
 # Format subroutines
-sub wiki_link
-{
-	my ($article, $link, $lang) = @_;
-	return '' if not $article;
-	return $article if $article =~ /[\[\]]/;
-	if ($link) {
-		if ($lang) {
-			return "[[$article]] [[:$lang:$article|*]]";
-		} else {
-			return "[[$article]]";
-		}
-	} else {
-		return $article;
-	}
+sub wiki_link {
+    my ( $article, $link, $lang ) = @_;
+    return '' if not $article;
+    return $article if $article =~ /[\[\]]/;
+    if ($link) {
+        if ($lang) {
+            return "[[$article]] [[:$lang:$article|*]]";
+        }
+        else {
+            return "[[$article]]";
+        }
+    }
+    else {
+        return $article;
+    }
 }
 
 # Add formatnum to any number greater than 999
-sub formatnum
-{
-	my @list = @_;
+sub formatnum {
+    my @list = @_;
 
-	for (my $i=0; $i < @list; $i++) {
-		if ($list[$i] =~ /^\d{4,}$/) {
-			$list[$i] = "{{formatnum:$list[$i]}}";
-		}
-	}
-	return @list;
+    for ( my $i = 0 ; $i < @list ; $i++ ) {
+        if ( $list[$i] =~ /^\d{4,}$/ ) {
+            $list[$i] = "{{formatnum:$list[$i]}}";
+        }
+    }
+    return @list;
 }
 
-sub wiki_list
-{
-	my ($start_char, $link, $lang, $formatnum) = @_;
+sub wiki_list {
+    my ( $start_char, $link, $lang, $formatnum ) = @_;
 
-	while(my $line = <STDIN>) {
-		if ($line =~ /^#/) {
-			print STDOUT $line;
-			next;
-		}
-		chomp($line);
-		my @elts = split(/\t/, $line);
-		$elts[0] = wiki_link($elts[0], $link, $lang);
-		@elts = formatnum(@elts) if $formatnum;
-		print STDOUT "$start_char " . join("\t", @elts) . "\n";
-	}
+    while ( my $line = <STDIN> ) {
+        if ( $line =~ /^#/ ) {
+            print STDOUT $line;
+            next;
+        }
+        chomp($line);
+        my @elts = split( /\t/, $line );
+        $elts[0] = wiki_link( $elts[0], $link, $lang );
+        @elts = formatnum(@elts) if $formatnum;
+        print STDOUT "$start_char " . join( "\t", @elts ) . "\n";
+    }
 }
 
-sub wiki_table
-{
-	my ($link, $lang, $formatnum) = @_;
+sub wiki_table {
+    my ( $link, $lang, $formatnum ) = @_;
 
-	while(my $line = <STDIN>) {
-		if ($line =~ /^#/) {
-			print STDOUT $line;
-			next;
-		}
-		chomp($line);
-		my @elts = split(/\t/, $line);
-		$elts[0] = wiki_link($elts[0], $link, $lang);
-		@elts = formatnum(@elts) if $formatnum;
-		print STDOUT "|-\n| " . join(' || ', @elts) . "\n";
-	}
+    while ( my $line = <STDIN> ) {
+        if ( $line =~ /^#/ ) {
+            print STDOUT $line;
+            next;
+        }
+        chomp($line);
+        my @elts = split( /\t/, $line );
+        $elts[0] = wiki_link( $elts[0], $link, $lang );
+        @elts = formatnum(@elts) if $formatnum;
+        print STDOUT "|-\n| " . join( ' || ', @elts ) . "\n";
+    }
 }
 
-sub db_table_csv
-{
-	while(my $line = <STDIN>) {
-		if ($line =~ /^#/) {
-			print STDOUT $line;
-			next;
-		}
-		chomp($line);
-		my @elts = split(/\t/, $line);
-		for (my $i = 0; $i < @elts; $i++) {
-			# Number? No need for apostrophe
-			if (not $elts[$i] =~ /^[0-9]+$/) {
-				$elts[$i] = '"' . $elts[$i] . '"';
-			}
-		}
-		print STDOUT join(',', @elts) . "\n";
-	}
+sub db_table_csv {
+    while ( my $line = <STDIN> ) {
+        if ( $line =~ /^#/ ) {
+            print STDOUT $line;
+            next;
+        }
+        chomp($line);
+        my @elts = split( /\t/, $line );
+        for ( my $i = 0 ; $i < @elts ; $i++ ) {
+
+            # Number? No need for apostrophe
+            if ( not $elts[$i] =~ /^[0-9]+$/ ) {
+                $elts[$i] = '"' . $elts[$i] . '"';
+            }
+        }
+        print STDOUT join( ',', @elts ) . "\n";
+    }
 }
 
 ##################################
 # MAIN
 init();
-print "{{-start-}}\n" if $opt{P};
+print "{{-start-}}\n"   if $opt{P};
 print "'''$opt{P}'''\n" if $opt{P};
-print STDOUT '<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">' . "\n" if $opt{C};
-if ($opt{L}) {
-	wiki_list('*', $opt{l}, $opt{I}, $opt{F});
-} elsif ($opt{N}) {
-	wiki_list('#', $opt{l}, $opt{I}, $opt{F});
-} elsif ($opt{T}) {
-	wiki_table($opt{l}, $opt{I}, $opt{F});
-} elsif ($opt{t}) {
-	db_table_csv();
-} elsif ($opt{C}) {
-	while(my $line = <STDIN>) {
-		print STDOUT $line;
-	}
-} else {
-	print STDERR "No format given\n";
+print STDOUT
+'<div style="-webkit-column-width: 15em; -moz-column-width: 15em; column-width: 15em;">'
+  . "\n"
+  if $opt{C};
+if ( $opt{L} ) {
+    wiki_list( '*', $opt{l}, $opt{I}, $opt{F} );
 }
-print "</div>\n" if $opt{C};
+elsif ( $opt{N} ) {
+    wiki_list( '#', $opt{l}, $opt{I}, $opt{F} );
+}
+elsif ( $opt{T} ) {
+    wiki_table( $opt{l}, $opt{I}, $opt{F} );
+}
+elsif ( $opt{t} ) {
+    db_table_csv();
+}
+elsif ( $opt{C} ) {
+    while ( my $line = <STDIN> ) {
+        print STDOUT $line;
+    }
+}
+else {
+    print STDERR "No format given\n";
+}
+print "</div>\n"    if $opt{C};
 print "{{-end-}}\n" if $opt{P};
 print STDOUT "\n" if $opt{C} or $opt{D};
-
 
 __END__
 
