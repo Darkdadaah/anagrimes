@@ -15,10 +15,23 @@ use lib '..';
 use wiktio::basic;
 use wiktio::string_tools qw( ascii );
 use wiktio::dump_reader;
-our %opt;                 # Getopt options
+my %opt;    # Getopt options
 
 # Codes to skip (not language codes)
-our %EXCEPT = map { $_ => 1 } qw( ws doi );
+my %EXCEPT = map { $_ => 1 } qw(
+ws
+doi
+File
+Image
+);
+my @FILE_TYPES = qw(
+png
+jpg
+jpeg
+svg
+gif
+tif
+);
 
 #################################################
 # Message about this program and how to use it
@@ -51,10 +64,8 @@ sub init() {
 
     if ( not $opt{l} ) {
         my $lang;
-        if ( $opt{i} =~ /(?:\/|^)([a-z]{2,3})wikt/ ) {
+        if ($opt{i} =~ /(?:\/|^)([a-z]{2,3}|roa_rup|simple|zh_min_nan)wikt/) {
             $lang = $1;
-        }
-        if ( defined $lang ) {
             $opt{l} = $lang;
         }
         else {
@@ -64,7 +75,7 @@ sub init() {
 }
 
 sub interwiki_analyze {
-    my ( $title, $lines, $count, $dump_lang ) = @_;
+    my ($title, $lines, $count, $dump_lang) = @_;
 
     # Extract interwikis
     my %iw = ();
@@ -75,42 +86,45 @@ sub interwiki_analyze {
         my @elements = split /\n/, $full_line;
 
         foreach my $elt (@elements) {
-            if ( $elt =~ /^ *\[\[ *([a-z]{2,3}) *: *(.+) *\]\] *$/ ) {
-                $iw{$1} = $2;
+            if ($elt =~ /^\s*\[\[\s*([a-z]{2,3})\s*:\s*(.+)\s*\]\]\s*$/) {
+                my $lang = $1;
+                my $link = $2;
+                $link =~ s/^\s*//;
+                $link =~ s/\s*$//;
+                $iw{$lang} = $link;
             }
         }
     }
 
     # Analyze the data
-    if ( keys %iw > 0 ) {
-        foreach my $l ( sort keys %iw ) {
-
+    if (keys %iw > 0) {
+        foreach my $l (sort keys %iw) {
             # Skip some codes that are not language codes
-            next if defined $EXCEPT{$l};
+            next if $EXCEPT{$l};
 
             my $t = $iw{$l};
 
-            if ( $t ne $title ) {
+            # Skip files
+            next if grep { $t =~ /\.$_/i } @FILE_TYPES;
 
-                # Lots of wikis use PAGENAME to create the interwikis
-                next if $t =~ /\{\{ *PAGENAME *\}\}/;
+            if ($t ne $title and $t ne "{{PAGENAME}}") {
 
                 # apostrophe?
-                my $t2     = $t;
+                my $t2 = $t;
                 my $title2 = $title;
                 $t2 =~ s/['ʼ’]/'/g;
                 $title2 =~ s/['ʼ’]/'/g;
 
                 # Diacritics?
                 my $title_dia = ascii($title);
-                my $t_dia     = ascii($t);
+                my $t_dia = ascii($t);
 
                 # Capital?
-                my $t3     = uc($t);
+                my $t3 = uc($t);
                 my $title3 = uc($title);
 
                 # Apostrophe + Capital?
-                my $t4     = uc($t2);
+                my $t4 = uc($t2);
                 my $title4 = uc($title2);
 
                 # Hyphen
@@ -127,66 +141,54 @@ sub interwiki_analyze {
 
                 # Category of difference?
                 my $cat = '';
-                if ( $t =~ /^\s*$/ ) {
+                if ($t =~ /^\s*$/) {
                     $count->{interwiki_wrong_empty}++;
                     $cat = 'empty';
-                }
-                elsif ( $t2 eq $title2 ) {
+                } elsif ($t2 eq $title2) {
                     $count->{interwiki_wrong_apostrophe}++;
                     $cat = 'apostrophe';
-                }
-                elsif ( $t3 eq $title3 ) {
+                } elsif ($t3 eq $title3) {
                     $count->{interwiki_wrong_capital}++;
                     $cat = 'capital';
-                }
-                elsif ( $t4 eq $title4 ) {
+                } elsif ($t4 eq $title4) {
                     $count->{interwiki_wrong_apostrophe_and_capital}++;
                     $cat = 'apostrophe_capital';
-                }
-                elsif ( index( $t, $title ) != -1 ) {
+                } elsif (index($t, $title) != -1) {
                     $count->{interwiki_wrong_partial_title}++;
                     $cat = 'partial_title';
-                }
-                elsif ( index( $title, $t ) != -1 ) {
+                } elsif (index($title, $t) != -1) {
                     $count->{interwiki_wrong_part_of_title}++;
                     $cat = 'part_of_title';
-                }
-                elsif ( $titleh eq $th ) {
+                } elsif ($titleh eq $th) {
                     $count->{interwiki_wrong_hyphen}++;
                     $cat = 'hyphen';
-                }
-                elsif ( $title eq $t . "." ) {
+                } elsif ($title eq $t . ".") {
                     $count->{interwiki_wrong_endpoint}++;
                     $cat = 'endpoint';
-                }
-                elsif ( $t eq $title . "." ) {
+                } elsif ($t eq $title . ".") {
                     $count->{interwiki_wrong_endpoint_of}++;
                     $cat = 'endpoint_of';
-                }
-                elsif ( $titlep eq $tp ) {
+                } elsif ($titlep eq $tp) {
                     $count->{interwiki_wrong_notletter}++;
                     $cat = 'notletter';
-                }
-                elsif ( $t =~ /:/ ) {
+                } elsif ($t =~ /:/) {
                     $count->{interwiki_wrong_colon}++;
                     $cat = 'colon';
-                }
-                elsif ( $t_dia eq $title_dia ) {
+                } elsif ($t_dia eq $title_dia) {
                     $count->{interwiki_wrong_diacritics}++;
                     $cat = 'diacritics';
-                }
-                else {
+                } else {
                     $count->{interwiki_wrong_other}++;
                     $cat = 'other';
                 }
                 delete $iw{$l};
-                print STDOUT "$dump_lang\t$l\t$title\t$t\t$cat\n";
+                print STDOUT "$dump_lang\t$l\t'$title'\t$t\t$cat\n";
+                #die "'$title' - '$l' : '$t'" if $title eq 'balkon';
             }
         }
         $count->{interwiki_correct}++ if keys %iw > 0;
 
-    }
-    else {
+    } else {
         $count->{interwiki_none}++;
     }
 }
@@ -251,8 +253,9 @@ $| = 0;
 print STDERR "\n";
 close($dump_fh);
 
-foreach my $c ( sort keys %$count ) {
-    printf STDERR "%9d  %s\n", $count->{$c}, $c;
+print STDERR "$opt{l}\tdump\t$opt{i}\n";
+foreach my $c (sort keys %$count) {
+    printf STDERR "%s\t%9d\t%s\n", ($opt{l}, $count->{$c}, $c);
 }
 
 __END__
