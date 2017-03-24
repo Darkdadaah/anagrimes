@@ -11,7 +11,8 @@ binmode STDOUT, ":encoding(utf8)";
 binmode STDERR, ":encoding(utf8)";
 use Encode qw(decode encode);
 
-use lib '..';
+use FindBin;
+use lib $FindBin::Bin . '/../lib';
 use wiktio::string_tools qw(ascii ascii_strict anagramme);
 
 foreach my $a (@ARGV) {

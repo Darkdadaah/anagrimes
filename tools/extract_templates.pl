@@ -12,7 +12,8 @@ binmode STDOUT, ":encoding(utf8)";
 binmode STDERR, ":encoding(utf8)";
 
 # Useful Anagrimes libraries
-use lib '..';
+use lib $FindBin::Bin . '/../lib';
+use wiktio::string_tools qw(ascii);
 use wiktio::basic;
 use wiktio::dump_reader;
 our %opt;    # Getopt options

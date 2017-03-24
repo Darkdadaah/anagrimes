@@ -11,7 +11,8 @@ binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 use Encode qw(decode);    # Needed?
 
-use lib '..';
+use FindBin;
+use lib $FindBin::Bin . '/../lib';
 use wiktio::basic;
 use wiktio::string_tools qw( ascii );
 use wiktio::dump_reader;

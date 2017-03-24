@@ -10,7 +10,8 @@ use open IO => ':utf8';
 binmode STDOUT, ":utf8";
 binmode STDERR, ":utf8";
 
-use lib '..';
+use FindBin;
+use lib $FindBin::Bin . '/../lib';
 use wiktio::basic;
 use wiktio::dump_reader;
 use wiktio::parser qw( parseArticle parseLanguage parseType is_gentile);

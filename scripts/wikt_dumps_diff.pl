@@ -5,7 +5,8 @@ use strict;
 use warnings;
 use Getopt::Std;
 
-use lib '..';
+use FindBin;
+use lib $FindBin::Bin . '/../lib';
 use wiktio::basic;
 use wiktio::basic qw(step stepl print_value);
 use wiktio::dump_reader;

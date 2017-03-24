@@ -3,7 +3,9 @@
 use strict;
 use warnings;
 use Getopt::Std;
-use lib '..';
+
+use FindBin;
+use lib $FindBin::Bin . '/../lib';
 use wiktio::string_tools qw(ascii);
 use utf8;
 use open IO => ':utf8';
