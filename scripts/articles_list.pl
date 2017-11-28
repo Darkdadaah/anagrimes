@@ -21,98 +21,37 @@ use wiktio::parser qw(parseArticle parseLanguage parseType);
 
 # To filter the bots
 # Hard-coded list for fr.wikt
-our @bots_names =
-  qw(Bot-Jagwar BotMoyogo BotdeSki ChuispastonBot Cjlabot Daahbot Fenkysbot GaAsBot GedawyBot JackBot KamikazeBot LmaltierBot Luckas-bot MalafayaBot MediaWiki MenasimBot MglovesfunBot VolkovBot WarddrBOT WikitanvirBot タチコマ);
+our %bots_names = map { $_ => 1 } qw(
+    Bot-Jagwar
+    BotMoyogo
+    BotdeSki
+    ChuispastonBot
+    Cjlabot
+    Daahbot
+    Fenkysbot
+    GaAsBot
+    GedawyBot
+    JackBot
+    KamikazeBot
+    LmaltierBot
+    Luckas-bot
+    MalafayaBot
+    MediaWiki
+    MenasimBot
+    MglovesfunBot
+    VolkovBot
+    WarddrBOT
+    WikitanvirBot
+    タチコマ
+);
 
-our %opt;    # Getopt options
+###############################################################################
+# MAIN
+my $par = init();
+my $art_count = get_articles_list($par);
 
-#################################################
-# Message about this program and how to use it
-sub usage {
-    print STDERR "[ $_[0] ]\n" if $_[0];
-    print STDERR << "EOF";
-	
-	This script parses a Wiktionary dump and extracts article names.
-	
-	usage: $0 [-h] -f file
-	
-	-h        : this (help) message
-	
-	INPUT
-	-i <path> : dump path
-	
-	OUTPUT
-	-o <path> : list of all the articles selected
-	-O <path> : list of all articles with the pattern but excluded
-	
-	NB: if no output is defined, only the final count will be shown
-	
-	FILTER
-	-p <str>  : regexp pattern to search
-	-n <str>  : regexp pattern to exclude
-	
-	-S <str>  : use this namespace (default: main namespace)
-	-s        : use all namespaces
-	
-	-A <str>  : only edited by (one or several separated by a comma): bot,IP,nouser,user
-	-H        : search the whole history of the articles
-	
-	-L <str>  : language to include only
-	-N <str>  : language to exclude
-	
-	example:
-	# Search the section language templates {{=xxx=}} but exclude {{=fr=}}
-	$0 -i data/frwikt.xml -p "\{\{=(.+)=\}\}" -n "\{\{=(.+)=\}\}"
-EOF
-    exit;
-}
-
-##################################
-# Command line options processing
-sub init() {
-    getopts( 'hi:o:O:p:n:S:sA:HL:N:', \%opt ) or usage();
-    %opt = %{ to_utf8( \%opt ) };
-    usage() if $opt{h};
-    usage("Dump path needed (-i)") if not $opt{i};
-    if ( not $opt{F} ) {
-        usage("Only 1 language option (-L|-N)") if $opt{L} and $opt{N};
-    }
-
-    if ( $opt{o} ) {
-        open( ARTICLES, "> $opt{o}" ) or die "Couldn't write $opt{o}: $!\n";
-        close(ARTICLES);
-    }
-    if ( $opt{O} ) {
-        open( ARTICLES, "> $opt{O}" ) or die "Couldn't write $opt{O}: $!\n";
-        close(ARTICLES);
-    }
-}
-
-##################################
+###############################################################################
 # SUBROUTINES
-
-# Prepare author list as a hash
-sub prepare_authors_list {
-    my $auth_text = shift;
-    my %auth      = ();
-    if ($auth_text) {
-        for ( split /,/, $auth_text ) {
-            $auth{'nouser'} = 1 if /^nousers?$/;
-        }
-    }
-    return \%auth;
-}
-
-# Correct the html to be able to match < > "
-sub rewrite_html {
-    my $p = shift;
-    if ($p) {
-        $p =~ s/&lt;/</g;
-        $p =~ s/&gt;/>/g;
-        $p =~ s/&quot;/"/g;
-    }
-    return $p;
-}
 
 # Parse a dump
 sub get_articles_list {
@@ -159,8 +98,10 @@ sub get_articles_list {
         {
             next ARTICLE;
         }
-        print STDERR
-"[$counts{'total articles'}] [$counts{'matched articles'}] $article->{'fulltitle'}                           \r"
+        print STDERR "[%d] [%d] %s"."                           \r",
+               ($counts{'total articles'},
+                $counts{'matched articles'},
+                $article->{'fulltitle'})
           if $counts{'total articles'} % 1000 == 0;
 
         # TO IMPROVE
@@ -170,7 +111,7 @@ sub get_articles_list {
             foreach my $author ( keys %auth ) {
 
                 # Check bots names
-                delete $auth{$author} if $author ~~ @bots_names;
+                delete $auth{$author} if exists $bots_names{$author};
 
                 # Check IPs
                 delete $auth{$author} if $author =~ /:/;
@@ -204,8 +145,32 @@ sub get_articles_list {
     print_counts( \%counts );
 }
 
+# Prepare author list as a hash
+sub prepare_authors_list {
+    my $auth_text = shift;
+    my %auth      = ();
+    if ($auth_text) {
+        for ( split /,/, $auth_text ) {
+            $auth{'nouser'} = 1 if /^nousers?$/;
+        }
+    }
+    return \%auth;
+}
+
+# Correct the html to be able to match < > "
+sub rewrite_html {
+    my $p = shift;
+    if ($p) {
+        $p =~ s/&lt;/</g;
+        $p =~ s/&gt;/>/g;
+        $p =~ s/&quot;/"/g;
+    }
+    return $p;
+}
+
 #----------------------------------
-# REDIRECTS in case there is something to do in a redirect page (by default: nothing)
+# REDIRECTS in case there is something to do in a redirect page
+# (by default: nothing)
 sub redirect {
     my ($article) = @_;
 
@@ -285,7 +250,7 @@ sub read_article {
             $n++;
 
             # Skip article if found a forbidden pattern
-            if ( $opt{n} and $line =~ /($opt{n})/ ) {
+            if ( $p{nopat} and $line =~ /($p{nopat})/ ) {
                 $no_pattern = "<tt><nowiki>$1</nowiki></tt> ($n)";
                 $no         = 1;
             }
@@ -366,25 +331,85 @@ sub print_counts {
     }
 }
 
-###################
-# MAIN
-init();
+###############################################################################
+# Message about this program and how to use it
+sub usage {
+    print STDERR "[ $_[0] ]\n" if $_[0];
+    print STDERR << "EOF";
+	
+	This script parses a Wiktionary dump and extracts article names.
+	
+	usage: $0 [-h] -f file
+	
+	-h        : this (help) message
+	
+	INPUT
+	-i <path> : dump path
+	
+	OUTPUT
+	-o <path> : list of all the articles selected
+	-O <path> : list of all articles with the pattern but excluded
+	
+	NB: if no output is defined, only the final count will be shown
+	
+	FILTER
+	-p <str>  : regexp pattern to search
+	-n <str>  : regexp pattern to exclude
+	
+	-S <str>  : use this namespace (default: main namespace)
+	-s        : use all namespaces
+	
+	-A <str>  : only edited by (one or several separated by a comma):
+                    "bot,IP,nouser,user"
+	-H        : search the whole history of the articles
+	
+	-L <str>  : language to include only
+	-N <str>  : language to exclude
+	
+	example:
+	# Search the section language templates {{=xxx=}} but exclude {{=fr=}}
+	$0 -i data/frwikt.xml -p "\{\{=(.+)=\}\}" -n "\{\{=(.+)=\}\}"
+EOF
+    exit;
+}
 
-# Prepare lists
-my %par = ();
-$par{'namespace'}            = $opt{S};
-$par{'all_namespaces'}       = $opt{s};
-$par{'dump_path'}            = $opt{i};
-$par{'output_path'}          = $opt{o};
-$par{'output_rejected_path'} = $opt{O};
-$par{'authors'}              = prepare_authors_list( $opt{A} );
-$par{'lang'}                 = $opt{L};
-$par{'nolang'}               = $opt{N};
-$par{'pat'}                  = $opt{p};
-$par{'nopat'}                = $opt{n};
-$par{'whole_history'}        = $opt{H};
+###############################################################################
+# Command line options processing
+sub init {
+    my %opt;
+    getopts( 'hi:o:O:p:n:S:sA:HL:N:', \%opt ) or usage();
+    %opt = %{ to_utf8( \%opt ) };
+    usage() if $opt{h};
+    usage("Dump path needed (-i)") if not $opt{i};
+    if ( not $opt{F} ) {
+        usage("Only 1 language option (-L|-N)") if $opt{L} and $opt{N};
+    }
 
-# Get data from dump
-my $art_count = get_articles_list( \%par );
+    if ( $opt{o} ) {
+        open( ARTICLES, "> $opt{o}" ) or die "Couldn't write $opt{o}: $!\n";
+        close(ARTICLES);
+    }
+    if ( $opt{O} ) {
+        open( ARTICLES, "> $opt{O}" ) or die "Couldn't write $opt{O}: $!\n";
+        close(ARTICLES);
+    }
+
+    # Prepare lists
+    my %par = ();
+    $par{'namespace'}            = $opt{S};
+    $par{'all_namespaces'}       = $opt{s};
+    $par{'dump_path'}            = $opt{i};
+    $par{'output_path'}          = $opt{o};
+    $par{'output_rejected_path'} = $opt{O};
+    $par{'authors'}              = prepare_authors_list( $opt{A} );
+    $par{'lang'}                 = $opt{L};
+    $par{'nolang'}               = $opt{N};
+    $par{'pat'}                  = $opt{p};
+    $par{'nopat'}                = $opt{n};
+    $par{'whole_history'}        = $opt{H};
+    
+    return \%par;
+}
 
 __END__
+
