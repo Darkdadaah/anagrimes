@@ -638,7 +638,7 @@ sub parseType {
     while ( $line = shift @$article ) {
 
         # Another section?
-        if ( $line =~ /{{-(.+?)-[\|\}]/ ) {
+        if ( $line =~ /\{\{-(.+?)-[\|\}]/ ) {
             my $templevel = $1;
             if ( exists $level4->{$templevel} ) {
                 $level = $templevel;

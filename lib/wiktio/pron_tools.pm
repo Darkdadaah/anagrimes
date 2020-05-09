@@ -30,6 +30,7 @@ use wiktio::basic;
 
 my @voyelles = qw( a ɑ ɒ æ e ɛ ɜ ɝ ə i ɪ o œ ɔ u y ɯ ʊ ʌ );
 push @voyelles, ( 'ɑ̃', 'ɛ̃', 'œ̃', 'ɔ̃' );
+my %voyelles_map = map { $_ => 1 } @voyelles;
 
 sub cherche_tables {
     my ( $lignes, $lang, $titre ) = @_;
@@ -149,7 +150,7 @@ sub cherche_prononciation {
     foreach my $ligne (@$lignes) {
 
         # Avec {{pron|}}
-        if ( $ligne =~ /^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}\}/ ) {
+        if ( $ligne =~ /^'''.+?''' ?.*?\{\{(?:pron|phon|phono)\|([^\}\r\n]+?)\}\}/ ) {
             my $p = $1;
 
             # Pron donnée mais sans code langue
@@ -177,7 +178,7 @@ sub cherche_prononciation {
             }
         }
         elsif ( $ligne =~
-/^'''.+?''' ?.*?\{\{pron\|([^\}\r\n]+?)\}\}.+ \{\{pron\|([^\}\r\n]+?)\}\}\}/
+/^'''.+?''' ?.*?\{\{(?:pron|phon|phono)\|([^\}\r\n]+?)\}\}.+ \{\{(?:pron|phon|phono)\|([^\}\r\n]+?)\}\}\}/
           )
         {
             my $p1 = $1;
@@ -625,7 +626,7 @@ sub extrait_rimes {
     foreach my $l (@lettres) {
 
         # Diac? Concat
-        if ( $l eq '̃' and $let[$#let] ) {
+        if ( $l eq '̃' and $let[$#let] ) { #'
             $let[$#let] .= $l;
         }
         else {
@@ -640,7 +641,7 @@ sub extrait_rimes {
 
     # Get last voyelle
   VOY: for ( my $i = $#let ; $i > 0 ; $i-- ) {
-        if ( $let[$i] ~~ @voyelles ) {
+        if ( $voyelles_map{ $let[$i] } ) {
             $rimes{voyelle} = $let[$i];
             last VOY;
         }

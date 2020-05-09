@@ -704,11 +704,11 @@ sub parse_language_sections {
         );
 
         # Also search for meanings (defs)
-        my @need = ( 'nom', 'verb', 'adj', 'adv', 'interj', 'onoma' );
+        my %need = map { $_ => 1 } ( 'nom', 'verb', 'adj', 'adv', 'interj', 'onoma' );
         my $def = 0;
-        if ( $type_nom ~~ @need and not $flex and not $gent ) {
+        if ( $need{$type_nom} and not $flex and not $gent ) {
             $def =
-              parse_type_section( $lang_section->{'type'}->{$type}->{lines},
+              parse_type_section( $lang_section->{type}->{$type}->{lines},
                 $title, $lang, \%word_values );
         }
 
@@ -739,7 +739,7 @@ sub parse_language_sections {
 # Should not be hard coded like that (loop through available transcriptions dictionary)
         if ( $lang eq 'ja' ) {
             my $transc_type =
-              cherche_transcription( $lang_section->{'type'}->{$type}->{lines},
+              cherche_transcription( $lang_section->{type}->{$type}->{lines},
                 $lang, $title, $type );
             foreach my $t (@$transc_type) {
                 $transc{$t}++;
