@@ -105,7 +105,7 @@ our %output_files = (
         'file'   => '',
         'order'  => 6,
         'fields' => {
-            'r_title'  => 'varchar(255) PRIMARY KEY',
+            'r_title'  => 'varchar(15) PRIMARY KEY',
             'r_target' => 'text',
         }
     },
@@ -308,6 +308,10 @@ sub print_sql_schema {
     }
 
     # Entries view
+    print $SQL "DROP VIEW IF EXISTS entries; ";
+    print $SQL "DROP VIEW IF EXISTS defentries; ";
+    print $SQL "DROP VIEW IF EXISTS deflex; ";
+
     print $SQL
 "CREATE VIEW entries AS SELECT * FROM articles INNER JOIN lexemes ON a_artid=l_artid LEFT JOIN prons ON l_lexid=p_lexid;\n";
     print $SQL
@@ -339,6 +343,7 @@ sub print_sql_schema {
     }
 
     # Create special fr table
+    print $SQL "DROP TABLE IF EXISTS entries_fr;";
     print $SQL
 "CREATE TABLE entries_fr AS SELECT * FROM entries WHERE l_lang=\"fr\" AND NOT l_is_flexion AND NOT l_is_gentile AND NOT l_is_locution;\n";
 
@@ -353,6 +358,7 @@ sub print_sql_schema {
 sub print_sql_table {
     my ( $SQL, $table, $fields, $constraints ) = @_;
 
+    print $SQL "DROP TABLE IF EXISTS $table;";
     my $start = "CREATE TABLE $table (\n";
     my @line  = ();
     foreach my $f ( sort keys %$fields ) {
