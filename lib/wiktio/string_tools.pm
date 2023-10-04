@@ -21,6 +21,7 @@ use Exporter;
 
 use strict;
 use warnings;
+use Try::Tiny;
 
 use utf8;
 use open IO => ':encoding(UTF-8)';
@@ -47,16 +48,19 @@ sub ascii {
     my $mot = $mot0;
 
     # Lettres spéciales
-    $mot =~ s/Æ/AE/g;
-    $mot =~ s/æ/ae/g;
-    $mot =~ s/Œ/OE/g;
-    $mot =~ s/œ/oe/g;
-    $mot =~ s/ø/oe/g;
-    $mot =~ s/’/'/g;
-    $mot =~ s/ʻ/'/g;
+    try {
+        $mot =~ s/Æ/AE/g;
+        $mot =~ s/æ/ae/g;
+        $mot =~ s/Œ/OE/g;
+        $mot =~ s/œ/oe/g;
+        $mot =~ s/ø/oe/g;
+        $mot =~ s/’/'/g;
+        $mot =~ s/ʻ/'/g;
+    } catch {
+        warn("Error in $mot: $_");
+    };
 
-    #
-    # 	# Enlever les caractères superflus
+    # Enlever les caractères superflus
     $mot =~ s/&amp;//g;
     $mot =~ s/&quot;//g;
     $mot =~ s/‿/ /g;
