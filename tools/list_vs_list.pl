@@ -5,9 +5,9 @@ use warnings;
 use Getopt::Std;
 
 # UTF8
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+use open IO => ':encoding(UTF-8)';
+binmode STDOUT, ":encoding(UTF-8)";
+binmode STDERR, ":encoding(UTF-8)";
 use utf8;
 
 our %opt;    # Getopt options

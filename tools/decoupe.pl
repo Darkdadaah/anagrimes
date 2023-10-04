@@ -8,9 +8,9 @@ use FindBin;
 use lib $FindBin::Bin . '/../lib';
 use wiktio::string_tools qw(ascii);
 use utf8;
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+use open IO => ':encoding(UTF-8)';
+binmode STDOUT, ":encoding(UTF-8)";
+binmode STDERR, ":encoding(UTF-8)";
 
 our %opt;    # Getopt options
 

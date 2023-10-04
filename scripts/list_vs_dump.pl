@@ -6,9 +6,9 @@ use Getopt::Std;
 
 use utf8;
 use Encode qw(decode encode);
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+use open IO => ':encoding(UTF-8)';
+binmode STDOUT, ":encoding(UTF-8)";
+binmode STDERR, ":encoding(UTF-8)";
 
 use FindBin;
 use lib $FindBin::Bin . '/../lib';

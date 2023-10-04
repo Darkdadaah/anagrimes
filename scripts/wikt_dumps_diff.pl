@@ -14,9 +14,9 @@ use wiktio::parser qw(parseArticle);
 use wiktio::string_tools qw(unisort_key);
 our %opt;
 use utf8;
-use open IO => ':utf8';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+use open IO => ':encoding(UTF-8)';
+binmode STDOUT, ":encoding(UTF-8)";
+binmode STDERR, ":encoding(UTF-8)";
 
 # Special case of Wiktionaries that use full name or special codes for their langues
 my $languages = {

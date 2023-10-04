@@ -7,8 +7,8 @@ use Getopt::Std;
 # Need utf8 compatibility for input/outputs
 use utf8;
 use open ':encoding(utf8)';
-binmode STDOUT, ":utf8";
-binmode STDERR, ":utf8";
+binmode STDOUT, ":encoding(UTF-8)";
+binmode STDERR, ":encoding(UTF-8)";
 use Encode qw(decode);    # Needed?
 
 use FindBin;
