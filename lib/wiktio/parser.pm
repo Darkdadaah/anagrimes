@@ -667,6 +667,7 @@ sub is_gentile {
     foreach my $line (@$lines) {
         if (
             $line =~ /\{\{note-gentilé/
+            or $line =~ /\{\{gentilés/
             or (
                 $type eq 'nom'
                 and ( $line =~
